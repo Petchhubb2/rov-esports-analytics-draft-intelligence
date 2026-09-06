@@ -40,26 +40,40 @@ class CrawlResult:
         return sum(len(s.complete_games) for s in self.series)
 
 
+def normalize_title(title: str) -> str:
+    """MediaWiki ถือว่า _ กับช่องว่างเท่ากัน และตัวอักษรแรกเป็นตัวใหญ่เสมอ
+
+    ต้อง normalize ก่อน กันการดึงหน้าเดียวกันซ้ำซึ่งเปลืองโควตาโดยเปล่าประโยชน์
+    พบจริงในหน้า GCS ที่มีทั้ง "Regular_Season" และ "Regular Season"
+    """
+    t = " ".join(title.replace("_", " ").split())
+    return t[:1].upper() + t[1:] if t else t
+
+
 def discover_subpages(wikitext: str, root: str) -> list[str]:
     """หาหน้าย่อยจาก {{Tabs static}} และลิงก์ภายในที่ชี้ลงหน้าลูก"""
+    root_n = normalize_title(root)
+    seen: set[str] = set()
     found: list[str] = []
-    for m in re.finditer(r"\|link\d+\s*=\s*([^\n|}]+)", wikitext):
-        title = m.group(1).strip()
-        if title and title not in found:
-            found.append(title)
 
-    for m in re.finditer(r"\[\[([^\]|#]+)", wikitext):
-        title = m.group(1).strip()
-        if title.startswith(root + "/") and title not in found:
-            found.append(title)
-
-    return [
-        t
-        for t in found
+    def add(raw: str) -> None:
+        t = normalize_title(raw)
         # ต้องเป็นหน้าลูกจริง ไม่ใช่ตัวหน้ารวมเอง
         # เพราะ {{Tabs static}} มีลิงก์กลับมาหาหน้าตัวเองด้วย
-        if t.startswith(root + "/") and not any(t.endswith(s) for s in SKIP_SUFFIXES)
-    ]
+        if not t.startswith(root_n + "/"):
+            return
+        if any(t.endswith(normalize_title(sfx)) for sfx in SKIP_SUFFIXES):
+            return
+        if t in seen:
+            return
+        seen.add(t)
+        found.append(t)
+
+    for m in re.finditer(r"\|link\d+\s*=\s*([^\n|}]+)", wikitext):
+        add(m.group(1).strip())
+    for m in re.finditer(r"\[\[([^\]|#]+)", wikitext):
+        add(m.group(1).strip())
+    return found
 
 
 def crawl_tournament(

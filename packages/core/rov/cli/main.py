@@ -503,6 +503,111 @@ def draft_comp(
         raise typer.Exit(1) from exc
 
 
+# รายการแข่งที่ดึงข้อมูลไว้แล้ว — เพิ่มได้เมื่อ import รายการใหม่
+KNOWN_TOURNAMENTS: list[tuple[str, str, str]] = [
+    ("TH", "RoV Pro League/2026/Summer", "RPL 2026 Summer (ไทย)"),
+    ("TH", "RoV Pro League/2026/Winter", "RPL 2026 Winter (ไทย)"),
+    ("TH", "RoV Pro League/2025/Winter", "RPL 2025 Winter (ไทย)"),
+    ("TW", "Garena Challenger Series/2026/Spring", "GCS 2026 Spring (ไต้หวัน)"),
+    ("TW", "Garena Challenger Series/2026/Summer", "GCS 2026 Summer (ไต้หวัน)"),
+]
+
+
+def _regions(only: str | None = None):
+    """โหลดทุกรายการที่อยู่ใน cache แล้วจัดเป็น Region"""
+    from rov.draft.importer.crawl import crawl_tournament
+    from rov.draft.importer.liquipedia import LiquipediaClient
+    from rov.draft.meta import Region
+
+    c = LiquipediaClient()
+    out = []
+    for key, page, label in KNOWN_TOURNAMENTS:
+        if only and only.upper() != key:
+            continue
+        res = crawl_tournament(c, page, dry_run=True)
+        if res.series:
+            out.append(Region(key=key, label=label, series=res.series))
+    return out
+
+
+@draft_app.command("meta")
+def draft_meta(
+    a: str = typer.Option("TH", help="ภูมิภาคฝั่งซ้าย"),
+    b: str = typer.Option("TW", help="ภูมิภาคฝั่งขวา"),
+    top: int = typer.Option(15),
+) -> None:
+    """เทียบเมต้าระหว่างภูมิภาค — ฮีโร่ตัวไหนนิยมต่างกัน"""
+    from rov.draft.meta import Region, compare_report, region_summary
+
+    regions = _regions()
+    if not regions:
+        typer.secho("ยังไม่มีข้อมูลใน cache — รัน rov draft import ก่อน", fg=typer.colors.RED)
+        raise typer.Exit(1)
+
+    typer.echo(region_summary(regions))
+    typer.echo("")
+
+    def merge(key: str) -> Region | None:
+        parts = [r for r in regions if r.key == key.upper()]
+        if not parts:
+            return None
+        merged = Region(key=key.upper(), label=f"{key.upper()} รวม {len(parts)} รายการ")
+        for p in parts:
+            merged.series.extend(p.series)
+        return merged
+
+    ra, rb = merge(a), merge(b)
+    if ra is None or rb is None:
+        typer.secho(f"ไม่มีข้อมูลของ {a if ra is None else b}", fg=typer.colors.RED)
+        raise typer.Exit(1)
+    typer.echo(compare_report(ra, rb, top=top))
+
+
+@draft_app.command("counters")
+def draft_counters(
+    hero: str = typer.Argument(..., help="ชื่อฮีโร่ เช่น sinestrea"),
+    min_games: int = typer.Option(10, help="จำนวนเกมขั้นต่ำของคู่ที่จะแสดง"),
+    region: str = typer.Option(None, help="จำกัดเฉพาะภูมิภาค TH หรือ TW"),
+) -> None:
+    """ตัวแก้ของฮีโร่ — คู่ที่ได้เปรียบและเสียเปรียบ จากข้อมูลรวมทุกลีก"""
+    from rov.draft.importer.parser import normalize_hero_id
+    from rov.draft.meta import counter_report, pool
+
+    regions = _regions(region)
+    if not regions:
+        typer.secho("ยังไม่มีข้อมูลใน cache", fg=typer.colors.RED)
+        raise typer.Exit(1)
+
+    pooled = pool(regions)
+    hid = normalize_hero_id(hero)
+    if hid not in pooled.stats.heroes:
+        typer.secho(f"ไม่พบฮีโร่ {hid} ในข้อมูล", fg=typer.colors.RED)
+        near = [h for h in pooled.stats.heroes if hid[:4] in h]
+        if near:
+            typer.echo("ใกล้เคียง: " + ", ".join(sorted(near)[:8]))
+        raise typer.Exit(1)
+    typer.echo(counter_report(pooled, hid, min_games=min_games))
+
+
+@draft_app.command("pool")
+def draft_pool(top: int = typer.Option(25)) -> None:
+    """สถิติรวมทุกลีกทุกฤดูกาลที่ดึงมาแล้ว"""
+    from rov.draft.meta import pool, region_summary
+    from rov.draft.stats import report
+
+    regions = _regions()
+    if not regions:
+        typer.secho("ยังไม่มีข้อมูลใน cache", fg=typer.colors.RED)
+        raise typer.Exit(1)
+    typer.echo(region_summary(regions))
+    typer.echo("")
+    pooled = pool(regions)
+    typer.echo(report(pooled.stats, top=top))
+    typer.echo(f"\nคู่ matchup ที่มีข้อมูล {len(pooled.matchups):,} คู่")
+    enough = sum(1 for m in pooled.matchups.values() if m.games >= 10)
+    typer.echo(f"คู่ที่มีอย่างน้อย 10 เกม {enough:,} คู่")
+
+
 @draft_app.command("cache")
 def draft_cache() -> None:
     """ดูขนาดของ cache"""

@@ -19,6 +19,7 @@
 | 09 | [build-log.md](09-build-log.md) | **สิ่งที่วัดได้จริงจากการลงมือทำ** · บั๊กที่เจอ · สมมติฐานที่ผิด · ตัวเลขล่าสุด |
 | 10 | [blueprint-alignment.md](10-blueprint-alignment.md) | **เทียบ Blueprint กับโค้ดจริง** · แผนที่ 44 โมดูล · โครงสร้างโฟลเดอร์ · 5 Data Layer |
 | 11 | [macro-planner.md](11-macro-planner.md) | Macro Knowledge Base · Rule Engine · Win Condition · Actual vs Recommended |
+| 12 | [cross-league-meta.md](12-cross-league-meta.md) | **เมต้าข้ามลีก** ไทย RPL เทียบ ไต้หวัน GCS · 861 เกม · ตัวแก้ |
 
 > ลำดับความน่าเชื่อถือเมื่อเอกสารขัดแย้งกัน: **09/10 > 08 > 01–07**
 > 01–07 เขียนจากแผนแนวคิดแรก · 08 ข้อเท็จจริงจากการค้น · 09 ผลจากการรันจริง
@@ -62,7 +63,7 @@ Dashboard               ██                     5%
 | แมพ | Antaris Battlefield · 3 เลน · ป่า 4 ส่วนต่อฝั่ง |
 | Objective | Abyssal Dragon (2:00 ทุก 2 นาที) · Dark Slayer (8:00 ทุก 5 นาที) |
 | กติกา draft | Global Ban-Pick = soft fearless (ห้ามใช้ตัวของตัวเองซ้ำในซีรีส์) |
-| แหล่งข้อมูล draft | Liquipedia API ย้อนหลังถึงปี 2021 |
+| แหล่งข้อมูล draft | Liquipedia API · ดึงแล้ว 861 เกม จาก RPL ไทย และ GCS ไต้หวัน |
 | คำถามที่ยังไม่มีคำตอบ | spectator minimap มี fog หรือไม่ · ลำดับ ban/pick ที่แน่นอน |
 
 รายละเอียดและแหล่งอ้างอิงอยู่ใน [08-game-reference.md](08-game-reference.md)
