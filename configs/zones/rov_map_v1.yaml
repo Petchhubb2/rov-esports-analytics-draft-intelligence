@@ -1,0 +1,120 @@
+# Zone map ของ Antaris Battlefield (RoV 5v5)
+#
+# ⚠️  ยังไม่ผ่านการยืนยัน — polygon ชุดนี้เป็น "แม่แบบ" ที่วางตามโครงสร้าง
+#     MOBA มาตรฐานที่ยืนยันแล้วว่า RoV ใช้ คือ 3 เลน แม่น้ำผ่ากลาง ป่า 4 ส่วนต่อฝั่ง
+#     (docs/08-game-reference.md §2) แต่พิกัดที่แน่นอนต้องวัดจาก minimap จริง
+#
+# วิธีแก้ให้ตรงกับของจริง:
+#   1. rov calibrate  เพื่อได้ minimap ROI
+#   2. rov zones-edit  เปิดภาพ minimap แล้วลากแก้ polygon
+#   3. ตรวจ: SLAYER_PIT กับ SPIRIT_SENTINEL ต้องอยู่ครึ่งแม่น้ำเดียวกัน
+#            และ DRAGON_PIT ต้องอยู่อีกครึ่งหนึ่ง (docs/08-game-reference.md §2)
+#
+# ระบบพิกัด: normalized 0..1  (0,0) = ซ้ายบน  (1,1) = ขวาล่าง
+# สมมติฐานทิศทาง: ฐานน้ำเงินมุมซ้ายล่าง ฐานแดงมุมขวาบน  ← ต้องยืนยัน
+#
+# ลำดับสำคัญ: zone ที่อยู่ท้ายไฟล์จะทับ zone ที่อยู่ต้น
+#             จึงเรียงจากกว้าง (lane, jungle) ไปแคบ (approach, pit)
+
+version: 1
+verified: false
+
+zones:
+  # ---------------------------------------------------------------- ฐาน
+  - id: BASE_BLUE
+    kind: base
+    region: BASE_BLUE
+    polygon: [[0.00, 0.80], [0.20, 0.80], [0.20, 1.00], [0.00, 1.00]]
+
+  - id: BASE_RED
+    kind: base
+    region: BASE_RED
+    polygon: [[0.80, 0.00], [1.00, 0.00], [1.00, 0.20], [0.80, 0.20]]
+
+  # ---------------------------------------------------------------- เลน
+  # DS Lane — เลนบน วิ่งจากฐานน้ำเงินขึ้นซ้าย แล้วข้ามด้านบนไปฐานแดง
+  - id: DS_LANE
+    kind: lane
+    region: TOP_SIDE
+    polygon: [[0.00, 0.10], [0.13, 0.00], [0.85, 0.00], [0.85, 0.13],
+              [0.13, 0.13], [0.13, 0.80], [0.00, 0.80]]
+
+  # Middle Lane — แนวทแยงจากฐานน้ำเงินไปฐานแดง
+  - id: MID
+    kind: lane
+    region: MID
+    polygon: [[0.14, 0.94], [0.30, 0.94], [0.94, 0.30], [0.94, 0.14],
+              [0.80, 0.14], [0.14, 0.80]]
+
+  # Abyssal Dragon Lane — เลนล่าง วิ่งจากฐานน้ำเงินไปขวา แล้วขึ้นไปฐานแดง
+  - id: DRAGON_LANE
+    kind: lane
+    region: BOT_SIDE
+    polygon: [[0.20, 0.87], [0.87, 0.87], [0.87, 0.15], [1.00, 0.15],
+              [1.00, 1.00], [0.20, 1.00]]
+
+  # ---------------------------------------------------------------- ป่า
+  # 4 ส่วนต่อฝั่ง แบ่งด้วยเลนกลางและแม่น้ำ
+  - id: JUNGLE_BLUE_TOP
+    kind: jungle
+    region: TOP_SIDE
+    polygon: [[0.13, 0.13], [0.45, 0.13], [0.13, 0.45]]
+
+  - id: JUNGLE_BLUE_BOT
+    kind: jungle
+    region: BOT_SIDE
+    polygon: [[0.20, 0.55], [0.55, 0.87], [0.20, 0.87]]
+
+  - id: JUNGLE_RED_TOP
+    kind: jungle
+    region: TOP_SIDE
+    polygon: [[0.45, 0.13], [0.80, 0.13], [0.80, 0.45]]
+
+  - id: JUNGLE_RED_BOT
+    kind: jungle
+    region: BOT_SIDE
+    polygon: [[0.87, 0.55], [0.87, 0.87], [0.55, 0.87]]
+
+  # ---------------------------------------------------------------- แม่น้ำ
+  # แม่น้ำวิ่งตามแนวทแยงตรงข้ามกับเลนกลาง คือจากซ้ายบนไปขวาล่าง
+  - id: RIVER_TOP
+    kind: river
+    region: TOP_SIDE
+    polygon: [[0.13, 0.20], [0.30, 0.13], [0.55, 0.38], [0.38, 0.55]]
+
+  - id: RIVER_BOTTOM
+    kind: river
+    region: BOT_SIDE
+    polygon: [[0.45, 0.62], [0.62, 0.45], [0.87, 0.70], [0.70, 0.87]]
+
+  # ---------------------------------------------------------------- Objective
+  # ยืนยันแล้วว่า Dark Slayer กับ Spirit Sentinel อยู่ครึ่งแม่น้ำเดียวกัน
+  # และ Dragon อยู่อีกครึ่ง (docs/08-game-reference.md §2)
+  #
+  # โซน approach สำคัญมาก เพราะทีมจะรวมตัว "รอบ" หลุมก่อนลงหลุม ไม่ใช่ยืนในหลุม
+  - id: SLAYER_PIT_APPROACH
+    kind: approach
+    parent: SLAYER_PIT
+    region: TOP_SIDE
+    polygon: [[0.16, 0.16], [0.40, 0.16], [0.40, 0.40], [0.16, 0.40]]
+
+  - id: DRAGON_PIT_APPROACH
+    kind: approach
+    parent: DRAGON_PIT
+    region: BOT_SIDE
+    polygon: [[0.60, 0.60], [0.84, 0.60], [0.84, 0.84], [0.60, 0.84]]
+
+  - id: SPIRIT_SENTINEL
+    kind: objective
+    region: TOP_SIDE
+    polygon: [[0.38, 0.20], [0.48, 0.20], [0.48, 0.30], [0.38, 0.30]]
+
+  - id: SLAYER_PIT
+    kind: objective
+    region: TOP_SIDE
+    polygon: [[0.21, 0.21], [0.33, 0.21], [0.33, 0.33], [0.21, 0.33]]
+
+  - id: DRAGON_PIT
+    kind: objective
+    region: BOT_SIDE
+    polygon: [[0.67, 0.67], [0.79, 0.67], [0.79, 0.79], [0.67, 0.79]]

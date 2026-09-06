@@ -1,0 +1,194 @@
+"""ทดสอบ config: layout, zones, params"""
+
+from __future__ import annotations
+
+import numpy as np
+import pytest
+
+from rov.config.layout import IconSpec, Layout, MinimapConfig, RectModel, TeamColor
+from rov.config.params import ObjectiveTiming, Params
+from rov.config.zones import ZoneMap
+from rov.domain.geometry import Rect
+
+ZONE_FILE = "configs/zones/rov_map_v1.yaml"
+
+
+# ------------------------------------------------------------------ layout
+
+
+def _minimal_minimap() -> MinimapConfig:
+    return MinimapConfig(
+        roi=RectModel(x=18, y=16, w=186, h=186),
+        icon=IconSpec(diameter_px=(16, 24)),
+        teams={
+            "blue": TeamColor(hue=(95, 125)),
+            "red": TeamColor(hue=(170, 10)),
+        },
+    )
+
+
+def test_red_hue_range_wraps():
+    assert TeamColor(hue=(170, 10)).wraps
+    assert not TeamColor(hue=(95, 125)).wraps
+
+
+def test_hue_outside_opencv_scale_rejected():
+    with pytest.raises(ValueError, match="0-179"):
+        TeamColor(hue=(0, 300))
+
+
+def test_teams_must_have_both_colors():
+    with pytest.raises(ValueError, match="ขาดสี"):
+        MinimapConfig(
+            roi=RectModel(x=0, y=0, w=10, h=10),
+            icon=IconSpec(diameter_px=(4, 8)),
+            teams={"blue": TeamColor(hue=(95, 125))},
+        )
+
+
+def test_homography_requires_reference_points():
+    with pytest.raises(ValueError, match="homography_src"):
+        MinimapConfig(
+            roi=RectModel(x=0, y=0, w=10, h=10),
+            transform="homography",
+            icon=IconSpec(diameter_px=(4, 8)),
+            teams={"blue": TeamColor(hue=(95, 125)), "red": TeamColor(hue=(0, 10))},
+        )
+
+
+def test_unanswered_phase0_lists_fog_question():
+    lay = Layout(id="t", source_resolution=(1280, 720), minimap=_minimal_minimap())
+    missing = lay.unanswered_phase0()if callable(getattr(lay, "unanswered_phase0", None)) else lay.unanswered_phase0
+    joined = " ".join(missing)
+    assert "fog_of_war" in joined, "ต้องเตือนว่ายังไม่ได้ตอบคำถาม G1"
+    assert "clock" in joined
+
+
+def test_scaling_720p_to_1080p():
+    lay = Layout(id="t", source_resolution=(1280, 720), minimap=_minimal_minimap())
+    big = lay.scaled_to(1920, 1080)
+
+    assert big.minimap.roi.x == 27  # 18 * 1.5
+    assert big.minimap.roi.w == 279  # 186 * 1.5
+    # ขนาด icon ต้องขยายตามด้วย ไม่ใช่ค้างที่ค่าเดิม
+    assert big.minimap.icon.diameter_px == (24, 36)
+    assert lay.minimap.roi.x == 18, "ต้องไม่แก้ layout ตัวเดิม"
+
+
+def test_scaling_rejects_different_aspect_ratio():
+    lay = Layout(id="t", source_resolution=(1280, 720), minimap=_minimal_minimap())
+    with pytest.raises(ValueError, match="อัตราส่วนภาพ"):
+        lay.scaled_to(1280, 1024)
+
+
+def test_icon_nominal_area_between_bounds():
+    spec = IconSpec(diameter_px=(16, 24))
+    lo, hi = spec.area_range
+    assert lo < spec.nominal_area < hi
+
+
+def test_rect_crop_and_scale():
+    img = np.arange(100 * 100, dtype=np.uint8).reshape(100, 100)
+    r = Rect(10, 20, 30, 40)
+    assert r.crop(img).shape == (40, 30)
+    assert r.scaled(2.0) == Rect(20, 40, 60, 80)
+    assert r.contains(15, 25)
+    assert not r.contains(5, 25)
+
+
+# ------------------------------------------------------------------- zones
+
+
+def test_zone_lookup_matches_expected_regions():
+    zm = ZoneMap.load(ZONE_FILE)
+    assert zm.zone_at(0.05, 0.95) == "BASE_BLUE"
+    assert zm.zone_at(0.95, 0.05) == "BASE_RED"
+    assert zm.zone_at(0.73, 0.73) == "DRAGON_PIT"
+    assert zm.zone_at(0.27, 0.27) == "SLAYER_PIT"
+
+
+def test_slayer_and_sentinel_share_river_half():
+    """ยืนยันจากเกมจริง: Dark Slayer กับ Spirit Sentinel อยู่ครึ่งแม่น้ำเดียวกัน
+    ส่วน Dragon อยู่อีกครึ่ง (docs/08-game-reference.md §2)"""
+    zm = ZoneMap.load(ZONE_FILE)
+    assert zm.region_of("SLAYER_PIT") == zm.region_of("SPIRIT_SENTINEL")
+    assert zm.region_of("DRAGON_PIT") != zm.region_of("SLAYER_PIT")
+
+
+def test_zone_out_of_bounds_is_none():
+    zm = ZoneMap.load(ZONE_FILE)
+    assert zm.zone_at(-0.1, 0.5) is None
+    assert zm.zone_at(1.5, 0.5) is None
+
+
+def test_edge_distance_is_larger_at_zone_centre():
+    zm = ZoneMap.load(ZONE_FILE)
+    centre = zm.edge_distance(0.73, 0.73)
+    edge = zm.edge_distance(0.675, 0.73)
+    assert centre > edge
+
+
+def test_batch_lookup_matches_single_lookup():
+    zm = ZoneMap.load(ZONE_FILE)
+    xs = np.array([0.05, 0.73, 0.27, np.nan])
+    ys = np.array([0.95, 0.73, 0.27, 0.5])
+    batch = zm.zones_at_batch(xs, ys)
+    assert batch == ["BASE_BLUE", "DRAGON_PIT", "SLAYER_PIT", None]
+
+
+def test_zone_polygon_must_be_normalized():
+    with pytest.raises(ValueError, match="normalized"):
+        ZoneMap.model_validate(
+            {
+                "version": 1,
+                "zones": [
+                    {"id": "X", "kind": "lane", "polygon": [[0, 0], [50, 0], [50, 50]]}
+                ],
+            }
+        )
+
+
+def test_map_coverage_is_reasonable():
+    zm = ZoneMap.load(ZONE_FILE)
+    cov = zm.coverage_fraction()
+    assert 0.7 < cov <= 1.0, f"zone ครอบคลุมแมพ {cov:.0%} — น่าจะวาดไม่ครบหรือทับซ้อน"
+
+
+# ------------------------------------------------------------------ params
+
+
+def test_objective_timing_before_first_spawn():
+    t = ObjectiveTiming()
+    assert t.next_dragon(0.0) == 120.0
+    assert t.next_slayer(0.0) == 480.0
+
+
+def test_objective_alive_when_never_killed():
+    t = ObjectiveTiming()
+    assert t.next_dragon(300.0) == 0.0
+
+
+def test_objective_respawn_after_kill():
+    t = ObjectiveTiming()
+    # dragon ถูกฆ่าที่ 125 วินาที รอบเกิดใหม่ 120 วินาที
+    assert t.next_dragon(130.0, last_killed=125.0) == pytest.approx(115.0)
+    # เลยเวลาเกิดใหม่แล้ว
+    assert t.next_dragon(260.0, last_killed=125.0) == 0.0
+
+
+def test_enraged_dragon_uses_longer_interval():
+    t = ObjectiveTiming()
+    assert t.next_dragon(700.0, last_killed=650.0) == pytest.approx(250.0)
+
+
+def test_objective_timings_marked_unverified():
+    """แพตช์ 26 มิ.ย. 2026 แก้ระบบ jungle ค่าเริ่มต้นจึงต้องถือว่ายังไม่ยืนยัน"""
+    assert ObjectiveTiming().verified is False
+
+
+def test_config_hash_changes_with_params():
+    a = Params()
+    b = Params()
+    assert a.config_hash() == b.config_hash()
+    b.detect.residual_threshold += 1
+    assert a.config_hash() != b.config_hash()

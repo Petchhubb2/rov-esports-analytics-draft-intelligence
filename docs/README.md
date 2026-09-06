@@ -1,0 +1,54 @@
+# เอกสารออกแบบระบบ — RoV Esports Analytics & Draft Intelligence
+
+เอกสารชุดนี้แปลงแผนแนวคิดใน [`RoV_Esports_Analytics_แผนพัฒนาระบบ.md`](../RoV_Esports_Analytics_แผนพัฒนาระบบ.md)
+ให้เป็น **แผนทางเทคนิคที่ลงมือทำได้** — มีสัญญาข้อมูล (data contract), อัลกอริทึม, สคีมา,
+และเกณฑ์ผ่าน/ไม่ผ่านของแต่ละเฟส
+
+เอกสารเดิม = "จะทำอะไร"  ·  เอกสารชุดนี้ = "จะทำอย่างไร และรู้ได้อย่างไรว่าทำสำเร็จ"
+
+| # | เอกสาร | เนื้อหา |
+|---|--------|---------|
+| 01 | [assessment.md](01-assessment.md) | ประเมินแผนเดิม · ช่องว่าง 10 ข้อที่ต้องปิดก่อนเริ่มโค้ด |
+| 02 | [architecture.md](02-architecture.md) | สถาปัตยกรรม · โครงสร้างโปรเจกต์ · การตัดสินใจด้าน stack |
+| 03 | [data-contracts.md](03-data-contracts.md) | สคีมาทุก Layer · artifact ระหว่าง stage · DDL ฐานข้อมูล |
+| 04 | [vision-pipeline.md](04-vision-pipeline.md) | Calibration · Detection · Identification · Tracking |
+| 05 | [macro-events.md](05-macro-events.md) | Zone model · กติกาตรวจจับ event ทีละตัว |
+| 06 | [draft-engine.md](06-draft-engine.md) | Hero attribute · Composition scoring · Matchup · Recommendation |
+| 07 | [roadmap.md](07-roadmap.md) | เฟส · Acceptance gate · ประมาณการงาน |
+| 08 | [game-reference.md](08-game-reference.md) | **ข้อมูลเกมที่ตรวจสอบแล้ว** · แพตช์ · แมพ · objective timing · กติกา draft · แหล่งข้อมูล |
+| 09 | [build-log.md](09-build-log.md) | **สิ่งที่วัดได้จริงจากการลงมือทำ** · บั๊กที่เจอ · สมมติฐานที่ผิด · ตัวเลขล่าสุด |
+
+> ลำดับความน่าเชื่อถือเมื่อเอกสารขัดแย้งกัน: **09 > 08 > 01–07**
+> 01–07 เขียนจากแผนแนวคิด · 08 คือข้อเท็จจริงจากการค้น · 09 คือผลจากการรันจริง
+
+## สรุปสั้นที่สุด
+
+โครงการนี้จะสำเร็จหรือล้มเหลวที่ **Milestone 1 เท่านั้น**:
+แปลง broadcast video เป็นตาราง `(game_time, player, x, y, confidence, source)`
+ที่วัดความแม่นได้ และไม่มี identity switch
+
+ทุกอย่างที่เหลือ — Macro, Profile, Draft, Dashboard, ML — เป็นการต่อยอดจากตารางนั้น
+และเป็นงานที่ความเสี่ยงต่ำกว่ามาก
+
+ดังนั้นลำดับความสำคัญของเวลาคือ:
+
+```
+Vision + Data Quality   ████████████████████  70%
+Macro Engine            █████                 15%
+Draft Engine            ███                   10%
+Dashboard               ██                     5%
+```
+
+## ข้อเท็จจริงที่ตรวจสอบแล้ว (2026-09-06)
+
+| รายการ | ค่า |
+|--------|-----|
+| แพตช์ปัจจุบัน | 1.63 |
+| ฮีโร่ทั้งหมด / ที่มีข้อมูล pro | 126 / 98 |
+| แมพ | Antaris Battlefield · 3 เลน · ป่า 4 ส่วนต่อฝั่ง |
+| Objective | Abyssal Dragon (2:00 ทุก 2 นาที) · Dark Slayer (8:00 ทุก 5 นาที) |
+| กติกา draft | Global Ban-Pick = soft fearless (ห้ามใช้ตัวของตัวเองซ้ำในซีรีส์) |
+| แหล่งข้อมูล draft | Liquipedia API ย้อนหลังถึงปี 2021 |
+| คำถามที่ยังไม่มีคำตอบ | spectator minimap มี fog หรือไม่ · ลำดับ ban/pick ที่แน่นอน |
+
+รายละเอียดและแหล่งอ้างอิงอยู่ใน [08-game-reference.md](08-game-reference.md)
