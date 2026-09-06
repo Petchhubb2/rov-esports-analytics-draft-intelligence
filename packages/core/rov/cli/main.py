@@ -198,6 +198,162 @@ def eval_synthetic(
         typer.echo(f"\nผ่าน {n_ok} จาก {len(rows)} seed")
 
 
+# --------------------------------------------------------------- System 01
+
+
+ingest_app = typer.Typer(help="System 01 — Video Ingestion", no_args_is_help=True)
+app.add_typer(ingest_app, name="ingest")
+
+
+@ingest_app.command("init-db")
+def ingest_init_db() -> None:
+    """สร้างตารางในฐานข้อมูล (ใช้ตอน dev — production ใช้ alembic)"""
+    from rov.store.db import create_all, database_url, ping
+
+    if not ping():
+        typer.secho(f"ต่อฐานข้อมูลไม่ได้: {database_url()}", fg=typer.colors.RED)
+        typer.echo("ตรวจว่า PostgreSQL รันอยู่ และตั้ง ROV_DATABASE_URL ถูกต้อง")
+        raise typer.Exit(1)
+    create_all()
+    typer.secho(f"สร้างตารางแล้วที่ {database_url()}", fg=typer.colors.GREEN)
+
+
+@ingest_app.command("add")
+def ingest_add(
+    path: str,
+    title: str = typer.Option(None, help="ชื่อแมตช์"),
+    match_id: str = typer.Option(None, help="เพิ่มวิดีโอเข้าแมตช์ที่มีอยู่แล้ว"),
+) -> None:
+    """รับไฟล์วิดีโอเข้าระบบ แล้วสร้าง Match, Video, ProcessingJob"""
+    from rov.ingest.service import IngestError, ingest_video
+    from rov.store.db import session_scope
+
+    try:
+        with session_scope() as s:
+            r = ingest_video(s, path, title=title, match_id=match_id)
+    except IngestError as exc:
+        typer.secho(f"รับไฟล์ไม่ได้: {exc}", fg=typer.colors.RED)
+        raise typer.Exit(1) from exc
+
+    typer.echo(r.meta.summary())
+    typer.echo("")
+    typer.echo(f"  match_id  {r.match_id}")
+    typer.echo(f"  video_id  {r.video_id}")
+    typer.echo(f"  job_id    {r.job_id}")
+    for w in r.warnings:
+        typer.secho(f"  ⚠ {w}", fg=typer.colors.YELLOW)
+
+
+@ingest_app.command("job")
+def ingest_job(job_id: str) -> None:
+    """ดูสถานะของ processing job"""
+    from rov.ingest.service import IngestError, job_state
+    from rov.store.db import session_scope
+
+    try:
+        with session_scope() as s:
+            st = job_state(s, job_id)
+    except IngestError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED)
+        raise typer.Exit(1) from exc
+    for k, v in st.items():
+        typer.echo(f"  {k:<12} {v}")
+
+
+@ingest_app.command("list")
+def ingest_list(limit: int = 20) -> None:
+    """รายการแมตช์ล่าสุด"""
+    from rov.store.db import session_scope
+    from rov.store.repo import MatchRepo, VideoRepo
+
+    with session_scope() as s:
+        matches = MatchRepo(s).list(limit=limit)
+        if not matches:
+            typer.echo("ยังไม่มีแมตช์ในระบบ")
+            return
+        for m in matches:
+            vids = VideoRepo(s).by_match(m.id)
+            res = vids[0].resolution if vids else "-"
+            typer.echo(f"  {m.id[:8]}  {res:<10} {m.title or '(ไม่มีชื่อ)'}")
+
+
+# --------------------------------------------------------------- Draft import
+
+
+draft_app = typer.Typer(help="Draft Intelligence", no_args_is_help=True)
+app.add_typer(draft_app, name="draft")
+
+
+@draft_app.command("plan")
+def draft_plan(tournaments: int = 10, pages_each: int = 3) -> None:
+    """ประมาณเวลาที่ต้องใช้ดึงข้อมูลก่อนเริ่มจริง
+
+    ต้องรันก่อนงานดึงยาวเสมอ เพราะ Liquipedia จำกัด 60 requests ต่อชั่วโมง
+    """
+    from rov.draft.importer.liquipedia import LiquipediaClient
+
+    c = LiquipediaClient()
+    n = tournaments * (1 + pages_each)
+    p = c.plan(n)
+    typer.echo(f"  รายการแข่ง        {tournaments}")
+    typer.echo(f"  หน้าต่อรายการ      {1 + pages_each}")
+    typer.echo(f"  request รวม       {p['requests']}")
+    typer.echo(f"  เวลาโดยประมาณ     {p['estimated_hours']} ชั่วโมง")
+    typer.echo(f"  โควตาเหลือชั่วโมงนี้ {p['remaining_this_hour']}")
+    typer.echo("")
+    typer.echo("หนึ่งหน้า Group Stage ให้ข้อมูลราว 270 เกม จึงไม่ต้องดึงทีละแมตช์")
+
+
+@draft_app.command("import")
+def draft_import(
+    tournament: str = typer.Argument(
+        ..., help='เช่น "RoV Pro League/2026/Summer"'
+    ),
+    live: bool = typer.Option(
+        False, "--live", help="ยิง request จริง (ค่าเริ่มต้นใช้เฉพาะ cache)"
+    ),
+    max_pages: int = typer.Option(8),
+) -> None:
+    """ดึงข้อมูล draft ของรายการแข่งหนึ่งรายการ"""
+    from rov.draft.importer.crawl import crawl_tournament
+    from rov.draft.importer.liquipedia import LiquipediaClient
+    from rov.draft.importer.parser import summarize
+
+    c = LiquipediaClient()
+    if not live:
+        typer.secho(
+            "โหมด cache เท่านั้น — ใส่ --live เพื่อยิง request จริง",
+            fg=typer.colors.YELLOW,
+        )
+
+    res = crawl_tournament(c, tournament, max_pages=max_pages, dry_run=not live)
+
+    typer.echo(f"\nหน้าที่ดึงมา   {len(res.pages_fetched)}")
+    for p in res.pages_fetched:
+        typer.echo(f"    ✓ {p}")
+    for p in res.pages_skipped:
+        typer.echo(f"    · ข้าม (ไม่มีใน cache) {p}")
+    for p, err in res.pages_failed:
+        typer.secho(f"    ✗ {p}: {err}", fg=typer.colors.RED)
+
+    if res.series:
+        typer.echo("")
+        typer.echo(summarize(res.series).report())
+    typer.echo(f"\nสถิติ client: {c.stats.as_dict()}")
+    typer.echo(f"โควตาเหลือชั่วโมงนี้: {c.limiter.remaining_this_hour}")
+
+
+@draft_app.command("cache")
+def draft_cache() -> None:
+    """ดูขนาดของ cache"""
+    from rov.draft.importer.cache import ResponseCache
+
+    st = ResponseCache().stats()
+    typer.echo(f"  ไฟล์   {st['entries']}")
+    typer.echo(f"  ขนาด   {st['bytes'] / 1024:.0f} KB")
+    typer.echo(f"  ที่อยู่  {st['root']}")
+
+
 # --------------------------------------------------------------- misc
 
 
@@ -264,20 +420,37 @@ def doctor() -> None:
 def status() -> None:
     """สรุปว่าโครงการเดินมาถึงไหนแล้ว เทียบกับ roadmap"""
     setup_console()
+    from rov.store.db import ping
+
+    db_ok = ping()
+    layouts = Path("configs/layouts")
+    has_layout = layouts.exists() and any(layouts.glob("*.yaml"))
+    cache = Path("data/cache/liquipedia")
+    has_draft_data = cache.exists() and any(cache.rglob("*.json.gz"))
+
     items = [
-        ("Phase 0  layout config", Path("configs/layouts").exists()
-         and any(Path("configs/layouts").glob("*.yaml")), "ต้องมีคลิปจริงก่อน"),
-        ("Phase 0  zone map", Path("configs/zones/rov_map_v1.yaml").exists(),
-         "แม่แบบพร้อม ยังไม่ยืนยันกับ minimap จริง"),
-        ("Phase 1  detector + eval", True, "ผ่านเกณฑ์บนชุดสังเคราะห์ ยังไม่ทดสอบกับคลิปจริง"),
-        ("Phase 2  HUD reader", False, "ยังไม่เริ่ม"),
-        ("Phase 2  objective state", False, "ยังไม่เริ่ม"),
-        ("Phase 3  tracking", False, "ยังไม่เริ่ม"),
-        ("Phase 4  zone mapping", Path("packages/core/rov/config/zones.py").exists(),
-         "lookup พร้อม ยังไม่ต่อกับ pipeline"),
-        ("Phase 5  event detection", False, "ยังไม่เริ่ม"),
-        ("Draft D0 importer", False, "ยังไม่เริ่ม — ควรเริ่มก่อนเพราะ rate limit"),
-        ("Draft D1 hero attribute", False, "ยังไม่เริ่ม"),
+        ("01 Video Ingestion", db_ok, "probe/sampler + DB + API + queue" if db_ok
+         else "โค้ดพร้อม แต่ต่อฐานข้อมูลไม่ได้"),
+        ("02 Broadcast Parser", False, "มีแค่สคีมา ROI ยังไม่มีตัวอ่าน HUD/นาฬิกา"),
+        ("03 Minimap Vision", True, "ผ่านเกณฑ์บนชุดสังเคราะห์ ยังไม่ทดสอบคลิปจริง"),
+        ("04 Hero Identification", False, "ยังไม่เริ่ม"),
+        ("05 Player Identity", False, "มีแค่ชนิดข้อมูล"),
+        ("06 Player Tracking", False, "ยังไม่เริ่ม"),
+        ("07 Map Calibration", has_layout, "ต้องมีคลิปจริงก่อน" if not has_layout else ""),
+        ("08 Map / Zone Engine", True, "raster lookup O(1) พร้อม"),
+        ("09 Ground Truth", False, "มีตัวกำเนิด GT แต่ยังไม่มีเครื่องมือ label"),
+        ("10 Event Detection", False, "ยังไม่เริ่ม"),
+        ("11-14 Macro/Player/Team Analytics", False, "ยังไม่เริ่ม"),
+        ("15-26 Draft Engines", False, "ยังไม่เริ่ม"),
+        ("— Draft Data Import", has_draft_data,
+         "ดึงจาก Liquipedia ได้แล้ว" if has_draft_data else "ยังไม่ได้ดึงข้อมูล"),
+        ("27-32 Macro Planner", False, "ออกแบบไว้ใน docs/11 ยังไม่เขียนโค้ด"),
+        ("33 Scouting", False, "ยังไม่เริ่ม"),
+        ("34 Prediction / ML", False, "ห้ามเริ่มก่อนมี ground truth"),
+        ("39 Processing Queue", db_ok, "jobs table + SKIP LOCKED"),
+        ("40-41 API / Database", db_ok, "ครอบคลุมเฉพาะ System 01"),
+        ("42-43 Dashboard / Replay", False, "ยังไม่เริ่ม"),
+        ("44 Testing / Evaluation", True, "87 เทสต์"),
     ]
     for name, done, note in items:
         mark = "✓" if done else "·"

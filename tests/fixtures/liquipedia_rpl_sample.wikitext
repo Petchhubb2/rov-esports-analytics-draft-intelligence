@@ -1,0 +1,96 @@
+{{Match
+    |bestof=5
+    |date=January 31, 2026 - 12:00 {{Abbr/ICT}}
+    |youtube=Garena RoV Thailand     |facebook=Garena RoV Tournament     |twitch=Garena RoV Twitch
+    |mvp=Sharkz, AshEarth, Sharkz
+    |opponent1={{TeamOpponent|fs
+		|substitutes={{PlayerSubstitutions
+            |{{Substitution|in={{OpponentPlayer|Givemeakiss|flag=th}}|out={{OpponentPlayer|Agetsive|flag=th}}|games=3}}
+		}}
+	}}
+    |opponent2={{TeamOpponent|godji check}}
+	|comment=Player of the Match: {{Player|AshEarth|flag=th}} (82%)
+    |map1={{Map|vod=https://www.youtube.com/watch?v=xmL6Q2Qa-o0&t=2678s
+        |team1side=blue|team2side=red|length=11:58|winner=1
+        
+        |t1h1=skud|t1h2=billow|t1h3=rouie|t1h4=hayate|t1h5=toro
+        |t2h1=murad|t2h2=keera|t2h3=lorion|t2h4=wisp|t2h5=y'bneth
+        
+        |t1b1=annette|t1b2=eland'orr|t1b3=qi|t1b4=florentino
+        |t2b1=sinestrea|t2b2=zata|t2b3=mganga|t2b4=marja
+    }}
+    |map2={{Map|vod=https://www.youtube.com/watch?v=xmL6Q2Qa-o0&t=4410s
+        |team1side=red|team2side=blue|length=18:46|winner=1
+        
+        |t1h1=taara|t1h2=zephys|t1h3=mganga|t1h4=stuart|t1h5=dolia
+        |t2h1=marja|t2h2=sinestrea|t2h3=iggy|t2h4=elsu|t2h5=thane
+        
+        |t1b1=rouie|t1b2=enzo|t1b3=skud|t1b4=maloch
+        |t2b1=eland'orr|t2b2=zata|t2b3=tachi|t2b4=keera
+    }}
+    |map3={{Map|vod=https://www.youtube.com/watch?v=xmL6Q2Qa-o0&t=6779s
+        |team1side=blue|team2side=red|length=16:55|winner=1
+        
+        |t1h1=richter|t1h2=murad|t1h3=aya|t1h4=elsu|t1h5=annette
+        |t2h1=qi|t2h2=tachi|t2h3=yue|t2h4=capheny|t2h5=taara
+        
+        |t1b1=rouie|t1b2=zata|t1b3=kahlii|t1b4=dolia
+        |t2b1=sinestrea|t2b2=eland'orr|t2b3=florentino|t2b4=marja
+    }}
+    |map4={{Map|winner=skip}}
+    |map5={{Map|winner=skip}}
+}}
+
+{{Match
+    |date=January 31, 2026 - 15:00 {{Abbr/ICT}}
+    |youtube=Garena RoV Thailand     |facebook=Garena RoV Tournament     |twitch=Garena RoV Twitch
+    |mvp=Myra, Opar, Opar, Deboom, Acapae
+    |opponent1={{TeamOpponent|solyx}}
+    |opponent2={{TeamOpponent|bac}}
+	|comment=Player of the Match: {{Player|Deboom|flag=th}} (47.5%)
+    |map1={{Map|vod=https://youtu.be/xmL6Q2Qa-o0?t=13625
+        |team1side=blue|team2side=red|length=12:50|winner=1
+        
+        |t1h1=marja|t1h2=edras|t1h3=zata|t1h4=fennik|t1h5=dolia
+        |t2h1=murad|t2h2=tachi|t2h3=mganga|t2h4=hayate|t2h5=toro
+        
+        |t1b1=eland'orr|t1b2=enzo|t1b3=teemee|t1b4=annette 
+        |t2b1=valhein|t2b2=stuart|t2b3=qi|t2b4=capheny
+    }}
+    |map2={{Map|vod=https://youtu.be/xmL6Q2Qa-o0?t=15351
+        |team1side=blue|team2side=red|length=18:45|winner=2
+        
+        |t1h1=biron|t1h2=billow|t1h3=natalya|t1h4=valhein|t1h5=ybneth
+        |t2h1=skud|t2h2=elandorr|t2h3=lorion|t2h4=wisp|t2h5=enzo
+        
+        |t1b1=zata|t1b2=marja|t1b3=florentino|t1b4=edras
+        |t2b1=sinestrea|t2b2=tachi|t2b3=mganga|t2b4=iggy
+    }}
+    |map3={{Map|vod=https://youtu.be/xmL6Q2Qa-o0?t=17730
+        |team1side=red|team2side=blue|length=17:16|winner=2
+        
+        |t1h1=qi|t1h2=tachi|t1h3=heino|t1h4=stuart|t1h5=teemee
+        |t2h1=airi|t2h2=marja|t2h3=rouie|t2h4=elsu|t2h5=ybneth
+        
+        |t1b1=zata|t1b2=sinestrea|t1b3=florentino|t1b4=keera
+        |t2b1=murad|t2b2=lorion|t2b3=enzo|t2b4=ignis
+    }}
+    |map4={{Map|vod=https://youtu.be/xmL6Q2Qa-o0?t=19796
+        |team1side=blue|team2side=red|length=14:48|winner=1
+        
+        |t1h1=florentino|t1h2=zephys|t1h3=iggy|t1h4=elsu|t1h5=annette
+        |t2h1=taara|t2h2=keera|t2h3=tulen|t2h4=capheny|t2h5=teemee
+        
+        |t1b1=zata|t1b2=valhein|t1b3=aya|t1b4=dolia
+        |t2b1=sinestrea|t2b2=rouie|t2b3=skud|t2b4=toro
+    }}
+    |map5={{Map|vod=https://youtu.be/xmL6Q2Qa-o0?t=21824
+        |team1side=blue|team2side=red|length=10:00|winner=1
+        
+        |t1h1=airi|t1h2=volkath|t1h3=lorion|t1h4=elandorr|t1h5=toro
+        |t2h1=riktor|t2h2=billow|t2h3=iggy|t2h4=erin|t2h5=dolia
+        
+        |t1b1=zata|t1b2=valhein|t1b3=stuart|t1b4=maloch
+        |t2b1=rouie|t2b2=sinestrea|t2b3=skud|t2b4=murad
+    }}
+}}

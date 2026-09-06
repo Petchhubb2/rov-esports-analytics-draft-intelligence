@@ -17,9 +17,23 @@
 | 07 | [roadmap.md](07-roadmap.md) | เฟส · Acceptance gate · ประมาณการงาน |
 | 08 | [game-reference.md](08-game-reference.md) | **ข้อมูลเกมที่ตรวจสอบแล้ว** · แพตช์ · แมพ · objective timing · กติกา draft · แหล่งข้อมูล |
 | 09 | [build-log.md](09-build-log.md) | **สิ่งที่วัดได้จริงจากการลงมือทำ** · บั๊กที่เจอ · สมมติฐานที่ผิด · ตัวเลขล่าสุด |
+| 10 | [blueprint-alignment.md](10-blueprint-alignment.md) | **เทียบ Blueprint กับโค้ดจริง** · แผนที่ 44 โมดูล · โครงสร้างโฟลเดอร์ · 5 Data Layer |
+| 11 | [macro-planner.md](11-macro-planner.md) | Macro Knowledge Base · Rule Engine · Win Condition · Actual vs Recommended |
 
-> ลำดับความน่าเชื่อถือเมื่อเอกสารขัดแย้งกัน: **09 > 08 > 01–07**
-> 01–07 เขียนจากแผนแนวคิด · 08 คือข้อเท็จจริงจากการค้น · 09 คือผลจากการรันจริง
+> ลำดับความน่าเชื่อถือเมื่อเอกสารขัดแย้งกัน: **09/10 > 08 > 01–07**
+> 01–07 เขียนจากแผนแนวคิดแรก · 08 ข้อเท็จจริงจากการค้น · 09 ผลจากการรันจริง
+> 10 การเทียบกับ Blueprint ฉบับใหม่ · 11 ออกแบบส่วนที่ Blueprint เพิ่มเข้ามา
+
+## สามเสาหลัก (Blueprint §3)
+
+```
+Video Analysis  ·  Draft System  ·  Scouting
+                        ↓
+                  Macro Planner  →  Intelligence  →  Dashboard
+```
+
+รวม 44 โมดูล · สถานะปัจจุบัน ✅ 7 · 🟡 11 · ⬜ 27
+ดูแผนที่เต็มใน [10-blueprint-alignment.md](10-blueprint-alignment.md)
 
 ## สรุปสั้นที่สุด
 

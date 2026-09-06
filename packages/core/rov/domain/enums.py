@@ -71,17 +71,109 @@ class Objective(StrEnum):
 
 
 class EventType(StrEnum):
+    """Event ทั้ง 13 ชนิดตาม Blueprint §16
+
+    OBJECTIVE แยกสี่สถานะโดยเจตนา เพราะ "เข้าไปเซ็ตอัพ" "แย่งกัน"
+    "ได้มา" และ "เสียไป" ให้ข้อมูลเชิงกลยุทธ์คนละอย่างกัน
+    การยุบรวมจะทำให้คำนวณอัตราสำเร็จของการเซ็ตอัพไม่ได้
+    """
+
     ROTATION = "ROTATION"
-    GANK = "GANK"
     GROUPING = "GROUPING"
+    GANK = "GANK"
     OBJECTIVE_SETUP = "OBJECTIVE_SETUP"
+    OBJECTIVE_CONTEST = "OBJECTIVE_CONTEST"
     OBJECTIVE_TAKEN = "OBJECTIVE_TAKEN"
+    OBJECTIVE_LOST = "OBJECTIVE_LOST"
     TEAMFIGHT = "TEAMFIGHT"
     DEATH = "DEATH"
     RESPAWN = "RESPAWN"
     RECALL = "RECALL"
-    SPLIT_PUSH = "SPLIT_PUSH"
     LANE_SWAP = "LANE_SWAP"
+    SPLIT_PUSH = "SPLIT_PUSH"
+
+
+class DataLayer(StrEnum):
+    """ชั้นข้อมูล 5 ชั้นตาม Blueprint §54
+
+    กฎเหล็ก: ชั้นบนห้ามเขียนทับชั้นล่าง
+    ลบชั้น 3-5 ทิ้งแล้วสร้างใหม่จากชั้น 2 ได้เสมอ
+
+    แผนเดิมมี 4 ชั้น Blueprint ใหม่แทรก ANALYTICS เข้ามาระหว่าง EVENT กับ INSIGHT
+    เพราะสถิติที่รวมแล้ว (เช่น dragon first rotation 68%) ต่างจากข้อสรุป
+    (เช่น objective-oriented jungler) และต้องตรวจสอบแยกกันได้
+    """
+
+    RAW = "L1_RAW"
+    OBSERVATION = "L2_OBSERVATION"
+    EVENT = "L3_EVENT"
+    ANALYTICS = "L4_ANALYTICS"
+    INSIGHT = "L5_INSIGHT"
+
+
+class PlanTier(StrEnum):
+    """ระดับของแผน macro ตาม Blueprint §44"""
+
+    PRIMARY = "PRIMARY"
+    SECONDARY = "SECONDARY"
+    EMERGENCY = "EMERGENCY"
+
+
+class GamePhase(StrEnum):
+    """ช่วงของเกม — ใช้เป็นเงื่อนไขของ macro rule
+
+    Blueprint §41 เตือนว่าอย่าใช้เวลาอย่างเดียวตัดสิน ต้องดู objective state
+    level power spike wave state gold vision ประกอบด้วย
+    ค่านี้จึงเป็นแค่หนึ่งในเงื่อนไข ไม่ใช่ตัวตัดสิน
+    """
+
+    OPENING = "OPENING"  # 0:00-1:00
+    EARLY = "EARLY"  # 1:00-5:00
+    MID = "MID"  # 5:00-12:00
+    LATE = "LATE"  # 12:00+
+
+
+class MacroTag(StrEnum):
+    """ป้ายลักษณะ macro ของฮีโร่ ตาม Blueprint §39"""
+
+    FAST_CLEAR = "FAST_CLEAR"
+    EARLY_GANK = "EARLY_GANK"
+    EARLY_PRESSURE = "EARLY_PRESSURE"
+    SCALING = "SCALING"
+    OBJECTIVE = "OBJECTIVE"
+    ENGAGE = "ENGAGE"
+    PEEL = "PEEL"
+    POKE = "POKE"
+    DIVE = "DIVE"
+    SPLIT_PUSH = "SPLIT_PUSH"
+
+
+class MacroShape(StrEnum):
+    """โครงสร้างการกระจายตัวของทีม ตาม Blueprint §43"""
+
+    S_3_1_1 = "3-1-1"
+    S_3_2 = "3-2"
+    S_4_1 = "4-1"
+    S_1_3_1 = "1-3-1"
+    S_5_MAN = "5-MAN"
+    S_2_2_1 = "2-2-1"
+
+
+class JobStatus(StrEnum):
+    """สถานะของ processing job ตาม Blueprint §7 และ §56"""
+
+    UPLOADED = "UPLOADED"
+    QUEUED = "QUEUED"
+    EXTRACTING = "EXTRACTING"
+    DETECTING = "DETECTING"
+    TRACKING = "TRACKING"
+    ANALYZING = "ANALYZING"
+    COMPLETED = "COMPLETED"
+    FAILED = "FAILED"
+
+    @property
+    def is_terminal(self) -> bool:
+        return self in (JobStatus.COMPLETED, JobStatus.FAILED)
 
 
 class LaneRole(StrEnum):
