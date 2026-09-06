@@ -6,7 +6,6 @@ CLI คือหน้าตาหลักของระบบตลอด Pha
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
 
 import typer
@@ -242,7 +241,8 @@ def doctor() -> None:
         else:
             typer.secho(f"  ✗ {f} ไม่พบ", fg=typer.colors.RED)
             ok = False
-    layouts = list(Path("configs/layouts").glob("*.yaml")) if Path("configs/layouts").exists() else []
+    layout_dir = Path("configs/layouts")
+    layouts = sorted(layout_dir.glob("*.yaml")) if layout_dir.exists() else []
     if layouts:
         for lf in layouts:
             typer.echo(f"  ✓ {lf}")

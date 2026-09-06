@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-
 from rov.config.layout import IconSpec, Layout, MinimapConfig, RectModel, TeamColor
 from rov.config.params import ObjectiveTiming, Params
 from rov.config.zones import ZoneMap
@@ -58,7 +57,7 @@ def test_homography_requires_reference_points():
 
 def test_unanswered_phase0_lists_fog_question():
     lay = Layout(id="t", source_resolution=(1280, 720), minimap=_minimal_minimap())
-    missing = lay.unanswered_phase0()if callable(getattr(lay, "unanswered_phase0", None)) else lay.unanswered_phase0
+    missing = lay.unanswered_phase0
     joined = " ".join(missing)
     assert "fog_of_war" in joined, "ต้องเตือนว่ายังไม่ได้ตอบคำถาม G1"
     assert "clock" in joined

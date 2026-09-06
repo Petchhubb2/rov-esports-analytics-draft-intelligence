@@ -19,7 +19,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "packages" / "core"
 from rov.cli.console import setup_console  # noqa: E402
 from rov.config.layout import IconSpec, MinimapConfig, RectModel, TeamColor  # noqa: E402
 from rov.config.params import DetectParams  # noqa: E402
-from rov.eval.detection import DetPoint, DetectionMetrics, GTIcon, match_frame  # noqa: E402
+from rov.eval.detection import DetectionMetrics, DetPoint, GTIcon, match_frame  # noqa: E402
 from rov.eval.synthetic import ICON_DIAMETER, MINIMAP_SIZE, SyntheticMatch  # noqa: E402
 from rov.minimap.background import build_rolling_background  # noqa: E402
 from rov.minimap.detect import detect_frame, enforce_team_caps  # noqa: E402

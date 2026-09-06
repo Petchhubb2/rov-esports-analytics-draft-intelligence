@@ -19,10 +19,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "packages" / "core"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from eval_synthetic import synthetic_layout  # noqa: E402
-
 from rov.cli.console import setup_console  # noqa: E402
 from rov.config.params import DetectParams  # noqa: E402
-from rov.eval.synthetic import MINIMAP_SIZE, SyntheticMatch  # noqa: E402
+from rov.eval.synthetic import SyntheticMatch  # noqa: E402
 from rov.minimap.background import build_rolling_background  # noqa: E402
 from rov.minimap.detect import detect_frame, enforce_team_caps  # noqa: E402
 
@@ -81,7 +80,7 @@ def main() -> None:
                 caps_lost_tp += 1
 
         matched, missed, extra = pair(f.truth, capped)
-        for i, j in matched:
+        for _, j in matched:
             tp_conf.append(capped[j].det_conf)
 
         in_fight = match._in_fight(f.video_time)

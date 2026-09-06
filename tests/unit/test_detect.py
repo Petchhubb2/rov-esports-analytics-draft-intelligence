@@ -9,12 +9,11 @@ from __future__ import annotations
 import cv2
 import numpy as np
 import pytest
-
 from rov.config.layout import IconSpec, MinimapConfig, RectModel, TeamColor
 from rov.config.params import DetectParams
 from rov.domain.enums import Team
-from rov.eval.synthetic import ICON_DIAMETER, MINIMAP_SIZE, draw_icon, make_terrain
 from rov.domain.geometry import Point
+from rov.eval.synthetic import ICON_DIAMETER, MINIMAP_SIZE, draw_icon, make_terrain
 from rov.minimap.background import build_rolling_background, residual
 from rov.minimap.detect import detect_frame, enforce_team_caps, fill_holes
 

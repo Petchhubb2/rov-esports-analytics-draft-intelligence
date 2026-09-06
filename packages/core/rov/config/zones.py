@@ -80,8 +80,9 @@ class ZoneMap(BaseModel):
         # วาดตามลำดับในไฟล์ zone ที่อยู่ท้ายทับ zone ที่อยู่ต้น
         # จึงควรเรียง zone กว้าง (lane) ไว้ต้น และ zone แคบ (objective) ไว้ท้าย
         for idx, z in enumerate(self.zones, start=1):
+            scale = RASTER_SIZE - 1
             pts = np.array(
-                [[round(x * (RASTER_SIZE - 1)), round(y * (RASTER_SIZE - 1))] for x, y in z.polygon],
+                [[round(x * scale), round(y * scale)] for x, y in z.polygon],
                 dtype=np.int32,
             )
             cv2.fillPoly(raster, [pts], color=int(idx))

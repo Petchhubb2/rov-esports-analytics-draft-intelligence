@@ -191,7 +191,7 @@ class SyntheticMatch:
         self._terrain = make_terrain(self.size, self.seed)
         # เส้นทางเดินของแต่ละ slot เป็นวงรีที่ต่างกัน จำลองการวนฟาร์มและโรม
         self._orbit = []
-        for s in range(10):
+        for _ in range(10):
             r = self._rng.uniform(0.18, 0.34)
             cx = self._rng.uniform(0.30, 0.70)
             cy = self._rng.uniform(0.30, 0.70)
