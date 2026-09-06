@@ -26,6 +26,7 @@ from rov.draft.stats import (
     MatchupStat,
     compute_matchups,
     compute_stats,
+    compute_synergies,
 )
 
 
@@ -95,6 +96,7 @@ class PooledStats:
 
     stats: DraftStats
     matchups: dict[tuple[str, str], MatchupStat]
+    synergies: dict[tuple[str, str], MatchupStat]
     sources: list[str]
     games_by_source: dict[str, int]
 
@@ -113,6 +115,7 @@ def pool(regions: list[Region]) -> PooledStats:
     return PooledStats(
         stats=compute_stats(all_series),
         matchups=compute_matchups(all_series),
+        synergies=compute_synergies(all_series),
         sources=[r.label for r in regions],
         games_by_source=by_source,
     )

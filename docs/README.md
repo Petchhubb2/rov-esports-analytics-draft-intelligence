@@ -20,6 +20,7 @@
 | 10 | [blueprint-alignment.md](10-blueprint-alignment.md) | **เทียบ Blueprint กับโค้ดจริง** · แผนที่ 44 โมดูล · โครงสร้างโฟลเดอร์ · 5 Data Layer |
 | 11 | [macro-planner.md](11-macro-planner.md) | Macro Knowledge Base · Rule Engine · Win Condition · Actual vs Recommended |
 | 12 | [cross-league-meta.md](12-cross-league-meta.md) | **เมต้าข้ามลีก** ไทย RPL เทียบ ไต้หวัน GCS · 861 เกม · ตัวแก้ |
+| 13 | [draft-simulator.md](13-draft-simulator.md) | **คู่มือใช้ Draft Simulator** · อ่านผลอย่างไร · ข้อจำกัด |
 
 > ลำดับความน่าเชื่อถือเมื่อเอกสารขัดแย้งกัน: **09/10 > 08 > 01–07**
 > 01–07 เขียนจากแผนแนวคิดแรก · 08 ข้อเท็จจริงจากการค้น · 09 ผลจากการรันจริง

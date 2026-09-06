@@ -1,0 +1,56 @@
+# รูปแบบ Ban-Pick
+#
+# สิ่งที่ยืนยันแล้วจากข้อมูลจริง 861 เกม (docs/12-cross-league-meta.md)
+#   แบน 4 ตัวต่อทีม  รวม 8 ตัวต่อเกม
+#   เลือก 5 ตัวต่อทีม
+#   ฝั่ง blue/red สลับได้ทุกเกมในซีรีส์
+#
+# ⚠️ สิ่งที่ยังไม่ยืนยัน: "ลำดับ" การสลับกันแบนและเลือกระหว่างสองทีม
+#    Liquipedia เก็บเป็นช่องของแต่ละทีม (t1b1..t1b4) ไม่ได้เก็บลำดับรวม
+#    และหา rulebook ทางการไม่พบ
+#
+#    ลำดับด้านล่างเป็นรูปแบบมาตรฐานของ MOBA ที่มี 4 ban + 5 pick ต่อทีม
+#    ถ้าดูคลิปแข่งแล้วพบว่าต่างจากนี้ ให้แก้ที่ไฟล์นี้ไฟล์เดียว
+#    ไม่ต้องแก้โค้ด และ verified ให้เปลี่ยนเป็น true
+
+id: rpl_2026
+name: RPL / GCS มาตรฐาน
+verified: false
+bans_per_team: 4
+picks_per_team: 5
+
+# กติกา Global Ban-Pick (soft fearless)
+# ยืนยันแล้วจากข้อมูล 270 จาก 272 เกมเป็นไปตามกติกานี้
+global_ban_pick:
+  enabled: true
+  scope: own_team_only        # own_team_only | both_teams
+  applies_to_bans: false      # จำกัดเฉพาะ pick ไม่รวม ban
+  reset_on_final_game: true   # Bo7 เกมที่ 7 กลับเป็น Normal Ban-Pick
+
+# ลำดับการกระทำ  blue = ทีมฝั่งน้ำเงิน  red = ฝั่งแดง
+sequence:
+  # เฟสแบนที่ 1 — ทีมละ 2
+  - { phase: 1, team: blue, action: BAN }
+  - { phase: 1, team: red,  action: BAN }
+  - { phase: 1, team: blue, action: BAN }
+  - { phase: 1, team: red,  action: BAN }
+
+  # เฟสเลือกที่ 1 — 1-2-2-1
+  - { phase: 1, team: blue, action: PICK }
+  - { phase: 1, team: red,  action: PICK }
+  - { phase: 1, team: red,  action: PICK }
+  - { phase: 1, team: blue, action: PICK }
+  - { phase: 1, team: blue, action: PICK }
+  - { phase: 1, team: red,  action: PICK }
+
+  # เฟสแบนที่ 2 — ทีมละ 2 โดยฝั่งแดงเริ่ม
+  - { phase: 2, team: red,  action: BAN }
+  - { phase: 2, team: blue, action: BAN }
+  - { phase: 2, team: red,  action: BAN }
+  - { phase: 2, team: blue, action: BAN }
+
+  # เฟสเลือกที่ 2 — 1-2-1
+  - { phase: 2, team: red,  action: PICK }
+  - { phase: 2, team: blue, action: PICK }
+  - { phase: 2, team: blue, action: PICK }
+  - { phase: 2, team: red,  action: PICK }

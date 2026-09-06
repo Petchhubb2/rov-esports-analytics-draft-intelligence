@@ -52,16 +52,16 @@ Video Analysis  ·  Draft System  ·  Scouting
 
 | # | โมดูล | สถานะ | ที่อยู่ในโค้ด |
 |---|-------|-------|----------------|
-| 15 | Draft Simulator | ⬜ | |
-| 16 | Pick Engine | ⬜ | |
-| 17 | Ban Engine | ⬜ | |
-| 18 | Counter Engine | ⬜ | |
+| 15 | Draft Simulator | ✅ | `rov/draft/state.py` + `rov draft sim` · undo/reset/history/Global Ban-Pick |
+| 16 | Pick Engine | ✅ | `rov/draft/recommend.py` — จัดอันดับจากข้อมูลจริง |
+| 17 | Ban Engine | ✅ | `rov/draft/recommend.py` — มองจากมุมศัตรูตอนแบน |
+| 18 | Counter Engine | 🟡 | `rov/draft/meta.py` — context=TEAM · LANE รอ vision |
 | 19 | Matchup Engine | 🟡 | `rov/draft/stats.py` — context=TEAM พร้อม shrinkage · LANE รอ vision |
 | 20 | Synergy Engine | 🟡 | `rov/draft/stats.py` — มี expected_synergy แล้ว ยังไม่หักความแข็งของทีม |
 | 21 | Composition Engine | ✅ | `rov/draft/composition.py` — 10 มิติ ปฏิเสธการให้คะแนนเมื่อ attribute ไม่ครบ |
 | 22 | Draft Score Engine | ⬜ | |
 | 23 | Patch / Meta Engine | 🟡 | `rov/store/models.py::Patch` + `rov/draft/stats.py` (pick/ban/win rate จริง) |
-| 24 | Draft Recommendation | ⬜ | |
+| 24 | Draft Recommendation | ✅ | 4 องค์ประกอบ พร้อมเหตุผลและจำนวนเกมกำกับ |
 | 25 | Player-specific Draft | ⬜ | |
 | 26 | Team-specific Draft | ⬜ | |
 | — | **Draft Data Import** | ✅ | `rov/draft/importer/` — ไม่ได้อยู่ใน 44 แต่จำเป็นต่อทั้ง 15–26 |
@@ -94,9 +94,9 @@ Video Analysis  ·  Draft System  ·  Scouting
 | 43 | Replay / Event Review | ⬜ | |
 | 44 | Testing / Evaluation | ✅ | `rov/eval/` + `tests/` |
 
-**สรุป: ✅ 9 · 🟡 13 · ⬜ 23**
+**สรุป: ✅ 13 · 🟡 13 · ⬜ 19**
 
-อัปเดต 2026-09-06 รอบสอง — เพิ่ม System 01 ครบ, Draft Import, Composition Engine
+อัปเดต 2026-09-06 รอบสาม — เพิ่ม Draft Simulator, Pick/Ban Engine, Recommendation
 
 ---
 

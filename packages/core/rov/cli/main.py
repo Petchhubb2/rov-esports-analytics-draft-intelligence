@@ -608,6 +608,120 @@ def draft_pool(top: int = typer.Option(25)) -> None:
     typer.echo(f"คู่ที่มีอย่างน้อย 10 เกม {enough:,} คู่")
 
 
+@draft_app.command("sim")
+def draft_sim(
+    blue: str = typer.Option("BLUE", help="ชื่อทีมฝั่งน้ำเงิน"),
+    red: str = typer.Option("RED", help="ชื่อทีมฝั่งแดง"),
+    fmt: str = typer.Option("configs/draft/format.yaml"),
+    region: str = typer.Option(None, help="ใช้ข้อมูลเฉพาะ TH หรือ TW"),
+    min_games: int = typer.Option(5, help="ฮีโร่ต้องมีอย่างน้อยกี่เกมจึงจะแนะนำ"),
+    top: int = typer.Option(8),
+) -> None:
+    """Draft Simulator แบบโต้ตอบ พร้อมคำแนะนำจากข้อมูลจริง
+
+    คำสั่งระหว่างเล่น
+        <ชื่อฮีโร่>   เลือกหรือแบนตัวนั้น
+        ?            ดูคำแนะนำอีกครั้ง
+        /undo        ย้อนหนึ่งตา
+        /reset       เริ่มใหม่
+        /board       ดูกระดาน
+        /history     ดูประวัติ
+        /find <คำ>   ค้นหาชื่อฮีโร่
+        /quit        ออก
+    """
+    from rov.draft.importer.parser import normalize_hero_id
+    from rov.draft.meta import pool
+    from rov.draft.recommend import recommend
+    from rov.draft.recommend import report as rec_report
+    from rov.draft.state import DraftFormat, DraftState, IllegalMove
+
+    regions = _regions(region)
+    if not regions:
+        typer.secho("ยังไม่มีข้อมูลใน cache — รัน rov draft import ก่อน", fg=typer.colors.RED)
+        raise typer.Exit(1)
+
+    pooled = pool(regions)
+    fo = DraftFormat.load(fmt)
+    state = DraftState(
+        fmt=fo, pool=set(pooled.stats.heroes), blue_name=blue, red_name=red
+    )
+
+    typer.echo(f"ข้อมูล {pooled.total_games} เกม จาก {len(pooled.sources)} รายการ")
+    typer.echo(f"ฮีโร่ที่เลือกได้ {len(state.pool)} ตัว · format {fo.id}")
+    if not fo.verified:
+        typer.secho(
+            "⚠ ลำดับ ban/pick ยังไม่ได้ยืนยันกับ rulebook จริง "
+            "แก้ได้ที่ configs/draft/format.yaml",
+            fg=typer.colors.YELLOW,
+        )
+    typer.echo("พิมพ์ ? เพื่อดูคำแนะนำ · /quit เพื่อออก\n")
+
+    def show_recs() -> None:
+        sugs = recommend(state, pooled, limit=top, min_games=min_games)
+        if not sugs:
+            typer.echo("  (ไม่มีตัวเลือกที่มีข้อมูลพอ)")
+        else:
+            typer.echo(rec_report(sugs, state, top=top))
+
+    while not state.complete:
+        typer.echo("")
+        typer.secho(state.prompt(), fg=typer.colors.CYAN, bold=True)
+        show_recs()
+        try:
+            raw = typer.prompt("\n> ", prompt_suffix="").strip()
+        except (EOFError, KeyboardInterrupt):
+            typer.echo("\nออกแล้ว")
+            return
+        if not raw:
+            continue
+
+        low = raw.lower()
+        if low in ("/quit", "/q", "/exit"):
+            typer.echo("ออกแล้ว")
+            return
+        if low == "?":
+            continue
+        if low == "/undo":
+            mv = state.undo()
+            typer.echo(f"ย้อน {mv.hero_id}" if mv else "ไม่มีอะไรให้ย้อน")
+            continue
+        if low == "/reset":
+            state.reset()
+            typer.echo("เริ่มใหม่แล้ว")
+            continue
+        if low == "/board":
+            typer.echo(state.board())
+            continue
+        if low == "/history":
+            typer.echo(state.history())
+            continue
+        if low.startswith("/find"):
+            q = normalize_hero_id(raw[5:])
+            hits = sorted(h for h in state.legal_moves() if q in h)
+            typer.echo("  " + (", ".join(hits[:30]) if hits else "ไม่พบ"))
+            continue
+
+        hid = normalize_hero_id(raw)
+        try:
+            mv = state.apply(hid)
+        except IllegalMove as exc:
+            typer.secho(f"  {exc}", fg=typer.colors.RED)
+            near = sorted(h for h in state.legal_moves() if hid[:3] and hid[:3] in h)
+            if near:
+                typer.echo("  ใกล้เคียง: " + ", ".join(near[:10]))
+            continue
+        typer.secho(
+            f"  {state.team_name(mv.turn.team_enum)} {mv.turn.action.value} {mv.hero_id}",
+            fg=typer.colors.GREEN,
+        )
+
+    typer.echo("")
+    typer.secho("═══ draft เสร็จสมบูรณ์ ═══", bold=True)
+    typer.echo(state.board())
+    typer.echo("")
+    typer.echo(state.history())
+
+
 @draft_app.command("cache")
 def draft_cache() -> None:
     """ดูขนาดของ cache"""
