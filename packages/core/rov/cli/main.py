@@ -343,6 +343,166 @@ def draft_import(
     typer.echo(f"โควตาเหลือชั่วโมงนี้: {c.limiter.remaining_this_hour}")
 
 
+def _load_series(tournament: str, live: bool = False):
+    from rov.draft.importer.crawl import crawl_tournament
+    from rov.draft.importer.liquipedia import LiquipediaClient
+
+    c = LiquipediaClient()
+    res = crawl_tournament(c, tournament, dry_run=not live)
+    if not res.series:
+        typer.secho(
+            f"ไม่มีข้อมูลของ {tournament} ใน cache — รัน "
+            f'rov draft import "{tournament}" --live ก่อน',
+            fg=typer.colors.RED,
+        )
+        raise typer.Exit(1)
+    return c, res
+
+
+@draft_app.command("stats")
+def draft_stats(
+    tournament: str = typer.Argument("RoV Pro League/2026/Summer"),
+    top: int = typer.Option(20),
+) -> None:
+    """สถิติฮีโร่จากข้อมูล draft จริง — pick, ban, win rate พร้อม shrinkage"""
+    from rov.draft.stats import compute_stats, report
+
+    _, res = _load_series(tournament)
+    typer.echo(report(compute_stats(res.series), top=top))
+
+
+@draft_app.command("heroes-init")
+def draft_heroes_init(
+    tournament: str = typer.Argument("RoV Pro League/2026/Summer"),
+    out: str = typer.Option("configs/draft/heroes.yaml"),
+    live: bool = typer.Option(False, "--live", help="ยิง request จริงเพื่อดึง class"),
+    patch: str = typer.Option("1.63"),
+) -> None:
+    """สร้างหรืออัปเดตไฟล์ฮีโร่จากข้อมูลจริง
+
+    เติมเฉพาะ id, name_en, hero_class ซึ่งตรวจสอบได้
+    ค่าเชิงคุณภาพต้องให้คนกรอก ระบบไม่เดาให้
+    รันซ้ำได้โดยไม่ทับค่าที่กรอกไว้แล้ว
+    """
+    from pathlib import Path as _P
+
+    from rov.draft.heroes import HeroDB
+    from rov.draft.importer.heroinfo import fetch_hero_classes, parse_hero_classes
+    from rov.draft.seed import seed_hero_db
+    from rov.draft.stats import compute_stats
+
+    c, res = _load_series(tournament, live=live)
+    stats = compute_stats(res.series)
+
+    try:
+        if live:
+            info, _ = fetch_hero_classes(c)
+        else:
+            cached = c.cache.get(
+                "https://liquipedia.net/honorofkings/api.php",
+                {
+                    "action": "query", "prop": "revisions", "rvprop": "content",
+                    "rvslots": "main", "titles": "Portal:Heroes/Arena of Valor",
+                    "format": "json", "formatversion": "2",
+                },
+            )
+            if cached is None:
+                typer.secho(
+                    "ยังไม่มีข้อมูล class ใน cache — ใส่ --live เพื่อดึง (1 request)",
+                    fg=typer.colors.YELLOW,
+                )
+                info = {}
+            else:
+                import json as _json
+
+                pages = _json.loads(cached.body)["query"]["pages"]
+                text = pages[0]["revisions"][0]["slots"]["main"]["content"]
+                info, _ = parse_hero_classes(text)
+    except Exception as exc:  # noqa: BLE001
+        typer.secho(f"ดึงข้อมูล class ไม่สำเร็จ: {exc}", fg=typer.colors.YELLOW)
+        info = {}
+
+    existing = HeroDB.load(out) if _P(out).exists() else None
+    db, result = seed_hero_db(stats, info, existing=existing, patch=patch)
+    db.save(out)
+
+    typer.echo(result.report())
+    cs = db.completeness()
+    typer.echo("")
+    typer.secho(
+        f"กรอกครบแล้ว {cs['complete']}/{cs['total']} ({cs['fraction']:.0%})",
+        fg=typer.colors.GREEN if cs["fraction"] > 0.5 else typer.colors.YELLOW,
+    )
+    typer.echo(f"เขียนไฟล์ {out}")
+    typer.echo("ดูว่าต้องกรอกอะไรต่อด้วย rov draft todo")
+
+
+@draft_app.command("todo")
+def draft_todo(
+    tournament: str = typer.Argument("RoV Pro League/2026/Summer"),
+    heroes: str = typer.Option("configs/draft/heroes.yaml"),
+    limit: int = typer.Option(15),
+) -> None:
+    """ฮีโร่ที่ยังต้องกรอก attribute เรียงตามความสำคัญในเมตาจริง"""
+    from rov.draft.heroes import HeroDB
+    from rov.draft.stats import compute_stats, hero_priority_order
+
+    db = HeroDB.load(heroes)
+    _, res = _load_series(tournament)
+    stats = compute_stats(res.series)
+    order = [hid for hid, _, _ in hero_priority_order(stats)]
+
+    cs = db.completeness()
+    typer.echo(f"กรอกครบแล้ว {cs['complete']}/{cs['total']} ({cs['fraction']:.0%})")
+    pending = db.todo(priority=order, limit=limit)
+    if not pending:
+        typer.secho("\nกรอกครบทุกตัวแล้ว", fg=typer.colors.GREEN)
+        return
+
+    typer.echo(f"\n{limit} ตัวถัดไปที่ควรกรอก (เรียงตาม pick + ban จริง)\n")
+    for i, h in enumerate(pending, 1):
+        pres = stats.presence_rate(h.id)
+        miss = h.missing_fields()
+        cls = ",".join(c.value for c in h.hero_class) or "ไม่รู้ class"
+        typer.echo(f"  {i:>2}. {h.id:<16} presence {pres:>4.0%}  [{cls}]")
+        typer.echo(f"      ขาด {len(miss)} ช่อง: {', '.join(miss[:6])}"
+                   + (" ..." if len(miss) > 6 else ""))
+
+
+@draft_app.command("comp")
+def draft_comp(
+    team: str = typer.Argument(..., help="ฮีโร่ 5 ตัว คั่นด้วยจุลภาค"),
+    enemy: str = typer.Option(None, help="ทีมตรงข้าม 5 ตัว"),
+    heroes: str = typer.Option("configs/draft/heroes.yaml"),
+) -> None:
+    """วิเคราะห์ composition ของทีม"""
+    from rov.draft.composition import IncompleteDataError, analyze, compare
+    from rov.draft.heroes import HeroDB
+
+    db = HeroDB.load(heroes)
+
+    def build(spec: str):
+        ids = [x.strip() for x in spec.split(",") if x.strip()]
+        try:
+            return [db.require(i) for i in ids]
+        except KeyError as exc:
+            typer.secho(str(exc), fg=typer.colors.RED)
+            raise typer.Exit(1) from exc
+
+    try:
+        ours = analyze(build(team))
+        typer.echo(ours.report())
+        if enemy:
+            theirs = analyze(build(enemy))
+            typer.echo("")
+            typer.echo(theirs.report())
+            typer.echo("")
+            typer.echo(compare(ours, theirs))
+    except IncompleteDataError as exc:
+        typer.secho(f"\n{exc}", fg=typer.colors.YELLOW)
+        raise typer.Exit(1) from exc
+
+
 @draft_app.command("cache")
 def draft_cache() -> None:
     """ดูขนาดของ cache"""

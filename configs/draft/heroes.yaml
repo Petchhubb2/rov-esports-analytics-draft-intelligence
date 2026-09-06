@@ -1,0 +1,3298 @@
+version: 1
+patch: '1.63'
+heroes:
+- id: sinestrea
+  name_en: Sinestrea
+  name_th: null
+  hero_class:
+  - assassin
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: rouie
+  name_en: Rouie
+  name_th: null
+  hero_class:
+  - support
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: elandorr
+  name_en: Eland'orr
+  name_th: null
+  hero_class:
+  - marksman
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: marja
+  name_en: Marja
+  name_th: null
+  hero_class:
+  - mage
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: zata
+  name_en: Zata
+  name_th: null
+  hero_class:
+  - assassin
+  - mage
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: toro
+  name_en: Toro
+  name_th: null
+  hero_class:
+  - support
+  - tank
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: tachi
+  name_en: Tachi
+  name_th: null
+  hero_class:
+  - warrior
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: hayate
+  name_en: Hayate
+  name_th: null
+  hero_class:
+  - marksman
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: florentino
+  name_en: Florentino
+  name_th: null
+  hero_class:
+  - warrior
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: dolia
+  name_en: Dolia
+  name_th: null
+  hero_class:
+  - support
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: murad
+  name_en: Murad
+  name_th: null
+  hero_class:
+  - assassin
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: qi
+  name_en: Qi
+  name_th: null
+  hero_class:
+  - assassin
+  - warrior
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: billow
+  name_en: Billow
+  name_th: null
+  hero_class:
+  - assassin
+  - warrior
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: lorion
+  name_en: Lorion
+  name_th: null
+  hero_class:
+  - mage
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: edras
+  name_en: Edras
+  name_th: null
+  hero_class:
+  - warrior
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: ybneth
+  name_en: Y'bneth
+  name_th: null
+  hero_class:
+  - tank
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: iggy
+  name_en: Iggy
+  name_th: null
+  hero_class:
+  - mage
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: stuart
+  name_en: Stuart
+  name_th: null
+  hero_class:
+  - marksman
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: keera
+  name_en: Keera
+  name_th: null
+  hero_class:
+  - assassin
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: zephys
+  name_en: Zephys
+  name_th: null
+  hero_class:
+  - assassin
+  - warrior
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: valhein
+  name_en: Valhein
+  name_th: null
+  hero_class:
+  - marksman
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: mganga
+  name_en: Mganga
+  name_th: null
+  hero_class:
+  - mage
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: capheny
+  name_en: Capheny
+  name_th: null
+  hero_class:
+  - marksman
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: skud
+  name_en: Skud
+  name_th: null
+  hero_class:
+  - warrior
+  - tank
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: fennik
+  name_en: Fennik
+  name_th: null
+  hero_class:
+  - marksman
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: enzo
+  name_en: Enzo
+  name_th: null
+  hero_class:
+  - assassin
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: teemee
+  name_en: TeeMee
+  name_th: null
+  hero_class:
+  - support
+  - tank
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: wisp
+  name_en: Wisp
+  name_th: null
+  hero_class:
+  - marksman
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: liliana
+  name_en: Liliana
+  name_th: null
+  hero_class:
+  - assassin
+  - mage
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: taara
+  name_en: Taara
+  name_th: null
+  hero_class:
+  - warrior
+  - tank
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: omen
+  name_en: Omen
+  name_th: null
+  hero_class:
+  - warrior
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: yue
+  name_en: Yue (AoV Hero)
+  name_th: null
+  hero_class:
+  - mage
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: yena
+  name_en: Yena
+  name_th: null
+  hero_class:
+  - warrior
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: biron
+  name_en: Biron
+  name_th: null
+  hero_class:
+  - warrior
+  - tank
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: mina
+  name_en: Mina
+  name_th: null
+  hero_class:
+  - support
+  - tank
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: aya
+  name_en: Aya
+  name_th: null
+  hero_class:
+  - support
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: ryoma
+  name_en: Ryoma
+  name_th: null
+  hero_class:
+  - assassin
+  - warrior
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: annette
+  name_en: Annette
+  name_th: null
+  hero_class:
+  - mage
+  - support
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: maloch
+  name_en: Maloch
+  name_th: null
+  hero_class:
+  - warrior
+  - tank
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: elsu
+  name_en: Elsu
+  name_th: null
+  hero_class:
+  - marksman
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: ignis
+  name_en: Ignis
+  name_th: null
+  hero_class:
+  - mage
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: airi
+  name_en: Airi
+  name_th: null
+  hero_class:
+  - assassin
+  - warrior
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: moren
+  name_en: Moren
+  name_th: null
+  hero_class:
+  - marksman
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: krizzix
+  name_en: Krizzix
+  name_th: null
+  hero_class:
+  - support
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: violet
+  name_en: Violet
+  name_th: null
+  hero_class:
+  - marksman
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: thane
+  name_en: Thane
+  name_th: null
+  hero_class:
+  - tank
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: volkath
+  name_en: Volkath
+  name_th: null
+  hero_class:
+  - assassin
+  - warrior
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: riktor
+  name_en: Riktor
+  name_th: null
+  hero_class: []
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: nakroth
+  name_en: Nakroth
+  name_th: null
+  hero_class:
+  - assassin
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: zuka
+  name_en: Zuka
+  name_th: null
+  hero_class:
+  - assassin
+  - warrior
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: baldum
+  name_en: Baldum
+  name_th: null
+  hero_class:
+  - support
+  - tank
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: cresht
+  name_en: Cresht
+  name_th: null
+  hero_class:
+  - support
+  - tank
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: natalya
+  name_en: Natalya
+  name_th: null
+  hero_class:
+  - mage
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: gildur
+  name_en: Gildur
+  name_th: null
+  hero_class:
+  - mage
+  - support
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: chaugnar
+  name_en: Chaugnar
+  name_th: null
+  hero_class:
+  - support
+  - tank
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: heino
+  name_en: Heino
+  name_th: null
+  hero_class:
+  - warrior
+  - mage
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: telannas
+  name_en: Tel'Annas
+  name_th: null
+  hero_class:
+  - marksman
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: errol
+  name_en: Errol
+  name_th: null
+  hero_class:
+  - warrior
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: raz
+  name_en: Raz
+  name_th: null
+  hero_class:
+  - assassin
+  - mage
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: roxie
+  name_en: Roxie
+  name_th: null
+  hero_class:
+  - warrior
+  - tank
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: goverra
+  name_en: Goverra
+  name_th: null
+  hero_class:
+  - mage
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: slimz
+  name_en: Slimz
+  name_th: null
+  hero_class:
+  - marksman
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: helen
+  name_en: Helen
+  name_th: null
+  hero_class:
+  - support
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: wiro
+  name_en: Wiro Sableng
+  name_th: null
+  hero_class:
+  - warrior
+  - tank
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: aoi
+  name_en: Aoi
+  name_th: null
+  hero_class:
+  - assassin
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: yan
+  name_en: Yan
+  name_th: null
+  hero_class:
+  - assassin
+  - warrior
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: ming
+  name_en: Ming Shiyin
+  name_th: null
+  hero_class:
+  - support
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: bolt_baron
+  name_en: Bolt Baron
+  name_th: null
+  hero_class: []
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: xeniel
+  name_en: Xeniel
+  name_th: null
+  hero_class:
+  - support
+  - tank
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: zip
+  name_en: Zip
+  name_th: null
+  hero_class:
+  - support
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: dyadia
+  name_en: Dyadia
+  name_th: null
+  hero_class:
+  - mage
+  - support
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: tulen
+  name_en: Tulen
+  name_th: null
+  hero_class:
+  - mage
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: jinnar
+  name_en: Jinnar
+  name_th: null
+  hero_class:
+  - mage
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: omega
+  name_en: Omega
+  name_th: null
+  hero_class:
+  - support
+  - tank
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: sephera
+  name_en: Sephera
+  name_th: null
+  hero_class:
+  - mage
+  - support
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: erin
+  name_en: Erin
+  name_th: null
+  hero_class:
+  - marksman
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: kriknak
+  name_en: Kriknak
+  name_th: null
+  hero_class:
+  - assassin
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: kahlii
+  name_en: Kahlii
+  name_th: null
+  hero_class:
+  - mage
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: bright
+  name_en: Bright
+  name_th: null
+  hero_class:
+  - assassin
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: zanis
+  name_en: Zanis
+  name_th: null
+  hero_class:
+  - warrior
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: arduin
+  name_en: Arduin
+  name_th: null
+  hero_class:
+  - warrior
+  - tank
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: azzenka
+  name_en: Azzen'Ka
+  name_th: null
+  hero_class:
+  - mage
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: lubu
+  name_en: Lu Bu
+  name_th: null
+  hero_class:
+  - warrior
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: butterfly
+  name_en: Butterfly
+  name_th: null
+  hero_class:
+  - assassin
+  - warrior
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: wukong
+  name_en: Wukong
+  name_th: null
+  hero_class:
+  - assassin
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: thorne
+  name_en: Thorne
+  name_th: null
+  hero_class:
+  - marksman
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: bijan
+  name_en: Bijan
+  name_th: null
+  hero_class:
+  - warrior
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: richter
+  name_en: Richter
+  name_th: null
+  hero_class:
+  - warrior
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: veres
+  name_en: Veres
+  name_th: null
+  hero_class:
+  - warrior
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: max
+  name_en: Max (Arena of Valor Hero)
+  name_th: null
+  hero_class:
+  - tank
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: arum
+  name_en: Arum
+  name_th: null
+  hero_class:
+  - support
+  - tank
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: mortos
+  name_en: Mortos
+  name_th: null
+  hero_class: []
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: alice
+  name_en: Alice
+  name_th: null
+  hero_class:
+  - support
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: charlotte
+  name_en: Charlotte
+  name_th: null
+  hero_class:
+  - warrior
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: ilumia
+  name_en: Ilumia
+  name_th: null
+  hero_class:
+  - mage
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null
+- id: grakk
+  name_en: Grakk
+  name_th: null
+  hero_class:
+  - support
+  - tank
+  lane_roles: []
+  damage:
+    type: null
+    profile: null
+    target: null
+  range: null
+  scaling:
+    early: null
+    mid: null
+    late: null
+  utility:
+    engage: null
+    disengage: null
+    peel: null
+    cc_hard: null
+    cc_soft: null
+    mobility: null
+    poke: null
+    sustain: null
+    frontline: null
+    objective: null
+    waveclear: null
+    splitpush: null
+  macro_tags: []
+  strong_against_traits: []
+  weak_against_traits: []
+  filled_by: null
+  filled_on: null
+  notes: null

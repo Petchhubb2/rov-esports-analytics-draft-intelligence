@@ -111,8 +111,10 @@ def test_game_one_draft_matches_source(wikitext):
     assert g.red_team == "godji check"
     assert g.winner_team == "fs"
     assert g.blue_picks == ["skud", "billow", "rouie", "hayate", "toro"]
-    assert g.red_picks == ["murad", "keera", "lorion", "wisp", "y'bneth"]
-    assert g.blue_bans == ["annette", "eland'orr", "qi", "florentino"]
+    # ชื่อถูก normalize แล้ว: y'bneth -> ybneth, eland'orr -> elandorr
+    # เพราะ Liquipedia เขียนชื่อเดียวกันได้สองแบบ ถ้าไม่รวมสถิติจะถูกแยกเป็นสองก้อน
+    assert g.red_picks == ["murad", "keera", "lorion", "wisp", "ybneth"]
+    assert g.blue_bans == ["annette", "elandorr", "qi", "florentino"]
     assert g.red_bans == ["sinestrea", "zata", "mganga", "marja"]
 
 

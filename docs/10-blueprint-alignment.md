@@ -56,11 +56,11 @@ Video Analysis  ·  Draft System  ·  Scouting
 | 16 | Pick Engine | ⬜ | |
 | 17 | Ban Engine | ⬜ | |
 | 18 | Counter Engine | ⬜ | |
-| 19 | Matchup Engine | ⬜ | |
-| 20 | Synergy Engine | ⬜ | |
-| 21 | Composition Engine | ⬜ | |
+| 19 | Matchup Engine | 🟡 | `rov/draft/stats.py` — context=TEAM พร้อม shrinkage · LANE รอ vision |
+| 20 | Synergy Engine | 🟡 | `rov/draft/stats.py` — มี expected_synergy แล้ว ยังไม่หักความแข็งของทีม |
+| 21 | Composition Engine | ✅ | `rov/draft/composition.py` — 10 มิติ ปฏิเสธการให้คะแนนเมื่อ attribute ไม่ครบ |
 | 22 | Draft Score Engine | ⬜ | |
-| 23 | Patch / Meta Engine | 🟡 | `rov/store/models.py::Patch` |
+| 23 | Patch / Meta Engine | 🟡 | `rov/store/models.py::Patch` + `rov/draft/stats.py` (pick/ban/win rate จริง) |
 | 24 | Draft Recommendation | ⬜ | |
 | 25 | Player-specific Draft | ⬜ | |
 | 26 | Team-specific Draft | ⬜ | |
@@ -94,7 +94,9 @@ Video Analysis  ·  Draft System  ·  Scouting
 | 43 | Replay / Event Review | ⬜ | |
 | 44 | Testing / Evaluation | ✅ | `rov/eval/` + `tests/` |
 
-**สรุป: ✅ 7 · 🟡 11 · ⬜ 27**
+**สรุป: ✅ 9 · 🟡 13 · ⬜ 23**
+
+อัปเดต 2026-09-06 รอบสอง — เพิ่ม System 01 ครบ, Draft Import, Composition Engine
 
 ---
 
@@ -184,7 +186,7 @@ Blueprint §16 เพิ่มจากแผนเดิม 2 ชนิด
 | ฝั่ง blue/red | **สลับได้ทุกเกมในซีรีส์** | `team1side` ต่อ map |
 | ความยาวเกม | มีให้ | `length=11:58` |
 | Global Ban-Pick | **ยืนยันแล้ว** 270 จาก 272 เกมเป็นไปตามกติกา | ตรวจอัตโนมัติใน parser |
-| ฮีโร่ที่พบใน pro | **98 ตัว** | ตรงกับตัวเลขของ rovmeta.com พอดี |
+| ฮีโร่ที่พบใน pro | **96 ตัว** | หลังรวมชื่อที่สะกดต่างกันเข้าด้วยกัน (ก่อนแก้บั๊กนับได้ 98) |
 
 **สิ่งที่ Liquipedia ไม่มี:** ลำดับการสลับกันแบนระหว่างสองทีม
 เก็บเป็นช่องของแต่ละทีมเท่านั้น จึงสร้าง `turn_order` ที่แท้จริงไม่ได้

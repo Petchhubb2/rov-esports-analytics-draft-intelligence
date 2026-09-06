@@ -121,11 +121,31 @@ def _team_name(tpl: Template | None) -> str | None:
     return None
 
 
+def normalize_hero_id(raw: str) -> str:
+    """ทำชื่อฮีโร่ให้เป็นรูปแบบเดียว
+
+    จำเป็นเพราะข้อมูลใน Liquipedia เขียนชื่อเดียวกันได้หลายแบบ
+    ตรวจพบจริงในชุด RPL 2026 Summer
+
+        eland'orr (2 pick) กับ elandorr (82 pick)  = ฮีโร่ตัวเดียวกัน
+        y'bneth   (3 pick) กับ ybneth   (83 pick)  = ฮีโร่ตัวเดียวกัน
+
+    ถ้าไม่รวมกัน สถิติจะถูกแยกเป็นสองก้อนแบบเงียบ ๆ
+    และฮีโร่ที่ถูกแบนบ่อยที่สุดจะดูเหมือนถูกแบนน้อยกว่าความจริง
+
+    กติกา: ตัวพิมพ์เล็ก · ตัด ' . - ทิ้ง · ช่องว่างเป็น _
+    """
+    s = raw.strip().lower()
+    for ch in ("'", "’", ".", "-"):
+        s = s.replace(ch, "")
+    return "_".join(s.split())
+
+
 def _slots(tpl: Template, prefix: str, count: int) -> list[str]:
     """ดึงค่าจากช่องที่เรียงเลข เช่น t1h1..t1h5 — ข้ามช่องที่ว่าง"""
     out: list[str] = []
     for i in range(1, count + 1):
-        v = (tpl.get(f"{prefix}{i}") or "").strip().lower()
+        v = normalize_hero_id(tpl.get(f"{prefix}{i}") or "")
         if v:
             out.append(v)
     return out
