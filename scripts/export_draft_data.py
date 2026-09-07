@@ -16,6 +16,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "packages" / "core"
 from rov.cli.console import setup_console  # noqa: E402
 from rov.cli.main import KNOWN_TOURNAMENTS, _regions  # noqa: E402
 from rov.draft.heroes import HeroDB  # noqa: E402
+from rov.draft.lanes import (  # noqa: E402
+    MIN_LANE_PAIR_GAMES,
+    SLOT_LANES,
+    compute_lane_matchups,
+    lane_usage,
+    slot_evidence,
+)
 from rov.draft.meta import pool  # noqa: E402
 from rov.draft.stats import MIN_GAMES_RELIABLE, SHRINKAGE_K  # noqa: E402
 
@@ -83,9 +90,28 @@ def main() -> int:
             out.append([a, b, m.games, m.wins])
         return out
 
+    # ── context=LANE ──────────────────────────────────────────────────
+    # ช่อง t1h1..t1h5 ของ Liquipedia เรียงตามเลน ตรวจหลักฐานสดทุกครั้ง
+    # ถ้าวันหนึ่งไม่ผ่านเกณฑ์ แปลว่าที่มาข้อมูลเปลี่ยน ต้องหยุดใช้เลข lane
+    all_series = [ser for r in regions for ser in r.series]
+    evidence = slot_evidence(all_series, classes)
+    if not evidence["passes"]:
+        print("⚠️ สัดส่วนคลาสต่อช่องไม่ผ่านเกณฑ์ — ไม่ส่งออกข้อมูลแยกเลน")
+
+    lane_pack: list = []
+    usage_out: dict = {}
+    if evidence["passes"]:
+        for (lane, a, b), m in compute_lane_matchups(all_series).items():
+            if m.games >= MIN_LANE_PAIR_GAMES:
+                lane_pack.append([lane.value, a, b, m.games, m.wins])
+        for hero, cnt in lane_usage(all_series).items():
+            usage_out[hero] = {ln.value: n for ln, n in cnt.most_common()}
+
     data = {
         "generated": "2026-09-06",
         "total_games": stats.total_games,
+        "min_lane_pair_games": MIN_LANE_PAIR_GAMES,
+        "lanes": [lane.value for lane in SLOT_LANES],
         "shrinkage_k": SHRINKAGE_K,
         "min_games_reliable": MIN_GAMES_RELIABLE,
         "min_pair_games": MIN_PAIR_GAMES,
@@ -101,6 +127,10 @@ def main() -> int:
         # matchup เก็บสองทิศทาง เพราะไม่สมมาตรในเชิงความหมาย
         "matchups": pack(pooled.matchups, one_direction=False),
         "synergies": pack(pooled.synergies, one_direction=True),
+        # context=LANE — เฉพาะคู่ที่ประกบกันในเลนเดียวกัน (rov/draft/lanes.py)
+        "lane_matchups": lane_pack,
+        "lane_usage": usage_out,
+        "lane_evidence": evidence,
     }
 
     out_path = Path("data/exports/draft_data.json")
@@ -112,6 +142,8 @@ def main() -> int:
     size_kb = out_path.stat().st_size / 1024
     print(f"เขียน {out_path}  ({size_kb:.0f} KB)")
     print(f"  เกม        {data['total_games']}")
+    print(f"  lane pair  {len(lane_pack)} (>= {MIN_LANE_PAIR_GAMES} เกม) "
+          f"· หลักฐานช่อง={'ผ่าน' if evidence['passes'] else 'ไม่ผ่าน'}")
     print(f"  ฮีโร่       {len(heroes)}  (มี class {sum(1 for h in heroes if h['cls'])})")
     print(f"  matchup    {len(data['matchups']):,} คู่ (>= {MIN_PAIR_GAMES} เกม)")
     print(f"  synergy    {len(data['synergies']):,} คู่")

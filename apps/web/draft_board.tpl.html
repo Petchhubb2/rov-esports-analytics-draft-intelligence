@@ -300,6 +300,17 @@ table.rec tbody tr.sel { background: color-mix(in srgb, var(--amber) 10%, transp
 .ctr-head .meta { font-family: var(--fx-mono); font-size: 11px; color: var(--text-faint); }
 .empty { color: var(--text-faint); font-size: 12px; padding: 8px; }
 
+/* ── เลือกเลน ── */
+.lanebar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.lane { font-family: var(--fx-mono); font-size: 11.5px; padding: 5px 10px; }
+.lane[aria-pressed="true"] { background: var(--amber); color: var(--ground); border-color: var(--amber); }
+.lane .n { opacity: .6; margin-left: 5px; }
+.ctx { font-size: 11.5px; color: var(--text-faint); margin-left: auto; }
+.usage { display: flex; gap: 3px; margin-top: 3px; }
+.usage i { height: 3px; border-radius: 1px; display: block; }
+.ctr-hero .lanes { font-family: var(--fx-mono); font-size: 9.5px; color: var(--text-faint); }
+
 /* ── แมพ ── */
 .map-wrap { padding: 12px; display: grid; gap: 16px; grid-template-columns: minmax(320px, 1fr) 1fr; }
 @media (max-width: 900px) { .map-wrap { grid-template-columns: 1fr; } }
@@ -581,6 +592,7 @@ input.search:focus { outline: none; border-color: var(--amber); }
           <b id="ctrGamesVal" style="font-family:var(--fx-mono)">8</b>
         </label>
       </div>
+      <div class="lanebar" id="laneBar"></div>
       <div class="ctr-wrap">
         <div class="ctr-list" id="ctrList"></div>
         <div>
@@ -601,8 +613,14 @@ input.search:focus { outline: none; border-color: var(--amber); }
             คู่ที่เจอกันไม่กี่เกมจึงถูกดึงเข้าหา 0 เอง ค่าจริงจากข้อมูลชุดนี้จึงอยู่ราว ±5 ไม่ใช่ ±50
             ให้ดูลำดับและแถบเทียบกัน มากกว่าดูตัวเลขดิบ ·
             ช่อง w-l เป็นสถิติดิบไม่ถ่วงน้ำหนัก
-            <br><b>ข้อจำกัด: เป็น context=TEAM</b> คืออยู่คนละทีมในเกมเดียวกัน
-            ไม่ได้แปลว่าประกบกันในเลน ตัวที่ "แพ้ทาง" อาจไม่เคยเจอหน้ากันเลยก็ได้
+            <br><b>ทุกเลน = context=TEAM</b> คืออยู่คนละทีมในเกมเดียวกัน
+            ไม่ได้แปลว่าประกบกันในเลน · <b>เลือกเลน = context=LANE</b>
+            คือประกบกันในเลนนั้นจริง ตัวอย่างน้อยกว่ามากแต่ตรงคำถามกว่า
+            <br><b>เลนมาจากไหน</b> ช่อง <code>t1h1..t1h5</code> ของ Liquipedia
+            เรียงตาม roster ของทีม ไม่ใช่ลำดับการเลือก
+            ยืนยันจาก <span id="evTeams">—</span> ทีม — ช่อง ADL เป็น marksman
+            <span id="evAdl">—</span> เหมือนกันทั้ง 5 รายการ ทั้งลีกไทยและไต้หวัน
+            ยังเป็นการอนุมานจากตำแหน่งช่อง ทีมที่สลับเลนกลางเกมจะนับตาม roster อยู่ดี
           </p>
         </div>
       </div>
@@ -709,6 +727,22 @@ const MU = new Map(D.matchups.map(([a,b,g,w]) => [a+"|"+b, {g,w}]));
 const SY = new Map(D.synergies.map(([a,b,g,w]) => [a+"|"+b, {g,w}]));
 const syKey = (a,b) => a < b ? a+"|"+b : b+"|"+a;
 
+// ── context=LANE ─────────────────────────────────────────────────────
+// ช่อง t1h1..t1h5 ของ Liquipedia เรียงตามเลน ไม่ใช่ลำดับการเลือก
+// ยืนยันแล้วจาก 1,722 ทีม — ดู packages/core/rov/draft/lanes.py
+const LANES = D.lanes || [];
+const LANE_TH = {ds:"DS เลน", jungle:"ป่า", mid:"มิด", dragon:"ADL", support:"ซัพพอร์ต"};
+const LANE_FULL = {
+  ds: "Dark Slayer lane — ออฟเลน", jungle: "ป่า", mid: "เลนกลาง",
+  dragon: "Abyssal Dragon lane — แครี่", support: "ซัพพอร์ต",
+};
+const MINLANE = D.min_lane_pair_games || 3;
+const LMU = new Map((D.lane_matchups||[]).map(([ln,a,b,g,w]) => [ln+"|"+a+"|"+b, {g,w}]));
+const USE = D.lane_usage || {};
+const laneCount = (h, ln) => (USE[h] || {})[ln] || 0;
+const laneTotal = h => Object.values(USE[h] || {}).reduce((a,b) => a+b, 0);
+const laneRows = ln => (D.lane_matchups||[]).filter(r => r[0] === ln);
+
 const adj = (g,w) => (w + K*PRIOR) / (g + K);
 const conf = g => g ? g/(g+K) : 0;
 const cscore = (g,w) => (adj(g,w) - PRIOR) * 100 * conf(g);
@@ -730,6 +764,7 @@ const S = {
   ctrHero: null,
   ctrQuery: "",
   ctrMin: MINPAIR,
+  ctrLane: "all",     // all = context=TEAM · ที่เหลือคือเลนเดียวกัน
 };
 
 // ── ซีรีส์ ────────────────────────────────────────────────────────────
@@ -1019,16 +1054,38 @@ function renderSeries() {
 // ── ตัวแก้ / แพ้ทาง ───────────────────────────────────────────────────
 // ใช้ cscore ตัวเดียวกับหน้าดราฟต์ คู่ที่ข้อมูลน้อยจะถูกดึงเข้าหา 0
 // D.matchups เก็บสองทิศทาง MU.get(a+"|"+b) จึงเป็นผลของ a เมื่อเจอ b
-function matchupsOf(hero, minG) {
+function matchupsOf(hero, minG, lane) {
   const out = [];
   for (const h of D.heroes) {
     if (h.id === hero) continue;
-    const m = MU.get(hero + "|" + h.id);
+    const m = lane === "all" ? MU.get(hero + "|" + h.id)
+                             : LMU.get(lane + "|" + hero + "|" + h.id);
     if (!m || m.g < minG) continue;
     out.push({id: h.id, name: h.name, g: m.g, w: m.w, sc: cscore(m.g, m.w)});
   }
   out.sort((a, b) => b.sc - a.sc);
   return out;
+}
+
+// แถบสัดส่วนเลนของฮีโร่ — ตอบว่า "ตัวนี้เล่นเลนไหนบ้าง"
+function usageBar(hero) {
+  const tot = laneTotal(hero);
+  if (!tot) return "";
+  const col = {ds:"#c98a2a", jungle:"#3f8f4a", mid:"#4f8fc0", dragon:"#c05a5a", support:"#8f6fc0"};
+  return `<span class="usage">` + LANES.map(ln => {
+    const w = 100 * laneCount(hero, ln) / tot;
+    return w < 0.5 ? "" : `<i style="width:${w.toFixed(1)}%;background:${col[ln]}"></i>`;
+  }).join("") + `</span>`;
+}
+
+function usageText(hero) {
+  const tot = laneTotal(hero);
+  if (!tot) return "ไม่มีข้อมูลเลน";
+  // ตัดเลนที่ปัดแล้วเป็น 0% ทิ้ง ไม่งั้นจะขึ้น "ซัพพอร์ต 0%" ให้รก
+  return LANES.filter(ln => Math.round(100*laneCount(hero, ln)/tot) > 0)
+    .sort((a,b) => laneCount(hero,b) - laneCount(hero,a))
+    .map(ln => `${LANE_TH[ln]} ${Math.round(100*laneCount(hero,ln)/tot)}%`)
+    .join(" · ");
 }
 
 function ctrRowHTML(r, mx) {
@@ -1042,19 +1099,42 @@ function ctrRowHTML(r, mx) {
 }
 
 function renderCtr() {
+  const lane = S.ctrLane;
+  const byLane = lane !== "all";
+
+  el("laneBar").innerHTML =
+    `<button class="lane" data-l="all" aria-pressed="${!byLane}"
+       title="ทุกคู่ข้ามทีม ไม่สนว่ายืนเลนไหน">ทุกเลน</button>` +
+    LANES.map(ln => `<button class="lane" data-l="${ln}" aria-pressed="${lane===ln}"
+       title="${escape(LANE_FULL[ln]||ln)}">${escape(LANE_TH[ln]||ln)}<span class="n">${laneRows(ln).length}</span></button>`).join("") +
+    `<span class="ctx">${byLane
+      ? "context=LANE — ประกบกันในเลนเดียวกันเท่านั้น"
+      : "context=TEAM — อยู่คนละทีมในเกมเดียวกัน ไม่ได้ประกบกัน"}</span>`;
+
   const q = S.ctrQuery.trim().toLowerCase();
-  const list = D.heroes.filter(h => !q || h.name.toLowerCase().includes(q) || h.id.includes(q));
-  if (!S.ctrHero || !HERO.has(S.ctrHero)) S.ctrHero = (list[0] || D.heroes[0]).id;
+  let list = D.heroes.filter(h => !q || h.name.toLowerCase().includes(q) || h.id.includes(q));
+  // เลือกเลนแล้วให้เหลือเฉพาะตัวที่เล่นเลนนั้นจริง เรียงตามจำนวนครั้งที่ลง
+  if (byLane) {
+    list = list.filter(h => laneCount(h.id, lane) >= MINLANE)
+               .sort((a,b) => laneCount(b.id, lane) - laneCount(a.id, lane));
+  }
+  if (!list.length) {
+    el("ctrList").innerHTML = `<p class="empty">ไม่มีฮีโร่ที่ตรงเงื่อนไข</p>`;
+    el("ctrHead").innerHTML = ""; el("ctrGood").innerHTML = ""; el("ctrBad").innerHTML = "";
+    el("ctrMin").textContent = "0 คู่";
+    return;
+  }
+  if (!S.ctrHero || !list.some(x => x.id === S.ctrHero)) S.ctrHero = list[0].id;
 
   el("ctrList").innerHTML = list.map(h => `
     <button class="ctr-hero" data-h="${h.id}" aria-pressed="${h.id === S.ctrHero}">
       <span class="pic sm" ${picStyle(h.id)}></span>
-      <span class="nm">${escape(h.name)}</span>
-      <span class="pres">${Math.round(h.pres*100)}%</span>
+      <span class="nm">${escape(h.name)}${byLane ? "" : usageBar(h.id)}</span>
+      <span class="pres">${byLane ? laneCount(h.id, lane) : Math.round(h.pres*100)+"%"}</span>
     </button>`).join("");
 
   const h = HERO.get(S.ctrHero);
-  const rows = matchupsOf(S.ctrHero, S.ctrMin);
+  const rows = matchupsOf(S.ctrHero, S.ctrMin, lane);
   // แถบเทียบกันเองภายในฮีโร่ตัวนี้ ไม่ใช่สเกลสัมบูรณ์ทั้งเกม
   const mx = rows.length ? Math.max(...rows.map(r => Math.abs(r.sc))) : 1;
   const good = rows.filter(r => r.sc > 0).slice(0, 12);
@@ -1063,7 +1143,10 @@ function renderCtr() {
   el("ctrHead").innerHTML = `<span class="pic" ${picStyle(h.id)}></span>
     <h2>${escape(h.name)}</h2>
     <span class="meta">pick ${h.p} · ban ${h.b} · wr ${(h.wr*100).toFixed(1)}% ·
-      คู่ที่ถึงเกณฑ์ ${rows.length}/${D.heroes.length - 1}</span>`;
+      คู่ที่ถึงเกณฑ์ ${rows.length}` +
+      (byLane ? ` · ลง${escape(LANE_TH[lane])} ${laneCount(h.id, lane)} ครั้ง` : "") +
+      `</span>
+    <span class="meta" style="flex:1 1 100%">เล่นเลน — ${escape(usageText(h.id))}</span>`;
 
   const none = `<p class="empty">ไม่มีคู่ที่ถึง ${S.ctrMin} เกม — ลดเกณฑ์ลง</p>`;
   el("ctrGood").innerHTML = good.length ? good.map(r => ctrRowHTML(r, mx)).join("") : none;
@@ -1240,6 +1323,17 @@ el("ctrGames").addEventListener("input", e => {
   el("ctrGamesVal").textContent = S.ctrMin;
   renderCtr();
 });
+el("laneBar").addEventListener("click", e => {
+  const b = e.target.closest(".lane"); if (!b) return;
+  S.ctrLane = b.dataset.l;
+  // context=LANE มีตัวอย่างต่อคู่น้อยกว่ามาก เกณฑ์เดิมจะกรองจนไม่เหลืออะไร
+  const sl = el("ctrGames");
+  if (S.ctrLane === "all") { sl.min = MINPAIR; sl.max = 60; S.ctrMin = MINPAIR; }
+  else { sl.min = MINLANE; sl.max = 30; S.ctrMin = Math.max(MINLANE, 5); }
+  sl.value = S.ctrMin;
+  el("ctrGamesVal").textContent = S.ctrMin;
+  renderCtr();
+});
 el("search").addEventListener("input", e => { S.query = e.target.value; renderPool(); });
 for (const inp of [el("nameBlue"), el("nameRed")]) inp.addEventListener("input", () => { renderTurn(); renderRecs(); renderSeries(); });
 
@@ -1275,6 +1369,14 @@ if (D.zone_map) {
   img.addEventListener("error", () => el("mapcard").hidden = true);
   img.src = D.zone_map;
 }
+
+const EV = D.lane_evidence || {};
+if (EV.teams) {
+  el("evTeams").textContent = EV.teams.toLocaleString();
+  const adl = ((EV.class_share_by_lane || {}).dragon || {}).marksman;
+  el("evAdl").textContent = adl ? Math.round(adl*100) + "%" : "—";
+}
+if (!LANES.length) el("laneBar").hidden = true;
 
 if (D.game_map) { el("gameMap").src = D.game_map; renderMap(); }
 else { el("tabMap").disabled = true; el("tabMap").title = "ยังไม่มีภาพแผนที่ — รัน scripts/rectify_map.py"; }

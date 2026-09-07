@@ -203,8 +203,12 @@ class MatchupStat:
 def compute_matchups(all_series: list[SeriesDraft]) -> dict[tuple[str, str], MatchupStat]:
     """matchup แบบ context=TEAM — ฮีโร่คนละทีมในเกมเดียวกัน
 
-    ยังไม่แยกตามเลน เพราะ Liquipedia ไม่ได้บอกว่าใครยืนเลนไหน
-    context=LANE ต้องรอ role assignment จาก vision pipeline
+    จับคู่ทุกตัวข้ามทีม ไม่สนว่ายืนเลนไหน ตัวอย่างจึงเยอะแต่ปนข้ามเลน
+
+    ถ้าอยากได้เฉพาะคู่ที่ประกบกันในเลนเดียวกัน ใช้
+    `rov.draft.lanes.compute_lane_matchups()` แทน — ช่อง t1h1..t1h5 ของ
+    Liquipedia เรียงตามเลนจริง (ยืนยันแล้ว ดู rov/draft/lanes.py)
+    ไม่ต้องรอ role assignment จาก vision pipeline อย่างที่เคยเขียนไว้ตรงนี้
     """
     out: dict[tuple[str, str], MatchupStat] = {}
 
