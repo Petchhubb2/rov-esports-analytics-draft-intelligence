@@ -112,6 +112,114 @@ def layout_check(
     typer.echo("เปิดดูด้วยตา ทุกกรอบต้องตรงตำแหน่งครบทุกภาพจึงจะผ่าน Phase 0")
 
 
+@app.command()
+def scan(
+    video: str = typer.Argument(..., help="ไฟล์คลิปแข่ง"),
+    out: str = typer.Option("data/exports/phase0", help="โฟลเดอร์ภาพผลลัพธ์"),
+    frames: int = typer.Option(40, help="จำนวนเฟรมที่ใช้วิเคราะห์"),
+) -> None:
+    """Phase 0 — สแกนหา minimap แล้วเขียนภาพให้ตรวจด้วยตา
+
+    ใช้หลักว่าบริเวณ minimap มีความแปรปรวนข้ามเฟรมต่ำกว่า main view
+    ผลลัพธ์เป็นข้อเสนอ ต้องเปิดภาพดูยืนยันเสมอ
+    """
+    from rov.ingest.calibrate import scan as do_scan
+    from rov.ingest.calibrate import write_inspection
+
+    try:
+        result = do_scan(video, n_frames=frames)
+    except (FileNotFoundError, ValueError) as exc:
+        typer.secho(str(exc), fg=typer.colors.RED)
+        raise typer.Exit(1) from exc
+
+    typer.echo(result.report())
+    written = write_inspection(result, out)
+    typer.echo(f"\nเขียนภาพ {len(written)} ไฟล์ลง {out}")
+    for p in written:
+        typer.echo(f"  {p.name}")
+    typer.echo("\nเปิดภาพเหล่านี้ดูก่อน แล้วค่อยเขียน configs/layouts/<id>.yaml")
+
+
+@app.command()
+def frames(
+    video: str = typer.Argument(..., help="ไฟล์คลิปแข่ง"),
+    out: str = typer.Option("data/exports/frames"),
+    n: int = typer.Option(8, help="จำนวนเฟรมกระจายทั้งคลิป"),
+    at: str = typer.Option(None, help="เวลาเจาะจง เป็นวินาที คั่นด้วยจุลภาค เช่น 300,610,900"),
+    crop: str = typer.Option(None, help="ตัดเฉพาะ ROI รูปแบบ x,y,w,h"),
+    zoom: int = typer.Option(1, help="ขยายภาพกี่เท่า"),
+) -> None:
+    """ตัดเฟรมจากคลิปออกมาเป็นภาพ PNG
+
+    ใช้ตอบคำถาม Phase 0 ที่ต้องดูด้วยตา เช่น minimap มี fog หรือไม่
+    """
+    from rov.domain.geometry import Rect
+    from rov.ingest.calibrate import write_frames
+
+    times = None
+    if at:
+        try:
+            times = [float(x) for x in at.split(",") if x.strip()]
+        except ValueError as exc:
+            typer.secho(f"อ่านเวลาไม่ได้: {at}", fg=typer.colors.RED)
+            raise typer.Exit(1) from exc
+
+    roi = None
+    if crop:
+        try:
+            x, y, w, h = (int(v) for v in crop.split(","))
+            roi = Rect(x, y, w, h)
+        except ValueError as exc:
+            typer.secho(f"รูปแบบ crop ต้องเป็น x,y,w,h แต่ได้ {crop}", fg=typer.colors.RED)
+            raise typer.Exit(1) from exc
+
+    try:
+        written = write_frames(video, out, times=times, n=n, crop=roi, zoom=zoom)
+    except FileNotFoundError as exc:
+        typer.secho(str(exc), fg=typer.colors.RED)
+        raise typer.Exit(1) from exc
+
+    typer.echo(f"เขียน {len(written)} ภาพลง {out}")
+    for p in written:
+        typer.echo(f"  {p.name}")
+
+
+@app.command()
+def vods(
+    region: str = typer.Option(None, help="TH หรือ TW"),
+    team: str = typer.Option(None, help="กรองตามชื่อทีม"),
+    limit: int = typer.Option(20),
+) -> None:
+    """ลิงก์ VOD ของเกมที่มีข้อมูล draft แล้ว พร้อมเวลาที่เกมเริ่ม
+
+    มาจากข้อมูลที่ดึงจาก Liquipedia ใช้หาคลิปสำหรับ Phase 0 ได้เลย
+    """
+    rows = []
+    for r in _regions(region):
+        for s in r.series:
+            for g in s.games:
+                if not g.vod:
+                    continue
+                if team and team.lower() not in f"{s.team1} {s.team2}".lower():
+                    continue
+                rows.append((r.key, s.team1, s.team2, g.game_index,
+                             g.length_sec, g.winner_team, g.vod))
+    if not rows:
+        typer.secho("ไม่พบ VOD ตามเงื่อนไข", fg=typer.colors.YELLOW)
+        return
+
+    typer.echo(f"พบ {len(rows)} เกมที่มีลิงก์ VOD · แสดง {min(limit, len(rows))} รายการแรก\n")
+    for key, a, b, idx, length, winner, url in rows[:limit]:
+        mins = f"{length / 60:.0f} นาที" if length else "?"
+        typer.echo(f"  [{key}] {a} vs {b} · เกม {idx} · {mins} · ชนะ {winner or '?'}")
+        typer.echo(f"        {url}")
+    typer.echo(
+        "\nลิงก์มี &t=<วินาที> กำกับจุดที่เกมเริ่มอยู่แล้ว\n"
+        "ดาวน์โหลดด้วยเครื่องมือที่ถนัด แล้ววางไฟล์ไว้ที่ data/videos/\n"
+        "จากนั้นรัน  rov scan data/videos/<ไฟล์>.mp4"
+    )
+
+
 # --------------------------------------------------------------- zones
 
 
