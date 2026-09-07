@@ -233,6 +233,73 @@ table.rec tbody tr.sel { background: color-mix(in srgb, var(--amber) 10%, transp
 .comp .cv { font-family: var(--fx-mono); text-align: right; font-variant-numeric: tabular-nums; }
 .comp .cd { color: var(--text-dim); font-size: 11px; }
 
+/* ── แท็บหลัก ── */
+.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+.tab {
+  font-family: var(--fx-display); font-size: 12.5px; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase;
+  background: transparent; border: 0; border-bottom: 2px solid transparent;
+  border-radius: 0; padding: 8px 14px; color: var(--text-faint);
+}
+.tab:hover:not(:disabled) { background: transparent; color: var(--text-dim); }
+.tab[aria-selected="true"] { color: var(--amber); border-bottom-color: var(--amber); }
+
+/* ── ซีรีส์ ── */
+.bo-pick { display: flex; gap: 4px; }
+.bo { font-family: var(--fx-mono); font-size: 11.5px; padding: 4px 9px; }
+.bo[aria-pressed="true"] { background: var(--amber); color: var(--ground); border-color: var(--amber); }
+.score { font-family: var(--fx-display); font-size: 20px; font-weight: 700; letter-spacing: .04em; }
+.score .b { color: var(--blue); } .score .r { color: var(--red); }
+.score .sep { color: var(--text-faint); margin: 0 6px; }
+.gamedots { display: flex; gap: 4px; }
+.gd {
+  width: 22px; height: 22px; border-radius: 2px; border: 1px solid var(--line);
+  display: grid; place-items: center; font-family: var(--fx-mono); font-size: 10px;
+  color: var(--text-faint); background: var(--panel-2);
+}
+.gd.b { background: var(--blue); border-color: var(--blue); color: #fff; }
+.gd.r { background: var(--red); border-color: var(--red); color: #fff; }
+.gd.now { border-color: var(--amber); color: var(--amber); }
+.win-btn { font-size: 11.5px; padding: 4px 9px; }
+.decided { color: var(--good); font-weight: 600; }
+
+/* ── ตัวแก้ ── */
+.ctr-wrap { padding: 12px; display: grid; gap: 14px; grid-template-columns: 260px 1fr; }
+@media (max-width: 860px) { .ctr-wrap { grid-template-columns: 1fr; } }
+.ctr-list { max-height: 520px; overflow-y: auto; display: flex; flex-direction: column; gap: 3px; }
+.ctr-hero {
+  display: flex; align-items: center; gap: 7px; padding: 5px 8px; text-align: left;
+  font-size: 12.5px;
+}
+.ctr-hero[aria-pressed="true"] { border-color: var(--amber); background: color-mix(in srgb, var(--amber) 10%, transparent); }
+.ctr-hero .pres { margin-left: auto; font-family: var(--fx-mono); font-size: 10px; color: var(--text-faint); }
+.ctr-panels { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+@media (max-width: 620px) { .ctr-panels { grid-template-columns: 1fr; } }
+.ctr-col h3 {
+  font-family: var(--fx-display); font-size: 11.5px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; margin: 0 0 7px;
+}
+.ctr-col.good h3 { color: var(--good); }
+.ctr-col.bad h3 { color: var(--red); }
+.ctr-row {
+  display: flex; align-items: center; gap: 7px; padding: 5px 8px;
+  border-bottom: 1px solid var(--line-soft); font-size: 12.5px;
+}
+.ctr-row .nm { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ctr-row .wl { font-family: var(--fx-mono); font-size: 11px; color: var(--text-dim); }
+.ctr-row .sc { font-family: var(--fx-mono); font-size: 12px; font-weight: 600; min-width: 42px; text-align: right; }
+.ctr-row .cbar { width: 44px; height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; flex: 0 0 auto; }
+.ctr-row .cbar i { display: block; height: 100%; }
+.ctr-col.good .cbar i { background: var(--good); }
+.ctr-col.bad .cbar i { background: var(--red); }
+.ctr-col.good .sc { color: var(--good); }
+.ctr-col.bad .sc { color: var(--red); }
+.ctr-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.ctr-head .pic { width: 44px; height: 44px; }
+.ctr-head h2 { font-family: var(--fx-display); font-size: 20px; margin: 0; letter-spacing: .02em; }
+.ctr-head .meta { font-family: var(--fx-mono); font-size: 11px; color: var(--text-faint); }
+.empty { color: var(--text-faint); font-size: 12px; padding: 8px; }
+
 /* ── portrait ── */
 .pic {
   flex: 0 0 auto; width: 26px; height: 26px; border-radius: 2px;
@@ -320,8 +387,13 @@ input.search:focus { outline: none; border-color: var(--amber); }
   padding: 9px 12px; box-shadow: var(--shadow); font-size: 12.5px; }
 .series .lab { font-family: var(--fx-display); font-size: 10.5px; font-weight: 600;
   letter-spacing: .12em; text-transform: uppercase; color: var(--text-faint); }
-.used { font-family: var(--fx-mono); font-size: 11px; color: var(--text-dim); }
-.used b { font-weight: 500; }
+.used { font-family: var(--fx-mono); font-size: 11px; color: var(--text-dim);
+  display: grid; grid-template-columns: minmax(90px, max-content) 1fr; gap: 8px;
+  align-items: baseline; padding: 3px 0; }
+.used + .used { border-top: 1px solid var(--line-soft); }
+.used b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.used.blue b { color: var(--blue); } .used.red b { color: var(--red); }
+.gbp { display: grid; grid-template-columns: max-content 1fr; gap: 4px 12px; align-items: start; }
 
 /* ── notes ── */
 .foot {
@@ -348,6 +420,12 @@ input.search:focus { outline: none; border-color: var(--amber); }
     <button id="theme" title="สลับธีม">◐</button>
   </header>
 
+  <div class="tabs" role="tablist">
+    <button class="tab" id="tabDraft" role="tab" aria-selected="true">Draft Room</button>
+    <button class="tab" id="tabCtr" role="tab" aria-selected="false">ตัวแก้ / แพ้ทาง</button>
+  </div>
+
+  <div id="viewDraft">
   <div class="turnbar" id="turnbar">
     <div class="step" id="step">—</div>
     <div class="now" id="now">—</div>
@@ -412,12 +490,23 @@ input.search:focus { outline: none; border-color: var(--amber); }
 
   <div class="series">
     <span class="lab">Series</span>
-    <span id="gameNo">เกมที่ 1</span>
-    <button id="nextGame" disabled>บันทึกเกมนี้ → เกมถัดไป</button>
+    <div class="bo-pick" id="boPick"></div>
+    <span class="score" id="score"></span>
+    <div class="gamedots" id="gameDots"></div>
+    <span id="seriesState" style="font-size:12px"></span>
+    <span style="flex:1 1 auto"></span>
+    <span class="lab">จบเกมนี้ ใครชนะ</span>
+    <button class="win-btn" id="winBlue">ฝั่งน้ำเงิน</button>
+    <button class="win-btn" id="winRed">ฝั่งแดง</button>
+    <button id="undoGame">↩ ผลเกมล่าสุด</button>
     <button id="clearSeries">ล้างซีรีส์</button>
-    <span class="lab" style="margin-left:auto">Global Ban-Pick</span>
-    <span class="used" id="usedBlue">—</span>
-    <span class="used" id="usedRed">—</span>
+  </div>
+  <div class="series gbp" style="margin-top:-6px">
+    <span class="lab">Global<br>Ban-Pick</span>
+    <div>
+      <div class="used blue" id="usedBlue">—</div>
+      <div class="used red" id="usedRed">—</div>
+    </div>
   </div>
 
   <section class="mapcard" id="mapcard" hidden>
@@ -448,6 +537,48 @@ input.search:focus { outline: none; border-color: var(--amber); }
       <span class="count" id="poolCount"></span>
     </div>
     <div class="grid" id="grid"></div>
+  </section>
+
+  </div><!-- /viewDraft -->
+
+  <section id="viewCtr" hidden>
+    <div class="pool" style="margin-bottom:12px">
+      <div class="pool-head">
+        <h2>ตัวไหนแพ้ทางตัวไหน</h2>
+        <input class="search" id="ctrSearch" placeholder="ค้นหาฮีโร่…" aria-label="ค้นหาฮีโร่">
+        <span class="count" id="ctrMin"></span>
+        <label style="font-size:12px;color:var(--text-dim);display:flex;align-items:center;gap:6px">
+          เกมขั้นต่ำ
+          <input type="range" id="ctrGames" min="8" max="60" value="8" style="width:110px">
+          <b id="ctrGamesVal" style="font-family:var(--fx-mono)">8</b>
+        </label>
+      </div>
+      <div class="ctr-wrap">
+        <div class="ctr-list" id="ctrList"></div>
+        <div>
+          <div class="ctr-head" id="ctrHead"></div>
+          <div class="ctr-panels">
+            <div class="ctr-col good">
+              <h3>▲ เจอแล้วได้เปรียบ</h3>
+              <div id="ctrGood"></div>
+            </div>
+            <div class="ctr-col bad">
+              <h3>▼ เจอแล้วเสียเปรียบ</h3>
+              <div id="ctrBad"></div>
+            </div>
+          </div>
+          <p style="font-size:11.5px;color:var(--text-faint);margin:12px 0 0;line-height:1.65">
+            <b>ตัวเลขคือคะแนนเดียวกับช่อง counter ในหน้าดราฟต์</b> —
+            เอาอัตราชนะที่ถ่วงด้วยขนาดตัวอย่างแล้วลบ 50% แล้วคูณความมั่นใจ
+            คู่ที่เจอกันไม่กี่เกมจึงถูกดึงเข้าหา 0 เอง ค่าจริงจากข้อมูลชุดนี้จึงอยู่ราว ±5 ไม่ใช่ ±50
+            ให้ดูลำดับและแถบเทียบกัน มากกว่าดูตัวเลขดิบ ·
+            ช่อง w-l เป็นสถิติดิบไม่ถ่วงน้ำหนัก
+            <br><b>ข้อจำกัด: เป็น context=TEAM</b> คืออยู่คนละทีมในเกมเดียวกัน
+            ไม่ได้แปลว่าประกบกันในเลน ตัวที่ "แพ้ทาง" อาจไม่เคยเจอหน้ากันเลยก็ได้
+          </p>
+        </div>
+      </div>
+    </div>
   </section>
 
   <footer class="foot">
@@ -519,19 +650,48 @@ const other = t => t === "blue" ? "red" : "blue";
 const S = {
   moves: [],           // {i, team, action, hero}
   swapped: false,      // ฝั่งไหนคือทีมไหน
-  game: 1,
-  used: {blue: new Set(), red: new Set()},  // Global Ban-Pick
+  bo: 3,               // รูปแบบซีรีส์ 1/3/5/7
+  // ผลของเกมที่จบไปแล้ว — เก็บทั้งผู้ชนะและตัวที่แต่ละฝั่งเลือก
+  // เก็บเป็นประวัติเต็ม ไม่ใช่ยอดสะสม เพื่อให้ย้อนผลเกมล่าสุดได้
+  results: [],         // [{w:"blue"|"red", picks:{blue:[...], red:[...]}}]
   filter: "all",
   query: "",
   picked: null,        // ฮีโร่ที่เลือกดูรายละเอียด
+  view: "draft",       // draft | counter
+  ctrHero: null,
+  ctrQuery: "",
+  ctrMin: MINPAIR,
 };
+
+// ── ซีรีส์ ────────────────────────────────────────────────────────────
+// ค่าที่นับได้จาก S.results ทั้งหมดเป็น derived ไม่เก็บซ้ำ
+// เพราะถ้าเก็บทั้งยอดสะสมและประวัติ สองอย่างจะเพี้ยนจากกันเมื่อ swap ฝั่ง
+const gameNo = () => S.results.length + 1;
+const winsOf = t => S.results.filter(r => r.w === t).length;
+const needed = () => Math.ceil(S.bo / 2);
+const decided = () => winsOf("blue") >= needed() || winsOf("red") >= needed();
+const seriesWinner = () => winsOf("blue") >= needed() ? "blue"
+                         : winsOf("red") >= needed() ? "red" : null;
+
+// configs/draft/format.yaml — global_ban_pick
+// scope: own_team_only · applies_to_bans: false · reset_on_final_game: true
+const GBP = {enabled: true, appliesToBans: false, resetOnFinalGame: true};
+
+// เกมสุดท้ายที่เป็นไปได้ของซีรีส์กลับเป็น Normal Ban-Pick (Bo7 เกม 7)
+const isFinalGame = () => S.bo > 1 && gameNo() >= S.bo;
+const gbpOff = () => !GBP.enabled || (GBP.resetOnFinalGame && isFinalGame());
 
 const turn = () => S.moves.length < SEQ.length ? SEQ[S.moves.length] : null;
 const taken = () => new Set(S.moves.map(m => m.hero));
 const of = (team, action) => S.moves.filter(m => m.team===team && m.action===action).map(m => m.hero);
 const teamName = t => document.getElementById(t==="blue" ? "nameBlue" : "nameRed").value || t.toUpperCase();
 
-function lockedFor(team) { return S.used[team]; }
+function lockedFor(team) {
+  const out = new Set();
+  if (gbpOff()) return out;
+  for (const r of S.results) for (const h of r.picks[team]) out.add(h);
+  return out;
+}
 
 function why(hero) {
   const t = turn();
@@ -540,7 +700,7 @@ function why(hero) {
   const m = S.moves.find(m => m.hero === hero);
   if (m) return `${HERO.get(hero).name} ถูก${m.action==="BAN"?"แบน":"เลือก"}ไปแล้วโดย ${teamName(m.team)}`;
   if (t.action === "PICK" && lockedFor(t.team).has(hero))
-    return `${HERO.get(hero).name} ใช้ไม่ได้ — ${teamName(t.team)} เลือกไปแล้วในเกมก่อนหน้า (Global Ban-Pick)`;
+    return `${HERO.get(hero).name} ใช้ไม่ได้ — ${teamName(t.team)} เลือกไปแล้วในเกมก่อนหน้าของซีรีส์ (Global Ban-Pick)`;
   return null;
 }
 
@@ -654,7 +814,6 @@ function renderTurn() {
       `<span class="verb ${t.action==="BAN"?"ban":""}">${t.action==="BAN"?"แบน":"เลือก"}</span>`;
   }
   el("undo").disabled = !S.moves.length;
-  el("nextGame").disabled = !!t;
 }
 
 function slotHTML(hero, i, kind, isActive) {
@@ -743,13 +902,113 @@ function renderPool() {
 }
 
 function renderSeries() {
-  el("gameNo").textContent = `เกมที่ ${S.game}`;
+  el("boPick").innerHTML = [1,3,5,7].map(n =>
+    `<button class="bo" data-bo="${n}" aria-pressed="${n===S.bo}">Bo${n}</button>`).join("");
+
+  const wb = winsOf("blue"), wr = winsOf("red"), win = seriesWinner();
+  el("score").innerHTML = `<span class="b">${wb}</span><span class="sep">–</span><span class="r">${wr}</span>`;
+
+  el("gameDots").innerHTML = Array.from({length: S.bo}, (_, i) => {
+    const r = S.results[i];
+    const now = !r && i === S.results.length && !win;
+    const tip = r ? `เกมที่ ${i+1} — ${teamName(r.w)} ชนะ` : `เกมที่ ${i+1}`;
+    return `<span class="gd ${r ? r.w[0] : ""} ${now ? "now" : ""}" title="${escape(tip)}">${i+1}</span>`;
+  }).join("");
+
+  const st = el("seriesState");
+  if (win) {
+    st.className = "decided";
+    st.textContent = `ซีรีส์จบแล้ว — ${teamName(win)} ชนะ ${Math.max(wb,wr)}-${Math.min(wb,wr)}`;
+  } else {
+    st.className = "";
+    let msg = `เกมที่ ${gameNo()} · ชนะ ${needed()} เกมก่อนได้ซีรีส์`;
+    if (GBP.resetOnFinalGame && isFinalGame()) msg += " · เกมตัดสิน กลับเป็น Normal Ban-Pick";
+    st.textContent = msg;
+  }
+
+  const t = turn();
+  for (const b of ["winBlue","winRed"]) {
+    el(b).disabled = !!t || !!win;
+    el(b).title = win ? "ซีรีส์จบแล้ว"
+      : t ? `ดราฟต์ให้ครบทั้ง ${SEQ.length} ตาก่อน`
+      : "บันทึกผลแล้วไปเกมถัดไป";
+  }
+  el("undoGame").disabled = !S.results.length;
+
   for (const team of ["blue","red"]) {
     const cap = team==="blue" ? "Blue" : "Red";
-    const u = [...S.used[team]];
-    el("used"+cap).innerHTML = `<b>${escape(teamName(team))}</b> ` +
-      (u.length ? u.map(id => escape(HERO.get(id).name)).join(", ") : "—");
+    const u = [...lockedFor(team)];
+    el("used"+cap).innerHTML = `<b>${escape(teamName(team))}</b><span>` + (
+      gbpOff() ? '<span style="color:var(--text-faint)">ปลดล็อกในเกมตัดสิน — เลือกซ้ำได้</span>'
+      : u.length ? `${u.length} ตัวที่ใช้ไปแล้ว — ` +
+          u.map(id => escape(HERO.get(id).name)).join(", ")
+      : '<span style="color:var(--text-faint)">ยังไม่ได้ใช้ตัวไหน</span>'
+    ) + "</span>";
   }
+}
+
+// ── ตัวแก้ / แพ้ทาง ───────────────────────────────────────────────────
+// ใช้ cscore ตัวเดียวกับหน้าดราฟต์ คู่ที่ข้อมูลน้อยจะถูกดึงเข้าหา 0
+// D.matchups เก็บสองทิศทาง MU.get(a+"|"+b) จึงเป็นผลของ a เมื่อเจอ b
+function matchupsOf(hero, minG) {
+  const out = [];
+  for (const h of D.heroes) {
+    if (h.id === hero) continue;
+    const m = MU.get(hero + "|" + h.id);
+    if (!m || m.g < minG) continue;
+    out.push({id: h.id, name: h.name, g: m.g, w: m.w, sc: cscore(m.g, m.w)});
+  }
+  out.sort((a, b) => b.sc - a.sc);
+  return out;
+}
+
+function ctrRowHTML(r, mx) {
+  return `<div class="ctr-row" title="เจอกัน ${r.g} เกม ชนะ ${r.w}">
+    <span class="pic sm" ${picStyle(r.id)}></span>
+    <span class="nm">${escape(r.name)}</span>
+    <span class="wl">${r.w}-${r.g - r.w} · ${(100*r.w/r.g).toFixed(0)}%</span>
+    <span class="cbar"><i style="width:${(100*Math.abs(r.sc)/mx).toFixed(0)}%"></i></span>
+    <span class="sc">${r.sc > 0 ? "+" : ""}${r.sc.toFixed(1)}</span>
+  </div>`;
+}
+
+function renderCtr() {
+  const q = S.ctrQuery.trim().toLowerCase();
+  const list = D.heroes.filter(h => !q || h.name.toLowerCase().includes(q) || h.id.includes(q));
+  if (!S.ctrHero || !HERO.has(S.ctrHero)) S.ctrHero = (list[0] || D.heroes[0]).id;
+
+  el("ctrList").innerHTML = list.map(h => `
+    <button class="ctr-hero" data-h="${h.id}" aria-pressed="${h.id === S.ctrHero}">
+      <span class="pic sm" ${picStyle(h.id)}></span>
+      <span class="nm">${escape(h.name)}</span>
+      <span class="pres">${Math.round(h.pres*100)}%</span>
+    </button>`).join("");
+
+  const h = HERO.get(S.ctrHero);
+  const rows = matchupsOf(S.ctrHero, S.ctrMin);
+  // แถบเทียบกันเองภายในฮีโร่ตัวนี้ ไม่ใช่สเกลสัมบูรณ์ทั้งเกม
+  const mx = rows.length ? Math.max(...rows.map(r => Math.abs(r.sc))) : 1;
+  const good = rows.filter(r => r.sc > 0).slice(0, 12);
+  const bad = rows.filter(r => r.sc < 0).slice(-12).reverse();
+
+  el("ctrHead").innerHTML = `<span class="pic" ${picStyle(h.id)}></span>
+    <h2>${escape(h.name)}</h2>
+    <span class="meta">pick ${h.p} · ban ${h.b} · wr ${(h.wr*100).toFixed(1)}% ·
+      คู่ที่ถึงเกณฑ์ ${rows.length}/${D.heroes.length - 1}</span>`;
+
+  const none = `<p class="empty">ไม่มีคู่ที่ถึง ${S.ctrMin} เกม — ลดเกณฑ์ลง</p>`;
+  el("ctrGood").innerHTML = good.length ? good.map(r => ctrRowHTML(r, mx)).join("") : none;
+  el("ctrBad").innerHTML  = bad.length  ? bad.map(r => ctrRowHTML(r, mx)).join("")  : none;
+  el("ctrMin").textContent = `${rows.length} คู่`;
+}
+
+function setView(v) {
+  S.view = v;
+  el("viewDraft").hidden = v !== "draft";
+  el("viewCtr").hidden = v !== "counter";
+  el("tabDraft").setAttribute("aria-selected", String(v === "draft"));
+  el("tabCtr").setAttribute("aria-selected", String(v === "counter"));
+  if (v === "counter") renderCtr();
 }
 
 const escape = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -772,17 +1031,39 @@ el("reset").onclick = () => { S.moves = []; S.picked = null; render(); };
 el("swap").onclick = () => {
   const a = el("nameBlue"), b = el("nameRed");
   [a.value, b.value] = [b.value, a.value];
-  const u = S.used.blue; S.used.blue = S.used.red; S.used.red = u;
+  S.results = S.results.map(r => ({w: other(r.w), picks: {blue: r.picks.red, red: r.picks.blue}}));
   S.moves = S.moves.map(m => ({...m, team: other(m.team)}));
   render();
 };
-el("nextGame").onclick = () => {
-  for (const team of ["blue","red"]) of(team,"PICK").forEach(h => S.used[team].add(h));
-  S.game++; S.moves = []; S.picked = null; render();
-};
-el("clearSeries").onclick = () => {
-  S.used = {blue:new Set(), red:new Set()}; S.game = 1; S.moves = []; render();
-};
+function recordWin(w) {
+  if (turn() || seriesWinner()) return;
+  S.results.push({w, picks: {blue: of("blue","PICK"), red: of("red","PICK")}});
+  S.moves = []; S.picked = null; render();
+}
+el("winBlue").onclick = () => recordWin("blue");
+el("winRed").onclick  = () => recordWin("red");
+el("undoGame").onclick = () => { S.results.pop(); S.moves = []; S.picked = null; render(); };
+el("clearSeries").onclick = () => { S.results = []; S.moves = []; S.picked = null; render(); };
+el("boPick").addEventListener("click", e => {
+  const b = e.target.closest(".bo"); if (!b) return;
+  S.bo = +b.dataset.bo;
+  if (S.results.length > S.bo) S.results.length = S.bo;
+  render();
+});
+
+// ── แท็บและหน้าตัวแก้ ─────────────────────────────────────────────────
+el("tabDraft").onclick = () => setView("draft");
+el("tabCtr").onclick   = () => setView("counter");
+el("ctrList").addEventListener("click", e => {
+  const b = e.target.closest(".ctr-hero"); if (!b) return;
+  S.ctrHero = b.dataset.h; renderCtr();
+});
+el("ctrSearch").addEventListener("input", e => { S.ctrQuery = e.target.value; renderCtr(); });
+el("ctrGames").addEventListener("input", e => {
+  S.ctrMin = +e.target.value;
+  el("ctrGamesVal").textContent = S.ctrMin;
+  renderCtr();
+});
 el("search").addEventListener("input", e => { S.query = e.target.value; renderPool(); });
 for (const inp of [el("nameBlue"), el("nameRed")]) inp.addEventListener("input", () => { renderTurn(); renderRecs(); renderSeries(); });
 
@@ -819,6 +1100,9 @@ if (D.zone_map) {
   img.src = D.zone_map;
 }
 
+el("ctrGames").value = S.ctrMin;
+el("ctrGamesVal").textContent = S.ctrMin;
 render();
+renderCtr();
 })();
 </script>
