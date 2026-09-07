@@ -21,3 +21,6 @@ data/cache/
 
 # วิดีโอทดสอบที่สร้างด้วย ffmpeg
 data/videos/_test_*
+
+# ผลลัพธ์ที่สร้างขึ้น ไม่ต้อง commit
+data/exports/

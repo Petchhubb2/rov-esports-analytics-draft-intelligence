@@ -1,0 +1,753 @@
+<title>RoV Draft Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap">
+
+<style>
+/* ── tokens ─────────────────────────────────────────────────────────
+   dark-first: bare :root is the dark palette, light is the variant.
+   accent amber = the colour the minimap paints a living Abyssal Dragon. */
+:root {
+  --ground:   #0E1520;
+  --panel:    #17202E;
+  --panel-2:  #1E2937;
+  --line:     #2A3746;
+  --line-soft:#212C3A;
+  --text:     #E4EBF2;
+  --text-dim: #94A5B8;
+  --text-faint:#64768A;
+  --blue:     #2F93E6;
+  --blue-dim: #1D5C93;
+  --red:      #E2453F;
+  --red-dim:  #8E2B28;
+  --amber:    #E8A33D;
+  --amber-dim:#7A5520;
+  --good:     #3FB37F;
+  --warn:     #D8863A;
+  --shadow:   0 1px 0 rgba(255,255,255,.03), 0 8px 24px -12px rgba(0,0,0,.6);
+  --fx-display: "Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --fx-body: "IBM Plex Sans Thai", "Leelawadee UI", "Tahoma", system-ui, sans-serif;
+  --fx-mono: "IBM Plex Mono", ui-monospace, "Consolas", monospace;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --ground:   #EDF1F5;
+    --panel:    #FFFFFF;
+    --panel-2:  #F4F7FA;
+    --line:     #D2DBE4;
+    --line-soft:#E3E9EF;
+    --text:     #16202C;
+    --text-dim: #55677A;
+    --text-faint:#8496A8;
+    --blue:     #1B6FBE;
+    --blue-dim: #A9CBEA;
+    --red:      #C42F2A;
+    --red-dim:  #EFB9B6;
+    --amber:    #9A6612;
+    --amber-dim:#EBD5A8;
+    --good:     #1F7F55;
+    --warn:     #9A5A14;
+    --shadow:   0 1px 2px rgba(20,32,44,.06), 0 8px 20px -14px rgba(20,32,44,.22);
+  }
+}
+:root[data-theme="light"] {
+  --ground:#EDF1F5; --panel:#FFFFFF; --panel-2:#F4F7FA;
+  --line:#D2DBE4; --line-soft:#E3E9EF;
+  --text:#16202C; --text-dim:#55677A; --text-faint:#8496A8;
+  --blue:#1B6FBE; --blue-dim:#A9CBEA; --red:#C42F2A; --red-dim:#EFB9B6;
+  --amber:#9A6612; --amber-dim:#EBD5A8; --good:#1F7F55; --warn:#9A5A14;
+  --shadow:0 1px 2px rgba(20,32,44,.06), 0 8px 20px -14px rgba(20,32,44,.22);
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--fx-body);
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  padding: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1420px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+
+/* ── masthead ── */
+.mast { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 16px; }
+.mast h1 {
+  font-family: var(--fx-display);
+  font-size: 25px; font-weight: 700; letter-spacing: .02em;
+  margin: 0; text-transform: uppercase;
+}
+.mast h1 span { color: var(--amber); }
+.provenance {
+  font-family: var(--fx-mono); font-size: 11px; color: var(--text-faint);
+  letter-spacing: .01em;
+}
+.provenance b { color: var(--text-dim); font-weight: 500; }
+.spacer { flex: 1 1 auto; }
+
+/* ── turn strip ── */
+.turnbar {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 4px; padding: 10px 12px; box-shadow: var(--shadow);
+}
+.turnbar.is-blue { border-left: 4px solid var(--blue); }
+.turnbar.is-red  { border-left: 4px solid var(--red); }
+.turnbar.is-done { border-left: 4px solid var(--good); }
+.step {
+  font-family: var(--fx-mono); font-size: 11px; color: var(--text-faint);
+  padding-right: 10px; border-right: 1px solid var(--line);
+}
+.now { font-family: var(--fx-display); font-size: 19px; font-weight: 600; letter-spacing: .01em; }
+.now .who { text-transform: uppercase; }
+.now.blue .who { color: var(--blue); }
+.now.red  .who { color: var(--red); }
+.verb { color: var(--text); }
+.verb.ban { color: var(--warn); }
+
+button {
+  font-family: var(--fx-body); font-size: 12.5px; color: var(--text);
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 3px; padding: 6px 11px; cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+button:hover:not(:disabled) { background: var(--line-soft); border-color: var(--text-faint); }
+button:disabled { opacity: .38; cursor: default; }
+button:focus-visible { outline: 2px solid var(--amber); outline-offset: 1px; }
+.btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* ── board ── */
+.board { display: grid; grid-template-columns: 1fr 1.25fr 1fr; gap: 12px; align-items: start; }
+@media (max-width: 1080px) { .board { grid-template-columns: 1fr; } }
+
+.side {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 4px; overflow: hidden; box-shadow: var(--shadow);
+}
+.side-head {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 9px 12px; border-bottom: 1px solid var(--line);
+}
+.side-head .tag {
+  font-family: var(--fx-display); font-size: 11px; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--text-faint);
+}
+.side-head input {
+  font-family: var(--fx-display); font-size: 18px; font-weight: 600;
+  letter-spacing: .02em; text-transform: uppercase;
+  background: transparent; border: 0; border-bottom: 1px dashed transparent;
+  color: var(--text); width: 100%; padding: 0;
+}
+.side-head input:hover { border-bottom-color: var(--line); }
+.side-head input:focus { outline: none; border-bottom-color: var(--amber); }
+.side.blue .side-head { border-bottom-color: var(--blue-dim); }
+.side.blue .side-head input { color: var(--blue); }
+.side.red  .side-head { border-bottom-color: var(--red-dim); }
+.side.red  .side-head input { color: var(--red); }
+
+.slot-group { padding: 10px 12px; }
+.slot-group + .slot-group { border-top: 1px solid var(--line-soft); }
+.slot-label {
+  font-family: var(--fx-display); font-size: 10.5px; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--text-faint);
+  margin-bottom: 7px;
+}
+.slots { display: flex; flex-direction: column; gap: 5px; }
+.bans { flex-direction: row; flex-wrap: wrap; }
+
+.slot {
+  display: flex; align-items: center; gap: 8px;
+  min-height: 34px; padding: 5px 9px;
+  background: var(--panel-2); border: 1px solid var(--line-soft);
+  border-radius: 3px; font-size: 13.5px;
+}
+.slot.empty { color: var(--text-faint); border-style: dashed; }
+.slot.active { border-color: var(--amber); background: color-mix(in srgb, var(--amber) 8%, var(--panel-2)); }
+.bans .slot { flex: 1 1 calc(50% - 3px); min-width: 0; min-height: 30px; font-size: 12.5px; }
+.slot .nm { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slot.ban .nm { text-decoration: line-through; text-decoration-color: var(--warn); color: var(--text-dim); }
+.slot .idx {
+  font-family: var(--fx-mono); font-size: 10px; color: var(--text-faint);
+  flex: 0 0 auto; min-width: 16px;
+}
+.slot .cls {
+  font-family: var(--fx-mono); font-size: 9.5px; color: var(--text-faint);
+  margin-left: auto; letter-spacing: .04em; flex: 0 0 auto;
+}
+
+/* ── recommendation panel ── */
+.recs {
+  background: var(--panel); border: 1px solid var(--line);
+  border-top: 3px solid var(--amber);
+  border-radius: 4px; box-shadow: var(--shadow); overflow: hidden;
+}
+.recs-head { padding: 9px 12px; border-bottom: 1px solid var(--line); }
+.recs-head h2 {
+  font-family: var(--fx-display); font-size: 14px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; margin: 0; color: var(--amber);
+}
+.recs-head p { margin: 3px 0 0; font-size: 11.5px; color: var(--text-faint); }
+
+table.rec { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.rec th {
+  font-family: var(--fx-display); font-size: 10px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--text-faint);
+  text-align: right; padding: 7px 8px; border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+table.rec th.l { text-align: left; }
+table.rec td {
+  padding: 6px 8px; border-bottom: 1px solid var(--line-soft);
+  font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap;
+}
+table.rec td.l { text-align: left; }
+table.rec tbody tr { cursor: pointer; }
+table.rec tbody tr:hover { background: var(--panel-2); }
+table.rec tbody tr.sel { background: color-mix(in srgb, var(--amber) 10%, transparent); }
+.rank { font-family: var(--fx-mono); font-size: 10.5px; color: var(--text-faint); }
+.hname { font-weight: 500; }
+.total { font-family: var(--fx-mono); font-weight: 600; color: var(--amber); }
+.thin { color: var(--text-dim); font-family: var(--fx-mono); font-size: 12px; }
+.unsure { color: var(--warn); font-family: var(--fx-mono); font-size: 10px; }
+
+/* component bars */
+.bars { display: flex; gap: 3px; justify-content: flex-end; }
+.bar { width: 26px; height: 16px; background: var(--line-soft); border-radius: 1px; position: relative; overflow: hidden; }
+.bar i { position: absolute; left: 0; bottom: 0; width: 100%; display: block; }
+.bar.m i { background: var(--text-dim); }
+.bar.w i { background: var(--good); }
+.bar.c i { background: var(--blue); }
+.bar.s i { background: var(--amber); }
+
+.why { padding: 10px 12px; border-top: 1px solid var(--line); background: var(--panel-2); }
+.why h3 {
+  font-family: var(--fx-display); font-size: 12px; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase; margin: 0 0 6px; color: var(--text-dim);
+}
+.why ul { margin: 0 0 8px; padding-left: 16px; }
+.why li { font-size: 12.5px; margin-bottom: 2px; }
+.comp { display: grid; grid-template-columns: auto 42px 1fr; gap: 3px 8px; align-items: center; font-size: 11.5px; }
+.comp .cl { font-family: var(--fx-display); letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); font-size: 10.5px; }
+.comp .cv { font-family: var(--fx-mono); text-align: right; font-variant-numeric: tabular-nums; }
+.comp .cd { color: var(--text-dim); font-size: 11px; }
+
+/* ── pool ── */
+.pool { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; box-shadow: var(--shadow); }
+.pool-head {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  padding: 9px 12px; border-bottom: 1px solid var(--line);
+}
+.pool-head h2 {
+  font-family: var(--fx-display); font-size: 13px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; margin: 0; color: var(--text-dim);
+}
+.filters { display: flex; gap: 4px; flex-wrap: wrap; }
+.chip {
+  font-family: var(--fx-display); font-size: 11px; font-weight: 500;
+  letter-spacing: .07em; text-transform: uppercase;
+  padding: 4px 9px; border-radius: 2px;
+}
+.chip[aria-pressed="true"] { background: var(--amber); color: var(--ground); border-color: var(--amber); }
+input.search {
+  font-family: var(--fx-body); font-size: 12.5px;
+  background: var(--panel-2); border: 1px solid var(--line);
+  border-radius: 3px; padding: 5px 9px; color: var(--text); min-width: 150px;
+}
+input.search:focus { outline: none; border-color: var(--amber); }
+.count { font-family: var(--fx-mono); font-size: 11px; color: var(--text-faint); }
+
+.grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 5px; padding: 10px 12px; max-height: 340px; overflow-y: auto;
+}
+.hero {
+  display: flex; flex-direction: column; gap: 3px; align-items: stretch;
+  padding: 6px 8px; text-align: left; position: relative;
+}
+.hero .top { display: flex; align-items: baseline; gap: 5px; }
+.hero .hn { font-size: 12.5px; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hero .hc { font-family: var(--fx-mono); font-size: 9px; color: var(--text-faint); margin-left: auto; }
+.hero .meter { height: 3px; background: var(--line-soft); border-radius: 2px; overflow: hidden; }
+.hero .meter i { display: block; height: 100%; background: var(--text-faint); }
+.hero.hot .meter i { background: var(--amber); }
+.hero.gone { opacity: .3; cursor: default; text-decoration: line-through; }
+.hero.locked { opacity: .38; cursor: default; border-style: dashed; border-color: var(--warn); }
+.hero.rec { border-color: var(--amber); }
+.hero .flag { font-family: var(--fx-mono); font-size: 9px; color: var(--warn); }
+
+/* ── series ── */
+.series { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+  padding: 9px 12px; box-shadow: var(--shadow); font-size: 12.5px; }
+.series .lab { font-family: var(--fx-display); font-size: 10.5px; font-weight: 600;
+  letter-spacing: .12em; text-transform: uppercase; color: var(--text-faint); }
+.used { font-family: var(--fx-mono); font-size: 11px; color: var(--text-dim); }
+.used b { font-weight: 500; }
+
+/* ── notes ── */
+.foot {
+  border-top: 1px solid var(--line); padding-top: 12px;
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;
+  font-size: 12px; color: var(--text-dim);
+}
+.foot h4 {
+  font-family: var(--fx-display); font-size: 11px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; margin: 0 0 5px; color: var(--text-faint);
+}
+.foot p { margin: 0 0 5px; }
+.foot code { font-family: var(--fx-mono); font-size: 11px; color: var(--amber); }
+.caution { border-left: 2px solid var(--warn); padding-left: 9px; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <h1>RoV <span>Draft Room</span></h1>
+    <div class="spacer"></div>
+    <div class="provenance" id="prov"></div>
+    <button id="theme" title="สลับธีม">◐</button>
+  </header>
+
+  <div class="turnbar" id="turnbar">
+    <div class="step" id="step">—</div>
+    <div class="now" id="now">—</div>
+    <div class="spacer"></div>
+    <div class="btn-row">
+      <button id="undo">↶ ย้อน</button>
+      <button id="swap">⇄ สลับฝั่ง</button>
+      <button id="reset">🔄 เริ่มใหม่</button>
+    </div>
+  </div>
+
+  <div class="board">
+    <section class="side blue" id="sideBlue">
+      <div class="side-head">
+        <span class="tag">Blue</span>
+        <input id="nameBlue" value="TEAM BLUE" aria-label="ชื่อทีมฝั่งน้ำเงิน">
+      </div>
+      <div class="slot-group">
+        <div class="slot-label">Ban</div>
+        <div class="slots bans" id="banBlue"></div>
+      </div>
+      <div class="slot-group">
+        <div class="slot-label">Pick</div>
+        <div class="slots" id="pickBlue"></div>
+      </div>
+    </section>
+
+    <section class="recs">
+      <div class="recs-head">
+        <h2 id="recTitle">คำแนะนำ</h2>
+        <p id="recSub"></p>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="rec">
+          <thead>
+            <tr>
+              <th class="l">#</th><th class="l">ฮีโร่</th>
+              <th>รวม</th><th>meta · wr · ctr · syn</th><th>เกม</th>
+            </tr>
+          </thead>
+          <tbody id="recBody"></tbody>
+        </table>
+      </div>
+      <div class="why" id="why"></div>
+    </section>
+
+    <section class="side red" id="sideRed">
+      <div class="side-head">
+        <span class="tag">Red</span>
+        <input id="nameRed" value="TEAM RED" aria-label="ชื่อทีมฝั่งแดง">
+      </div>
+      <div class="slot-group">
+        <div class="slot-label">Ban</div>
+        <div class="slots bans" id="banRed"></div>
+      </div>
+      <div class="slot-group">
+        <div class="slot-label">Pick</div>
+        <div class="slots" id="pickRed"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="series">
+    <span class="lab">Series</span>
+    <span id="gameNo">เกมที่ 1</span>
+    <button id="nextGame" disabled>บันทึกเกมนี้ → เกมถัดไป</button>
+    <button id="clearSeries">ล้างซีรีส์</button>
+    <span class="lab" style="margin-left:auto">Global Ban-Pick</span>
+    <span class="used" id="usedBlue">—</span>
+    <span class="used" id="usedRed">—</span>
+  </div>
+
+  <section class="pool">
+    <div class="pool-head">
+      <h2>Hero Pool</h2>
+      <div class="filters" id="filters"></div>
+      <input class="search" id="search" placeholder="ค้นหาชื่อฮีโร่…" aria-label="ค้นหาฮีโร่">
+      <span class="count" id="poolCount"></span>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <footer class="foot">
+    <div>
+      <h4>ข้อมูลมาจากไหน</h4>
+      <p id="srcList"></p>
+      <p>ทุกตัวเลขคำนวณจากแมตช์ที่เกิดขึ้นจริง ไม่มีค่าที่ตั้งขึ้นเอง
+      อัตราชนะถ่วงด้วยขนาดตัวอย่างแบบ Beta shrinkage <code>k=<span id="kv"></span></code></p>
+    </div>
+    <div>
+      <h4>อ่านคะแนนอย่างไร</h4>
+      <p><b>meta</b> ทีมอาชีพให้ค่าตัวนี้แค่ไหน (pick + ban) ·
+      <b>wr</b> อัตราชนะถ่วงตัวอย่าง ·
+      <b>ctr</b> ได้เปรียบตัวที่ศัตรูเลือกไปแล้ว ·
+      <b>syn</b> เข้ากับตัวที่ทีมเราเลือกไปแล้ว</p>
+      <p>ค่า <b>50 = เป็นกลาง</b> ไม่ใช่ปานกลาง ช่วงต้นดราฟต์ ctr กับ syn
+      จะเป็น 50 หมดเพราะยังไม่มีใครเลือกอะไร</p>
+    </div>
+    <div class="caution">
+      <h4>สิ่งที่ยังเชื่อไม่ได้</h4>
+      <p><b>ลำดับ ban/pick ยังไม่ยืนยัน</b> ข้อมูลยืนยันแค่ว่าแบน 4 เลือก 5 ต่อทีม
+      แต่ลำดับการสลับกันหา rulebook ไม่พบ</p>
+      <p><b>ยังไม่ได้คิด composition</b> role balance, damage mix, engage/peel
+      ต้องรอกรอก hero attribute</p>
+      <p><b>counter เป็น context=TEAM</b> คืออยู่คนละทีมในเกมเดียวกัน
+      ไม่ใช่การดวลกันในเลน · ข้อมูลยังรวมข้าม patch</p>
+    </div>
+  </footer>
+</div>
+
+<script type="application/json" id="draft-data">__DATA__</script>
+
+<script>
+(() => {
+"use strict";
+
+const D = JSON.parse(document.getElementById("draft-data").textContent);
+const K = D.shrinkage_k, PRIOR = D.baseline_wr, MINPAIR = D.min_pair_games;
+
+// ── ลำดับ ban/pick — ตรงกับ configs/draft/format.yaml ────────────────
+const SEQ = [
+  ["1","blue","BAN"],["1","red","BAN"],["1","blue","BAN"],["1","red","BAN"],
+  ["1","blue","PICK"],["1","red","PICK"],["1","red","PICK"],
+  ["1","blue","PICK"],["1","blue","PICK"],["1","red","PICK"],
+  ["2","red","BAN"],["2","blue","BAN"],["2","red","BAN"],["2","blue","BAN"],
+  ["2","red","PICK"],["2","blue","PICK"],["2","blue","PICK"],["2","red","PICK"],
+].map(([phase, team, action]) => ({phase, team, action}));
+const BANS = 4, PICKS = 5;
+
+const CLS_ABBR = {assassin:"ASN", mage:"MAG", marksman:"MKS", support:"SUP", tank:"TNK", warrior:"WAR"};
+
+const HERO = new Map(D.heroes.map(h => [h.id, h]));
+const MU = new Map(D.matchups.map(([a,b,g,w]) => [a+"|"+b, {g,w}]));
+const SY = new Map(D.synergies.map(([a,b,g,w]) => [a+"|"+b, {g,w}]));
+const syKey = (a,b) => a < b ? a+"|"+b : b+"|"+a;
+
+const adj = (g,w) => (w + K*PRIOR) / (g + K);
+const conf = g => g ? g/(g+K) : 0;
+const cscore = (g,w) => (adj(g,w) - PRIOR) * 100 * conf(g);
+const scale = (v,lo,hi) => hi<=lo ? 50 : Math.max(0, Math.min(100, 100*(v-lo)/(hi-lo)));
+const other = t => t === "blue" ? "red" : "blue";
+
+// ── state ────────────────────────────────────────────────────────────
+const S = {
+  moves: [],           // {i, team, action, hero}
+  swapped: false,      // ฝั่งไหนคือทีมไหน
+  game: 1,
+  used: {blue: new Set(), red: new Set()},  // Global Ban-Pick
+  filter: "all",
+  query: "",
+  picked: null,        // ฮีโร่ที่เลือกดูรายละเอียด
+};
+
+const turn = () => S.moves.length < SEQ.length ? SEQ[S.moves.length] : null;
+const taken = () => new Set(S.moves.map(m => m.hero));
+const of = (team, action) => S.moves.filter(m => m.team===team && m.action===action).map(m => m.hero);
+const teamName = t => document.getElementById(t==="blue" ? "nameBlue" : "nameRed").value || t.toUpperCase();
+
+function lockedFor(team) { return S.used[team]; }
+
+function why(hero) {
+  const t = turn();
+  if (!t) return "ดราฟต์จบแล้ว";
+  if (!HERO.has(hero)) return "ไม่รู้จักฮีโร่นี้";
+  const m = S.moves.find(m => m.hero === hero);
+  if (m) return `${HERO.get(hero).name} ถูก${m.action==="BAN"?"แบน":"เลือก"}ไปแล้วโดย ${teamName(m.team)}`;
+  if (t.action === "PICK" && lockedFor(t.team).has(hero))
+    return `${HERO.get(hero).name} ใช้ไม่ได้ — ${teamName(t.team)} เลือกไปแล้วในเกมก่อนหน้า (Global Ban-Pick)`;
+  return null;
+}
+
+function apply(hero) {
+  const t = turn();
+  if (!t || why(hero)) return false;
+  S.moves.push({i: S.moves.length, team: t.team, action: t.action, hero});
+  S.picked = null;
+  render();
+  return true;
+}
+
+// ── คำแนะนำ — พอร์ตจาก rov/draft/recommend.py ────────────────────────
+const W = {meta:.30, winrate:.30, counter:.25, synergy:.15};
+
+function counterAgainst(hero, enemies) {
+  if (!enemies.length) return [0, "ศัตรูยังไม่ได้เลือก จึงยังคิด counter ไม่ได้"];
+  let total = 0, used = 0, best = null;
+  for (const e of enemies) {
+    const m = MU.get(hero+"|"+e);
+    if (!m || m.g < MINPAIR) continue;
+    const sc = cscore(m.g, m.w);
+    total += sc; used++;
+    if (!best || sc > best[1]) best = [e, sc];
+  }
+  if (!used) return [0, `ยังไม่มีคู่ที่ถึง ${MINPAIR} เกมกับตัวที่ศัตรูเลือก`];
+  let d = `จาก ${used}/${enemies.length} คู่ที่มีข้อมูล`;
+  if (best && best[1] > 0.5) d += ` · เด่นเมื่อเจอ ${HERO.get(best[0]).name} (${best[1]>0?"+":""}${best[1].toFixed(1)})`;
+  return [total, d];
+}
+
+function synergyWith(hero, allies) {
+  if (!allies.length) return [0, "ทีมยังไม่ได้เลือก จึงยังคิด synergy ไม่ได้"];
+  let total = 0, used = 0;
+  for (const a of allies) {
+    const m = SY.get(syKey(hero, a));
+    if (!m || m.g < MINPAIR) continue;
+    total += cscore(m.g, m.w); used++;
+  }
+  if (!used) return [0, `ยังไม่มีคู่ที่ถึง ${MINPAIR} เกมกับตัวที่ทีมเลือก`];
+  return [total, `จาก ${used}/${allies.length} คู่ที่มีข้อมูล`];
+}
+
+function recommend(limit = 8, minGames = 5) {
+  const t = turn();
+  if (!t) return [];
+  const isBan = t.action === "BAN";
+  // ตอนแบน มองจากมุมศัตรู — เราอยากตัดตัวที่ดีต่อ "เขา"
+  const subject = isBan ? other(t.team) : t.team;
+  const ours = of(subject, "PICK"), theirs = of(other(subject), "PICK");
+
+  const tk = taken();
+  let legal = D.heroes.filter(h => !tk.has(h.id) && h.p >= minGames);
+  if (t.action === "PICK") legal = legal.filter(h => !lockedFor(t.team).has(h.id));
+  // ไม่แนะนำให้แบนตัวที่ศัตรูใช้ไม่ได้อยู่แล้ว — เสียตาแบนเปล่า
+  if (isBan) legal = legal.filter(h => !lockedFor(subject).has(h.id));
+  if (!legal.length) return [];
+
+  const pres = legal.map(h => h.pres);
+  const pLo = Math.min(...pres), pHi = Math.max(...pres);
+
+  const out = legal.map(h => {
+    const [cRaw, cDet] = counterAgainst(h.id, theirs);
+    const [sRaw, sDet] = synergyWith(h.id, ours);
+    const c = {
+      meta:    {label:"Meta",     v: scale(h.pres, pLo, pHi), d:`pick ${h.p} ban ${h.b} จาก ${D.total_games} เกม`},
+      winrate: {label:"Win rate", v: scale(h.wr, .42, .58),   d:`${h.wr.toFixed(3)} จาก ${h.p} เกม (ถ่วงตัวอย่างแล้ว)`},
+      counter: {label:"Counter",  v: scale(cRaw, -6, 6), raw:cRaw, d:cDet},
+      synergy: {label:"Synergy",  v: scale(sRaw, -6, 6), raw:sRaw, d:sDet},
+    };
+    const total = Object.entries(W).reduce((s,[k,w]) => s + w*c[k].v, 0);
+    return {h, total, c, reasons: reasons(h, c, isBan)};
+  });
+  out.sort((a,b) => b.total - a.total);
+  return out.slice(0, limit);
+}
+
+function reasons(h, c, isBan) {
+  const r = [];
+  if (h.pres >= .5) r.push(`อยู่ในเมตาหนัก presence ${Math.round(h.pres*100)}%`);
+  if (h.b > h.p*2 && h.b >= 20) r.push(`ถูกแบนมากกว่าถูกเลือก ${h.b} ต่อ ${h.p} — ทีมอาชีพกลัวตัวนี้`);
+  if (c.counter.raw > 2) r.push("ได้เปรียบตัวที่ศัตรูเลือกไปแล้ว");
+  if (c.counter.raw < -2) r.push("เสียเปรียบตัวที่ศัตรูเลือกไปแล้ว");
+  if (h.p < D.min_games_reliable) r.push(`ข้อมูลยังน้อย ${h.p} เกม ตัวเลขยังไม่นิ่ง`);
+  if (isBan && h.pres >= .4) r.push("แบนแล้วตัดตัวเลือกหลักของศัตรูได้");
+  return r;
+}
+
+// ── render ───────────────────────────────────────────────────────────
+const el = id => document.getElementById(id);
+
+function render() {
+  renderTurn();
+  renderSides();
+  renderRecs();
+  renderPool();
+  renderSeries();
+}
+
+function renderTurn() {
+  const t = turn(), bar = el("turnbar");
+  bar.className = "turnbar " + (t ? "is-"+t.team : "is-done");
+  if (!t) {
+    el("step").textContent = `${SEQ.length}/${SEQ.length}`;
+    el("now").className = "now";
+    el("now").textContent = "ดราฟต์เสร็จสมบูรณ์";
+  } else {
+    el("step").textContent = `ตา ${S.moves.length+1}/${SEQ.length} · เฟส ${t.phase}`;
+    el("now").className = "now " + t.team;
+    el("now").innerHTML = `<span class="who">${escape(teamName(t.team))}</span> ` +
+      `<span class="verb ${t.action==="BAN"?"ban":""}">${t.action==="BAN"?"แบน":"เลือก"}</span>`;
+  }
+  el("undo").disabled = !S.moves.length;
+  el("nextGame").disabled = !!t;
+}
+
+function slotHTML(hero, i, kind, isActive) {
+  if (!hero) return `<div class="slot empty ${kind} ${isActive?"active":""}">
+    <span class="idx">${kind==="ban"?"B":"P"}${i+1}</span><span class="nm">${isActive?"เลือกจากด้านล่าง":"—"}</span></div>`;
+  const h = HERO.get(hero);
+  const cls = (h.cls||[]).map(c => CLS_ABBR[c]||c).join(" ");
+  return `<div class="slot ${kind}"><span class="idx">${kind==="ban"?"B":"P"}${i+1}</span>
+    <span class="nm">${escape(h.name)}</span><span class="cls">${cls}</span></div>`;
+}
+
+function renderSides() {
+  const t = turn();
+  for (const team of ["blue","red"]) {
+    const cap = team === "blue" ? "Blue" : "Red";
+    const bans = of(team,"BAN"), picks = of(team,"PICK");
+    const activeBan  = t && t.team===team && t.action==="BAN"  ? bans.length  : -1;
+    const activePick = t && t.team===team && t.action==="PICK" ? picks.length : -1;
+    el("ban"+cap).innerHTML  = Array.from({length:BANS},  (_,i) => slotHTML(bans[i],  i, "ban",  i===activeBan)).join("");
+    el("pick"+cap).innerHTML = Array.from({length:PICKS}, (_,i) => slotHTML(picks[i], i, "pick", i===activePick)).join("");
+  }
+}
+
+function renderRecs() {
+  const t = turn();
+  const sugs = recommend();
+  el("recTitle").textContent = t
+    ? `แนะนำให้${t.action==="BAN"?"แบน":"เลือก"} — ${teamName(t.team)}`
+    : "ดราฟต์จบแล้ว";
+  el("recSub").textContent = t
+    ? (t.action==="BAN"
+        ? "ตอนแบน ระบบมองจากมุมศัตรู แล้วเสนอตัดตัวที่ดีต่อเขาที่สุด"
+        : "เรียงตามคะแนนรวมของสี่องค์ประกอบ")
+    : "กด เริ่มใหม่ เพื่อดราฟต์อีกครั้ง หรือบันทึกเกมนี้ไปเกมถัดไป";
+
+  el("recBody").innerHTML = sugs.length ? sugs.map((s,i) => {
+    const c = s.c;
+    const bar = (k,cl) => `<span class="bar ${cl}"><i style="height:${c[k].v.toFixed(0)}%"></i></span>`;
+    return `<tr data-h="${s.h.id}" class="${S.picked===s.h.id?"sel":""}">
+      <td class="l rank">${i+1}</td>
+      <td class="l"><span class="hname">${escape(s.h.name)}</span></td>
+      <td class="total">${s.total.toFixed(1)}</td>
+      <td><span class="bars">${bar("meta","m")}${bar("winrate","w")}${bar("counter","c")}${bar("synergy","s")}</span></td>
+      <td class="thin">${s.h.p}${s.h.p < D.min_games_reliable ? ' <span class="unsure">*</span>' : ""}</td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="5" class="l thin" style="padding:14px 8px">ไม่มีตัวเลือกที่มีข้อมูลพอ</td></tr>`;
+
+  const focus = sugs.find(s => s.h.id === S.picked) || sugs[0];
+  el("why").innerHTML = focus ? `
+    <h3>${escape(focus.h.name)}</h3>
+    ${focus.reasons.length ? `<ul>${focus.reasons.map(r=>`<li>${escape(r)}</li>`).join("")}</ul>` : ""}
+    <div class="comp">
+      ${["meta","winrate","counter","synergy"].map(k => `
+        <span class="cl">${focus.c[k].label}</span>
+        <span class="cv">${focus.c[k].v.toFixed(0)}</span>
+        <span class="cd">${escape(focus.c[k].d)}</span>`).join("")}
+    </div>` : "";
+}
+
+function renderPool() {
+  const tk = taken(), t = turn();
+  const locked = t ? lockedFor(t.team) : new Set();
+  const recIds = new Set(recommend(8).map(s => s.h.id));
+  const q = S.query.trim().toLowerCase();
+
+  const list = D.heroes.filter(h => {
+    if (S.filter !== "all" && !(h.cls||[]).includes(S.filter)) return false;
+    if (q && !h.name.toLowerCase().includes(q) && !h.id.includes(q)) return false;
+    return true;
+  });
+
+  el("poolCount").textContent = `${list.length} / ${D.heroes.length} ตัว`;
+  el("grid").innerHTML = list.map(h => {
+    const gone = tk.has(h.id);
+    const lk = !gone && t && t.action==="PICK" && locked.has(h.id);
+    const cls = (h.cls||[]).map(c => CLS_ABBR[c]||c).join(" ");
+    return `<button class="hero ${gone?"gone":""} ${lk?"locked":""} ${recIds.has(h.id)?"rec":""} ${h.pres>=.4?"hot":""}"
+      data-h="${h.id}" ${gone||lk?"disabled":""}
+      title="pick ${h.p} · ban ${h.b} · wr ${h.wr.toFixed(3)} · presence ${Math.round(h.pres*100)}%">
+      <span class="top"><span class="hn">${escape(h.name)}</span><span class="hc">${cls}</span></span>
+      <span class="meter"><i style="width:${Math.min(100,h.pres*100).toFixed(0)}%"></i></span>
+      ${lk ? '<span class="flag">ใช้แล้วในซีรีส์</span>' : ""}
+    </button>`;
+  }).join("");
+}
+
+function renderSeries() {
+  el("gameNo").textContent = `เกมที่ ${S.game}`;
+  for (const team of ["blue","red"]) {
+    const cap = team==="blue" ? "Blue" : "Red";
+    const u = [...S.used[team]];
+    el("used"+cap).innerHTML = `<b>${escape(teamName(team))}</b> ` +
+      (u.length ? u.map(id => escape(HERO.get(id).name)).join(", ") : "—");
+  }
+}
+
+const escape = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+// ── events ───────────────────────────────────────────────────────────
+el("grid").addEventListener("click", e => {
+  const b = e.target.closest(".hero"); if (!b || b.disabled) return;
+  apply(b.dataset.h);
+});
+el("recBody").addEventListener("click", e => {
+  const tr = e.target.closest("tr"); if (!tr || !tr.dataset.h) return;
+  S.picked = S.picked === tr.dataset.h ? null : tr.dataset.h;
+  renderRecs();
+});
+el("recBody").addEventListener("dblclick", e => {
+  const tr = e.target.closest("tr"); if (tr && tr.dataset.h) apply(tr.dataset.h);
+});
+el("undo").onclick = () => { S.moves.pop(); S.picked = null; render(); };
+el("reset").onclick = () => { S.moves = []; S.picked = null; render(); };
+el("swap").onclick = () => {
+  const a = el("nameBlue"), b = el("nameRed");
+  [a.value, b.value] = [b.value, a.value];
+  const u = S.used.blue; S.used.blue = S.used.red; S.used.red = u;
+  S.moves = S.moves.map(m => ({...m, team: other(m.team)}));
+  render();
+};
+el("nextGame").onclick = () => {
+  for (const team of ["blue","red"]) of(team,"PICK").forEach(h => S.used[team].add(h));
+  S.game++; S.moves = []; S.picked = null; render();
+};
+el("clearSeries").onclick = () => {
+  S.used = {blue:new Set(), red:new Set()}; S.game = 1; S.moves = []; render();
+};
+el("search").addEventListener("input", e => { S.query = e.target.value; renderPool(); });
+for (const inp of [el("nameBlue"), el("nameRed")]) inp.addEventListener("input", () => { renderTurn(); renderRecs(); renderSeries(); });
+
+el("theme").onclick = () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const dark = cur ? cur === "dark"
+    : !window.matchMedia("(prefers-color-scheme: light)").matches;
+  document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+};
+
+// filters
+const CLASSES = ["all", ...new Set(D.heroes.flatMap(h => h.cls||[]))].filter(Boolean);
+el("filters").innerHTML = CLASSES.map(c =>
+  `<button class="chip" data-f="${c}" aria-pressed="${c==="all"}">${c==="all"?"ทั้งหมด":(CLS_ABBR[c]||c)}</button>`
+).join("");
+el("filters").addEventListener("click", e => {
+  const b = e.target.closest(".chip"); if (!b) return;
+  S.filter = b.dataset.f;
+  for (const c of el("filters").children) c.setAttribute("aria-pressed", String(c.dataset.f === S.filter));
+  renderPool();
+});
+
+// provenance
+el("prov").innerHTML = `<b>${D.total_games}</b> เกมจริง · <b>${D.sources.length}</b> รายการ · ` +
+  `blue side <b>${(D.blue_side_wr*100).toFixed(1)}%</b> · ยาวกลาง <b>${(D.median_length/60).toFixed(1)}</b> นาที`;
+el("srcList").textContent = D.sources.map(s => `${s.label} ${s.games} เกม`).join(" · ");
+el("kv").textContent = K;
+
+render();
+})();
+</script>
