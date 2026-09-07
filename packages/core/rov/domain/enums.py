@@ -127,10 +127,27 @@ class GamePhase(StrEnum):
     ค่านี้จึงเป็นแค่หนึ่งในเงื่อนไข ไม่ใช่ตัวตัดสิน
     """
 
-    OPENING = "OPENING"  # 0:00-1:00
-    EARLY = "EARLY"  # 1:00-5:00
-    MID = "MID"  # 5:00-12:00
-    LATE = "LATE"  # 12:00+
+    @classmethod
+    def at(cls, game_clock: float) -> GamePhase:
+        """ช่วงของเกมจากนาฬิกาในเกม"""
+        if game_clock < 120:
+            return cls.OPENING
+        if game_clock < 240:
+            return cls.EARLY
+        if game_clock < 480:
+            return cls.MID
+        if game_clock < 900:
+            return cls.LATE
+        return cls.BATTLE
+
+    # แบ่งตามที่เกมแบ่งเองในหน้า "ข้อมูลสมรภูมิ" (docs/16-map-guide.md §5)
+    #   0:00 ─ 2:00 ─ 4:00 ─ 8:00 ─ 15:00
+    #   ช่วงแรก   ช่วงกลาง   ช่วงหลัง   Battle
+    OPENING = "OPENING"  # 0:00-2:00  ก่อน objective ตัวแรกเกิด
+    EARLY = "EARLY"  # 2:00-4:00  ที่ 4:00 ป้องกันป่าและโล่ป้อมหาย
+    MID = "MID"  # 4:00-8:00
+    LATE = "LATE"  # 8:00-15:00
+    BATTLE = "BATTLE"  # 15:00+  God Slayer เกิด
 
 
 class MacroTag(StrEnum):

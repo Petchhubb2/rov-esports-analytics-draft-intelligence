@@ -7,9 +7,10 @@
 วิธีนี้วาดเป็นภาพ label ตามกฎก่อน แล้วค่อยดึง contour ออกมาเป็น polygon
 จึงรับประกันว่า zone ไม่ทับกัน และรูปร่างสอดคล้องกันทั้งแมพ
 
-โครงสร้างที่ยืนยันแล้ว (docs/08-game-reference.md §2)
+โครงสร้างที่ยืนยันแล้ว (docs/16-map-guide.md — จากหน้าแนะนำแผนที่ในเกม)
     3 เลน · แม่น้ำผ่ากลาง · ป่า 4 ส่วนต่อฝั่ง
-    Dark Slayer กับ Spirit Sentinel อยู่ครึ่งแม่น้ำเดียวกัน Dragon อยู่อีกครึ่ง
+    Dark Slayer กับ Abyssal Dragon อยู่คนละครึ่งแม่น้ำ
+    God Slayer สุ่มไปแทนที่หลุมใดหลุมหนึ่ง ไม่มีหลุมของตัวเอง
 
 ⚠️ ทิศทางของแมพ (ฐานน้ำเงินมุมไหน เลนไหนอยู่บน) ยังต้องยืนยันกับ minimap จริง
    ถ้าผิด ให้แก้ค่าคงที่ด้านล่างแล้วรันใหม่ ไม่ต้องแก้ polygon ทีละจุด
@@ -43,9 +44,19 @@ BLUE_BASE = (0.06, 0.94)
 RED_BASE = (0.94, 0.06)
 
 # หลุม objective อยู่ในแม่น้ำ คนละครึ่งกัน
+#
+# ยืนยันจากหน้าแนะนำแผนที่ในเกม (docs/16-map-guide.md)
+#   Dark Slayer     เกิดนาทีที่ 2 คูลดาวน์ 3 นาที
+#   Abyssal Dragon  เกิดนาทีที่ 2 คูลดาวน์ 3 นาที
+#   God Slayer      เกิดนาทีที่ 15 แล้ว "สุ่มไปแทนที่" หลุมใดหลุมหนึ่งในสองหลุมนี้
+#                   จึงไม่มีหลุมของตัวเอง
+#
+# ไม่มี Spirit Sentinel ในเกมปัจจุบัน — เอกสารเดิมอ้างจากเว็บภายนอกที่เก่ากว่า
+# มอนสเตอร์ป่าใหญ่สองตัวคือ Might Golem (DMG) กับ Sage Golem (Recovery)
 SLAYER_PIT = (0.30, 0.30)     # ครึ่งบนซ้ายของแม่น้ำ ฝั่งเดียวกับ DS lane
-SENTINEL = (0.42, 0.24)       # อยู่ครึ่งเดียวกับ Slayer
 DRAGON_PIT = (0.70, 0.70)     # ครึ่งล่างขวา ฝั่งเดียวกับ Dragon lane
+MIGHT_GOLEM = (0.40, 0.20)    # มอนสเตอร์ป่าใหญ่ ฝั่งเดียวกับ Slayer
+SAGE_GOLEM = (0.60, 0.80)     # ฝั่งเดียวกับ Dragon
 
 ZONES = [
     # (id, kind, region) — ลำดับสำคัญ วาดทีหลังทับของเดิม
@@ -62,7 +73,8 @@ ZONES = [
     ("BASE_RED", "base", "BASE_RED"),
     ("SLAYER_PIT_APPROACH", "approach", "TOP_SIDE"),
     ("DRAGON_PIT_APPROACH", "approach", "BOT_SIDE"),
-    ("SPIRIT_SENTINEL", "objective", "TOP_SIDE"),
+    ("MIGHT_GOLEM", "objective", "TOP_SIDE"),
+    ("SAGE_GOLEM", "objective", "BOT_SIDE"),
     ("SLAYER_PIT", "objective", "TOP_SIDE"),
     ("DRAGON_PIT", "objective", "BOT_SIDE"),
 ]
@@ -111,7 +123,8 @@ def build_labels() -> np.ndarray:
     ):
         lab[((xx - cx) ** 2 + (yy - cy) ** 2) < APPROACH_R**2] = IDX[key]
     for (cx, cy), key in (
-        (SENTINEL, "SPIRIT_SENTINEL"),
+        (MIGHT_GOLEM, "MIGHT_GOLEM"),
+        (SAGE_GOLEM, "SAGE_GOLEM"),
         (SLAYER_PIT, "SLAYER_PIT"),
         (DRAGON_PIT, "DRAGON_PIT"),
     ):

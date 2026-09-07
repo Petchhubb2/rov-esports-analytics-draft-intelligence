@@ -78,8 +78,10 @@ class EventParams(BaseModel):
     group_min_sec: float = 3.0
     # OBJECTIVE_SETUP — ค่าตั้งจากรอบเวลาเกิดจริง (docs/08-game-reference.md §3)
     setup_min_sec: float = 5.0
-    setup_lead_sec_dragon: float = 45.0  # dragon เกิดใหม่ทุก 120 วินาที
-    setup_lead_sec_slayer: float = 60.0  # slayer เกิดใหม่ทุก 300 วินาที
+    # ยืนยันแล้วว่าทั้ง dragon และ slayer คูลดาวน์ 3 นาทีเท่ากัน (docs/16 §2)
+    # ตั้งไว้ราวหนึ่งในสามของรอบ ซึ่งเป็นช่วงที่ทีมเริ่มขยับไปเซ็ตอัพจริง
+    setup_lead_sec_dragon: float = 60.0
+    setup_lead_sec_slayer: float = 60.0
     setup_max_mean_speed: float = 0.02  # ต้องยืนรอ ไม่ใช่เดินผ่าน
     # GANK
     engage_radius: float = 0.05
@@ -102,29 +104,50 @@ class EventParams(BaseModel):
 class ObjectiveTiming(BaseModel):
     """เวลาเกิดของ objective
 
-    ค่าเริ่มต้นมาจากแหล่งก่อนแพตช์ 26 มิ.ย. 2026 ซึ่งมี major jungle system changes
-    ต้องวัดซ้ำจากคลิปจริง (docs/08-game-reference.md §3)
+    **ยืนยันจากหน้า "แนะนำแผนที่" ในเกมโดยตรง** (docs/16-map-guide.md)
+    ไม่ใช่จากเว็บภายนอกอีกต่อไป
+
+        Abyssal Dragon   ครั้งแรกนาทีที่ 2   คูลดาวน์ 3 นาที
+        Dark Slayer      ครั้งแรกนาทีที่ 2   คูลดาวน์ 3 นาที
+        God Slayer       ครั้งแรกนาทีที่ 15  คูลดาวน์ 3 นาที 30 วินาที
+
+    ค่าชุดก่อนหน้ามาจากเว็บภายนอกที่เก่ากว่าแพตช์ 26 มิ.ย. 2026 และ **ผิดทั้งหมด**
+    เดิมเขียนว่า Dark Slayer เกิดนาทีที่ 8 ทุก 5 นาที ซึ่งไม่ตรงกับเกมปัจจุบันเลย
+
+    God Slayer ไม่มีหลุมของตัวเอง แต่ **สุ่มไปเกิดแทนที่ Dark Slayer หรือ
+    Abyssal Dragon** ตัวใดตัวหนึ่ง จึงต้องคิดเป็นสถานะร่วมกัน ไม่ใช่แยกกัน
     """
 
-    verified: bool = False
+    verified: bool = True
+    verified_from: str = "หน้าแนะนำแผนที่ในเกม RoV (data/exports/mapdetal.mp4)"
+
     dragon_first: float = 120.0
-    dragon_interval: float = 120.0
-    dragon_enraged_from: float = 600.0
-    dragon_enraged_interval: float = 300.0
-    slayer_first: float = 480.0
-    slayer_interval: float = 300.0
-    sentinel_first: float = 110.0
-    sentinel_interval: float = 120.0
+    dragon_interval: float = 180.0
+    slayer_first: float = 120.0
+    slayer_interval: float = 180.0
+    god_slayer_first: float = 900.0
+    god_slayer_interval: float = 210.0
+    # Might Golem ได้รับการเสริมพลังหลังเริ่มเกม 10 นาที
+    might_golem_empowered_from: float = 600.0
 
     def next_dragon(self, clock: float, last_killed: float | None = None) -> float:
         """วินาทีจนกว่า dragon จะเกิดถัดไป — 0 แปลว่าเกิดอยู่แล้ว"""
-        enraged = clock >= self.dragon_enraged_from
-        interval = self.dragon_enraged_interval if enraged else self.dragon_interval
-        first = self.dragon_enraged_from if enraged else self.dragon_first
-        return _next_spawn(clock, first, interval, last_killed)
+        return _next_spawn(clock, self.dragon_first, self.dragon_interval, last_killed)
 
     def next_slayer(self, clock: float, last_killed: float | None = None) -> float:
         return _next_spawn(clock, self.slayer_first, self.slayer_interval, last_killed)
+
+    def next_god_slayer(self, clock: float, last_killed: float | None = None) -> float:
+        return _next_spawn(
+            clock, self.god_slayer_first, self.god_slayer_interval, last_killed
+        )
+
+    def god_slayer_active(self, clock: float) -> bool:
+        """ตั้งแต่นาทีที่ 15 หลุมหนึ่งในสองหลุมอาจเป็น God Slayer แทน
+
+        ตัวอ่านสถานะจาก minimap จึงต้องไม่สรุปว่าหลุมนั้นเป็น dragon เสมอ
+        """
+        return clock >= self.god_slayer_first
 
 
 def _next_spawn(

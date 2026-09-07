@@ -102,16 +102,17 @@ def test_zone_lookup_matches_expected_regions():
     zm = ZoneMap.load(ZONE_FILE)
     assert zm.zone_at(0.05, 0.95) == "BASE_BLUE"
     assert zm.zone_at(0.95, 0.05) == "BASE_RED"
-    assert zm.zone_at(0.73, 0.73) == "DRAGON_PIT"
-    assert zm.zone_at(0.27, 0.27) == "SLAYER_PIT"
+    assert zm.zone_at(0.70, 0.70) == "DRAGON_PIT"
+    assert zm.zone_at(0.30, 0.30) == "SLAYER_PIT"
 
 
-def test_slayer_and_sentinel_share_river_half():
-    """ยืนยันจากเกมจริง: Dark Slayer กับ Spirit Sentinel อยู่ครึ่งแม่น้ำเดียวกัน
-    ส่วน Dragon อยู่อีกครึ่ง (docs/08-game-reference.md §2)"""
+def test_objective_pits_are_on_opposite_river_halves():
+    """หลุมสองหลุมต้องอยู่คนละครึ่งแม่น้ำ (docs/16-map-guide.md)"""
     zm = ZoneMap.load(ZONE_FILE)
-    assert zm.region_of("SLAYER_PIT") == zm.region_of("SPIRIT_SENTINEL")
     assert zm.region_of("DRAGON_PIT") != zm.region_of("SLAYER_PIT")
+    # golem อยู่ฝั่งเดียวกับหลุมที่ใกล้ที่สุด
+    assert zm.region_of("MIGHT_GOLEM") == zm.region_of("SLAYER_PIT")
+    assert zm.region_of("SAGE_GOLEM") == zm.region_of("DRAGON_PIT")
 
 
 def test_zone_out_of_bounds_is_none():
@@ -146,8 +147,8 @@ def test_edge_distance_is_larger_at_zone_centre():
 
 def test_batch_lookup_matches_single_lookup():
     zm = ZoneMap.load(ZONE_FILE)
-    xs = np.array([0.05, 0.73, 0.27, np.nan])
-    ys = np.array([0.95, 0.73, 0.27, 0.5])
+    xs = np.array([0.05, 0.70, 0.30, np.nan])
+    ys = np.array([0.95, 0.70, 0.30, 0.5])
     batch = zm.zones_at_batch(xs, ys)
     assert batch == ["BASE_BLUE", "DRAGON_PIT", "SLAYER_PIT", None]
 
@@ -174,9 +175,10 @@ def test_map_coverage_is_reasonable():
 
 
 def test_objective_timing_before_first_spawn():
+    """ยืนยันจากหน้าแนะนำแผนที่ในเกม — ทั้งคู่เกิดนาทีที่ 2"""
     t = ObjectiveTiming()
     assert t.next_dragon(0.0) == 120.0
-    assert t.next_slayer(0.0) == 480.0
+    assert t.next_slayer(0.0) == 120.0
 
 
 def test_objective_alive_when_never_killed():
@@ -186,20 +188,33 @@ def test_objective_alive_when_never_killed():
 
 def test_objective_respawn_after_kill():
     t = ObjectiveTiming()
-    # dragon ถูกฆ่าที่ 125 วินาที รอบเกิดใหม่ 120 วินาที
-    assert t.next_dragon(130.0, last_killed=125.0) == pytest.approx(115.0)
+    # dragon ถูกฆ่าที่ 125 วินาที คูลดาวน์ 3 นาที
+    assert t.next_dragon(130.0, last_killed=125.0) == pytest.approx(175.0)
     # เลยเวลาเกิดใหม่แล้ว
-    assert t.next_dragon(260.0, last_killed=125.0) == 0.0
+    assert t.next_dragon(320.0, last_killed=125.0) == 0.0
 
 
-def test_enraged_dragon_uses_longer_interval():
+def test_dragon_and_slayer_share_the_same_cadence():
+    """จากเกมจริง ทั้งคู่เกิดนาทีที่ 2 และคูลดาวน์ 3 นาทีเท่ากัน"""
     t = ObjectiveTiming()
-    assert t.next_dragon(700.0, last_killed=650.0) == pytest.approx(250.0)
+    assert t.dragon_first == t.slayer_first == 120.0
+    assert t.dragon_interval == t.slayer_interval == 180.0
 
 
-def test_objective_timings_marked_unverified():
-    """แพตช์ 26 มิ.ย. 2026 แก้ระบบ jungle ค่าเริ่มต้นจึงต้องถือว่ายังไม่ยืนยัน"""
-    assert ObjectiveTiming().verified is False
+def test_god_slayer_arrives_at_minute_15():
+    t = ObjectiveTiming()
+    assert t.next_god_slayer(0.0) == 900.0
+    assert not t.god_slayer_active(890.0)
+    assert t.god_slayer_active(900.0)
+    # คูลดาวน์ 3 นาที 30 วินาที
+    assert t.next_god_slayer(920.0, last_killed=910.0) == pytest.approx(200.0)
+
+
+def test_objective_timings_are_now_verified():
+    """อ่านจากหน้าแนะนำแผนที่ในเกมโดยตรง ไม่ใช่เว็บภายนอกแล้ว"""
+    t = ObjectiveTiming()
+    assert t.verified is True
+    assert "แนะนำแผนที่" in t.verified_from
 
 
 def test_config_hash_changes_with_params():

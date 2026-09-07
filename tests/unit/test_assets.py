@@ -108,10 +108,17 @@ def test_both_halves_of_a_split_lane_are_rasterised():
 
 
 def test_generated_map_matches_confirmed_game_facts():
-    """Dark Slayer กับ Spirit Sentinel อยู่ครึ่งแม่น้ำเดียวกัน Dragon อยู่อีกครึ่ง"""
+    """หลุม Dark Slayer กับ Abyssal Dragon อยู่คนละครึ่งแม่น้ำ
+
+    ยืนยันจากหน้าแนะนำแผนที่ในเกม (docs/16-map-guide.md)
+    ไม่มี Spirit Sentinel ในเกมปัจจุบัน — มอนสเตอร์ป่าใหญ่คือ
+    Might Golem (DMG) กับ Sage Golem (Recovery)
+    """
     zm = ZoneMap.load(ZONE_FILE)
-    assert zm.region_of("SLAYER_PIT") == zm.region_of("SPIRIT_SENTINEL")
     assert zm.region_of("DRAGON_PIT") != zm.region_of("SLAYER_PIT")
+    assert zm.get("SPIRIT_SENTINEL") is None, "Spirit Sentinel ไม่มีในเกมปัจจุบัน"
+    assert zm.get("MIGHT_GOLEM") is not None
+    assert zm.get("SAGE_GOLEM") is not None
 
 
 def test_generated_map_covers_almost_everything():
