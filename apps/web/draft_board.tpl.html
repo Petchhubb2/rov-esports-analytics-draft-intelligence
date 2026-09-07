@@ -300,6 +300,33 @@ table.rec tbody tr.sel { background: color-mix(in srgb, var(--amber) 10%, transp
 .ctr-head .meta { font-family: var(--fx-mono); font-size: 11px; color: var(--text-faint); }
 .empty { color: var(--text-faint); font-size: 12px; padding: 8px; }
 
+/* ── แมพ ── */
+.map-wrap { padding: 12px; display: grid; gap: 16px; grid-template-columns: minmax(320px, 1fr) 1fr; }
+@media (max-width: 900px) { .map-wrap { grid-template-columns: 1fr; } }
+.map-stage { position: relative; aspect-ratio: 1; border: 1px solid var(--line);
+  border-radius: 3px; overflow: hidden; background: var(--panel-2); }
+.map-stage img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.map-stage svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.zpoly { fill-opacity: .28; stroke-width: .0035; stroke-opacity: .85; }
+.zlab { font-family: var(--fx-mono); font-size: .019px; fill: #fff; text-anchor: middle;
+  paint-order: stroke; stroke: #000; stroke-width: .006; stroke-linejoin: round; }
+.map-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: 10px; }
+.map-tools label { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text-dim); }
+.obj { display: grid; grid-template-columns: 40px 1fr; gap: 10px; padding: 9px 0;
+  border-bottom: 1px solid var(--line-soft); }
+.obj img { width: 40px; height: 40px; border-radius: 3px; background: var(--panel-2); }
+.obj .nm { font-family: var(--fx-display); font-size: 14px; font-weight: 600; letter-spacing: .02em; }
+.obj .tag { font-family: var(--fx-mono); font-size: 9.5px; padding: 1px 5px; border-radius: 2px;
+  background: var(--amber); color: var(--ground); margin-left: 6px; vertical-align: 1px; }
+.obj .tm { font-family: var(--fx-mono); font-size: 11.5px; color: var(--amber); margin: 2px 0 3px; }
+.obj .bf { font-size: 12px; color: var(--good); }
+.obj .nt { font-size: 12px; color: var(--text-dim); line-height: 1.55; }
+.tl { display: grid; grid-template-columns: 62px 1fr; gap: 6px 10px; font-size: 12.5px; margin-top: 4px; }
+.tl b { font-family: var(--fx-mono); color: var(--amber); font-size: 12px; }
+.tl span { color: var(--text-dim); line-height: 1.5; }
+.legend-sw { display: inline-block; width: 11px; height: 11px; border-radius: 2px;
+  vertical-align: -1px; margin-right: 5px; }
+
 /* ── portrait ── */
 .pic {
   flex: 0 0 auto; width: 26px; height: 26px; border-radius: 2px;
@@ -423,6 +450,7 @@ input.search:focus { outline: none; border-color: var(--amber); }
   <div class="tabs" role="tablist">
     <button class="tab" id="tabDraft" role="tab" aria-selected="true">Draft Room</button>
     <button class="tab" id="tabCtr" role="tab" aria-selected="false">ตัวแก้ / แพ้ทาง</button>
+    <button class="tab" id="tabMap" role="tab" aria-selected="false">แมพ</button>
   </div>
 
   <div id="viewDraft">
@@ -576,6 +604,47 @@ input.search:focus { outline: none; border-color: var(--amber); }
             <br><b>ข้อจำกัด: เป็น context=TEAM</b> คืออยู่คนละทีมในเกมเดียวกัน
             ไม่ได้แปลว่าประกบกันในเลน ตัวที่ "แพ้ทาง" อาจไม่เคยเจอหน้ากันเลยก็ได้
           </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="viewMap" hidden>
+    <div class="pool" style="margin-bottom:12px">
+      <div class="pool-head">
+        <h2>แผนที่ Antaris Battlefield</h2>
+        <span class="count" id="mapSrc"></span>
+      </div>
+      <div class="map-wrap">
+        <div>
+          <div class="map-tools">
+            <label><input type="checkbox" id="zoneOn"> ทับผังโซนที่ระบบใช้</label>
+            <label><input type="checkbox" id="zoneLab" checked> ชื่อโซน</label>
+            <span style="font-size:11.5px;color:var(--text-faint)">เอาเมาส์ชี้โซนเพื่อดูชื่อเต็ม</span>
+          </div>
+          <div class="map-stage" id="mapStage">
+            <img id="gameMap" alt="แผนที่ RoV มุมบนลงล่าง">
+            <svg id="zoneSvg" viewBox="0 0 1 1" preserveAspectRatio="none" hidden></svg>
+          </div>
+          <p style="font-size:11.5px;color:var(--text-faint);margin:10px 0 0;line-height:1.65"
+             id="mapNote"></p>
+        </div>
+
+        <div>
+          <h3 style="font-family:var(--fx-display);font-size:12px;letter-spacing:.1em;
+                     text-transform:uppercase;margin:0 0 6px;color:var(--text-dim)">
+            Objective — ยืนยันจากในเกม</h3>
+          <div id="objList"></div>
+
+          <h3 style="font-family:var(--fx-display);font-size:12px;letter-spacing:.1em;
+                     text-transform:uppercase;margin:18px 0 6px;color:var(--text-dim)">
+            ช่วงเวลาของเกม</h3>
+          <div class="tl" id="timeline"></div>
+
+          <h3 style="font-family:var(--fx-display);font-size:12px;letter-spacing:.1em;
+                     text-transform:uppercase;margin:18px 0 6px;color:var(--text-dim)">
+            ป้อม</h3>
+          <div class="tl" id="towers"></div>
         </div>
       </div>
     </div>
@@ -1002,12 +1071,114 @@ function renderCtr() {
   el("ctrMin").textContent = `${rows.length} คู่`;
 }
 
+// ── แมพ ───────────────────────────────────────────────────────────────
+// ทุกค่าในตารางนี้อ่านจากหน้า "ข้อมูลสมรภูมิ" ในเกมโดยตรง (docs/16-map-guide.md)
+// ไม่ได้มาจากเว็บภายนอก ซึ่งชุดก่อนหน้าผิดเกือบทุกตัว
+const OBJECTIVES = [
+  {k:"dark_slayer", n:"Dark Slayer", first:"นาทีที่ 2", cd:"3:00",
+   buff:"Light and Dark I · 90 วินาที",
+   note:"ดาเมจที่สร้างต่อ Dark Slayer และ Abyssal Dragon ลดลง 50% · ฆ่าแล้วได้ XP และทอง"},
+  {k:"abyssal_dragon", n:"Abyssal Dragon", first:"นาทีที่ 2", cd:"3:00",
+   buff:"Thunder of Light · 90 วินาที",
+   note:"Chain Lightning ใส่มอนป่าและครีป กระโดดได้สูงสุด 3 เป้า คูลดาวน์ 3 วินาที"},
+  {k:"god_slayer", n:"God Slayer", tag:"ใหม่", first:"นาทีที่ 15", cd:"3:30",
+   buff:"Slayer's Might · 90 วินาที",
+   note:"มอนป่าที่แข็งที่สุดในแมพ (Epic) · ไม่มีหลุมของตัวเอง สุ่มไปเกิดแทน Dark Slayer " +
+        "หรือ Abyssal Dragon ตัวใดตัวหนึ่ง · ฆ่าครบทั้ง 3 เลนจะได้ Slayer Vanguard ดันป้อม"},
+  {k:"might_golem", n:"Might Golem", first:"—", cd:"—", buff:"บัฟ DMG",
+   note:"ได้รับการเสริมพลังหลังเริ่มเกม 10 นาที · ฆ่าแล้ววิญญาณตามผู้สังหาร " +
+        "เพื่อนเข้าใกล้จะบินไปให้บัฟคนแรก ส่งต่อได้ครั้งเดียว"},
+  {k:"sage_golem", n:"Sage Golem", first:"—", cd:"—", buff:"บัฟ Recovery",
+   note:"มอนสเตอร์ป่าขนาดใหญ่"},
+  {k:"vision_sprite", n:"Vision Sprite", tag:"ใหม่",
+   first:"หลังป้อมนอกเลนกลางฝ่ายเราถูกทำลาย", cd:"2:00",
+   buff:"วิสัยทัศน์ · 40 วินาที",
+   note:"ฮีโร่ฝ่ายเดียวกันแตะแล้วมันบินไปมอบวิสัยทัศน์ให้พันธมิตร · " +
+        "ครั้งที่ 2 บินไปทางหลุม Dark Slayer หรือ Abyssal Dragon ที่ใกล้ที่สุด"},
+];
+
+const TIMELINE = [
+  ["0:00", "ช่วงแรก เริ่มเกม"],
+  ["2:00", "Dark Slayer และ Abyssal Dragon เกิดครั้งแรก จากนั้นคูลดาวน์ตัวละ 3 นาที"],
+  ["4:00", "เข้าช่วงกลาง — ป้องกันป่าหายไป · โล่ป้องกันป้อมหาย · ส่งรถถัง"],
+  ["8:00", "เข้าช่วงหลัง"],
+  ["10:00", "Might Golem ได้รับการเสริมพลัง"],
+  ["15:00", "เข้า Battle — God Slayer เกิดครั้งแรก คูลดาวน์ 3 นาที 30 วินาที"],
+];
+
+const TOWERS = [
+  ["4 นาทีแรก", "ความเสียหายที่ป้อมได้รับลดลง 10%"],
+  ["ไม่มีครีป", "ไม่มีครีปฝ่ายตัวเองอยู่ใกล้ ทุกครั้งที่ตี ความเสียหายที่ได้รับเพิ่มขึ้น 60% สูงสุด 300%"],
+  ["หลอดป้อม", "ศัตรูอยู่ในระยะโจมตีของป้อม ความเสียหายที่ป้อมได้รับลดลง 70%"],
+  ["วิสัยทัศน์", "ป้อมมีวิสัยทัศน์จริงในพื้นที่รอบตัว"],
+];
+
+const ZONE_COLOR = {
+  lane: "#7fa06a", jungle: "#2f5a2a", river: "#3f7fb0",
+  base: "#8a6a3a", approach: "#4f7f9a", objective: "#c98a2a",
+};
+
+function renderMap() {
+  const icons = D.map_icons || {};
+  el("objList").innerHTML = OBJECTIVES.map(o => `
+    <div class="obj">
+      <img src="${icons[o.k] || ""}" alt="" onerror="this.style.visibility='hidden'">
+      <div>
+        <div class="nm">${escape(o.n)}${o.tag ? `<span class="tag">${escape(o.tag)}</span>` : ""}</div>
+        <div class="tm">เกิดครั้งแรก ${escape(o.first)} · คูลดาวน์ ${escape(o.cd)}</div>
+        <div class="bf">${escape(o.buff)}</div>
+        <div class="nt">${escape(o.note)}</div>
+      </div>
+    </div>`).join("");
+
+  el("timeline").innerHTML = TIMELINE.map(([t, d]) =>
+    `<b>${t}</b><span>${escape(d)}</span>`).join("");
+  el("towers").innerHTML = TOWERS.map(([t, d]) =>
+    `<b style="font-size:11px">${escape(t)}</b><span>${escape(d)}</span>`).join("");
+
+  const zones = D.zones || [];
+  const svg = el("zoneSvg");
+  // ป้ายชื่อเฉพาะโซนใหญ่ ไม่งั้นชื่อทับกันจนอ่านไม่ออก
+  // โซนเล็ก (หลุม ทางเข้าหลุม) ใช้ tooltip ตอนเอาเมาส์ชี้แทน
+  const BIG = new Set(["lane", "base", "river", "jungle"]);
+  svg.innerHTML = zones.map(z => {
+    const c = ZONE_COLOR[z.kind] || "#888";
+    return (z.polys || []).map(poly =>
+      `<polygon class="zpoly" fill="${c}" stroke="${c}"
+        points="${poly.map(pt => pt[0] + "," + pt[1]).join(" ")}"><title>${z.id} · ${z.kind}</title></polygon>`
+    ).join("");
+  }).join("") + zones.filter(z => BIG.has(z.kind)).map(z => {
+    const all = (z.polys || []).flat();
+    if (!all.length) return "";
+    const cx = all.reduce((a, p) => a + p[0], 0) / all.length;
+    const cy = all.reduce((a, p) => a + p[1], 0) / all.length;
+    return `<text class="zlab zname" x="${cx.toFixed(4)}" y="${cy.toFixed(4)}">${z.id}</text>`;
+  }).join("");
+
+  const kinds = [...new Set(zones.map(z => z.kind))];
+  el("mapNote").innerHTML =
+    `ภาพนี้คือแผนที่จากหน้า <b>ข้อมูลสมรภูมิ</b> ในเกม แปลงจากมุม isometric ` +
+    `เป็นมุมบนลงล่างด้วย <code>scripts/rectify_map.py</code> — ` +
+    `เป็นภาพจากตัวเกมจริง ไม่ใช่ผังที่ระบบวาดเอง<br>` +
+    `หมุดบนภาพเป็นของเกมเอง: ` +
+    kinds.map(k => `<span class="legend-sw" style="background:${ZONE_COLOR[k] || "#888"}"></span>${k}`).join(" · ") +
+    ` คือสีของผังโซนที่ทับได้<br>` +
+    `<b>⚠️ ความแม่นยำ</b> ต้นทางเป็นงานศิลป์ 3 มิติ การ warp เป็นระนาบคลาดเคลื่อนราว ` +
+    `±0.03-0.05 และหมุดลอยเหนือพื้น จึงใช้ <b>ยืนยันโครงสร้าง</b>ได้ ` +
+    `แต่ <b>ใช้เป็นพิกัดสอบเทียบไม่ได้</b> — ต้องรอ minimap จากคลิปแข่งจริง`;
+
+  el("mapSrc").textContent = D.zones_verified
+    ? "ผังโซนยืนยันแล้ว" : "ผังโซนยังไม่ได้สอบเทียบ";
+}
+
 function setView(v) {
   S.view = v;
   el("viewDraft").hidden = v !== "draft";
   el("viewCtr").hidden = v !== "counter";
+  el("viewMap").hidden = v !== "map";
   el("tabDraft").setAttribute("aria-selected", String(v === "draft"));
   el("tabCtr").setAttribute("aria-selected", String(v === "counter"));
+  el("tabMap").setAttribute("aria-selected", String(v === "map"));
   if (v === "counter") renderCtr();
 }
 
@@ -1054,6 +1225,11 @@ el("boPick").addEventListener("click", e => {
 // ── แท็บและหน้าตัวแก้ ─────────────────────────────────────────────────
 el("tabDraft").onclick = () => setView("draft");
 el("tabCtr").onclick   = () => setView("counter");
+el("tabMap").onclick   = () => setView("map");
+el("zoneOn").addEventListener("change", e => { el("zoneSvg").hidden = !e.target.checked; });
+el("zoneLab").addEventListener("change", e => {
+  for (const t of el("zoneSvg").querySelectorAll(".zname")) t.style.display = e.target.checked ? "" : "none";
+});
 el("ctrList").addEventListener("click", e => {
   const b = e.target.closest(".ctr-hero"); if (!b) return;
   S.ctrHero = b.dataset.h; renderCtr();
@@ -1099,6 +1275,9 @@ if (D.zone_map) {
   img.addEventListener("error", () => el("mapcard").hidden = true);
   img.src = D.zone_map;
 }
+
+if (D.game_map) { el("gameMap").src = D.game_map; renderMap(); }
+else { el("tabMap").disabled = true; el("tabMap").title = "ยังไม่มีภาพแผนที่ — รัน scripts/rectify_map.py"; }
 
 el("ctrGames").value = S.ctrMin;
 el("ctrGamesVal").textContent = S.ctrMin;

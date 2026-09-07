@@ -21,6 +21,9 @@ DATA = Path("data/exports/draft_data.json")
 OUT = Path("data/exports/draft_board.html")
 ASSETS = Path("data/assets/heroes")
 ZONE_MAP = Path("data/exports/zone_map.png")
+GAME_MAP = Path("data/assets/map/topdown.png")
+MAP_ICONS = Path("data/assets/map/icons")
+ZONES_YAML = Path("configs/zones/rov_map_v1.yaml")
 
 
 def _pic_index(stems: list[str]) -> dict[str, str]:
@@ -70,6 +73,34 @@ def local_assets() -> dict:
             extra["pics_missing"] = sorted(set(hero_ids) - set(pics))
     if ZONE_MAP.exists():
         extra["zone_map"] = ZONE_MAP.name
+
+    # แผนที่จริงจากในเกม แปลงเป็นมุมบนลงล่างแล้ว (scripts/rectify_map.py)
+    if GAME_MAP.exists():
+        extra["game_map"] = "assets/map/topdown.png"
+        meta = GAME_MAP.with_name("map_meta.json")
+        if meta.exists():
+            extra["game_map_meta"] = json.loads(meta.read_text(encoding="utf-8"))
+    if MAP_ICONS.exists():
+        extra["map_icons"] = {
+            f.stem: f"assets/map/icons/{f.name}"
+            for f in sorted(MAP_ICONS.glob("*.png"))
+        }
+
+    # รูปหลายเหลี่ยมของ zone เอาไปวาดทับแผนที่จริงให้เห็นว่าระบบแบ่งยังไง
+    if ZONES_YAML.exists():
+        import yaml
+
+        zc = yaml.safe_load(ZONES_YAML.read_text(encoding="utf-8"))
+        extra["zones"] = [
+            {
+                "id": z["id"],
+                "kind": z["kind"],
+                "region": z.get("region"),
+                "polys": z.get("polygons") or ([z["polygon"]] if z.get("polygon") else []),
+            }
+            for z in zc.get("zones", [])
+        ]
+        extra["zones_verified"] = bool(zc.get("verified"))
     return extra
 
 
@@ -119,6 +150,9 @@ def main() -> int:
     print(f"  {d['total_games']} เกม · {len(d['heroes'])} ฮีโร่ · {len(d['matchups'])} matchup")
     miss = d.get("pics_missing", [])
     print(f"  รูปฮีโร่ {len(d.get('pics', {}))} · zone map {'มี' if d.get('zone_map') else 'ไม่มี'}")
+    print(f"  แผนที่จริง {'มี' if d.get('game_map') else 'ไม่มี'}"
+          f" · ไอคอน {len(d.get('map_icons', {}))}"
+          f" · zone {len(d.get('zones', []))} รูป")
     if miss:
         print(f"  ไม่มีรูป {len(miss)}: {', '.join(miss)}")
 
@@ -132,6 +166,14 @@ def main() -> int:
                 shutil.copy2(f, dest / f.name)
                 n += 1
         print(f"  คัดลอกไฟล์ประกอบ {n} ไฟล์ไป {dest}")
+
+    if GAME_MAP.exists():
+        mdest = OUT.parent / "assets" / "map"
+        (mdest / "icons").mkdir(parents=True, exist_ok=True)
+        shutil.copy2(GAME_MAP, mdest / GAME_MAP.name)
+        for f in MAP_ICONS.glob("*.png"):
+            shutil.copy2(f, mdest / "icons" / f.name)
+        print(f"  คัดลอกแผนที่จริงไป {mdest}")
     return 0
 
 
