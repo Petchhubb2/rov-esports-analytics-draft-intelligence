@@ -1,0 +1,71 @@
+# หลักการโรเททจากบทวิเคราะห์ภายนอก — อ่อนกว่าสองกลุ่มบน เพราะไม่มีตัวเลขรองรับ
+#
+# ⚠️ ข้อจำกัดที่ต้องรู้: แหล่งพวกนี้เป็นบทความทั่วไป ไม่ใช่การวิเคราะห์ระดับลีก
+# และเราตรวจสอบกับข้อมูลของตัวเองไม่ได้ เพราะยังไม่มี vision pipeline
+# ที่อ่านตำแหน่งจากคลิปแข่งได้ ให้ถือเป็น "หลักการตั้งต้น" ไม่ใช่ข้อสรุป
+#
+# สิ่งที่ผู้ใช้บอกว่ามีอยู่ (TikTok qsadd, YouTube analystseak, เพจทางการ)
+# ยังไม่ได้เอาเข้ามา เพราะเป็นคลิปวิดีโอที่ระบบอ่านเนื้อหาไม่ได้
+# ถ้าถอดความมาเป็นข้อความได้ ให้เพิ่มเป็น rule ใหม่ที่ source.type: coach_input
+
+rules:
+  - rule_id: WAVE_PUSH_BEFORE_ROTATE
+    name: ดันเวฟให้พ้นก่อนค่อยขยับ
+    phase: MID
+    priority: 70
+    patch: "1.63"
+    confidence: MEDIUM
+    conditions:
+      - cue: กำลังจะออกจากเลนไปช่วยที่อื่นหรือไปตี objective
+        fact: about_to_rotate
+        op: eq
+        value: true
+    action:
+      summary: >-
+        ขยับออกจากเลนโดยไม่ดันเวฟก่อน = เสียทั้งเงินและแรงกดดันบนแมพพร้อมกัน
+        เวฟที่ค้างอยู่จะไหลเข้าป้อมเรา ทำให้ต้องกลับมาแก้ทีหลัง
+        ในทางกลับกัน เวฟที่ดันไปแล้วบังคับให้ศัตรูต้องอยู่เคลียร์ ซื้อเวลาให้เรา
+    source:
+      type: literature
+      ref: ID2U — Rotation ROV 2026 (มิ.ย. 2026)
+      url: https://id2u.co/blog/rov-gameplay-rotation-guide-2026
+      detail: '"Mid roam after push wave" · "push your wave before rotating"'
+
+  - rule_id: WAVE_OBJECTIVE_OVER_KILL
+    name: ปลายเกมเอา objective ก่อนเอาคิล
+    phase: BATTLE
+    priority: 80
+    patch: "1.63"
+    confidence: MEDIUM
+    conditions:
+      - cue: ชนะปะทะแล้วและยังมีเวลาก่อนศัตรูเกิด
+        fact: enemy_down_count
+        op: gte
+        value: 2
+    action:
+      shape: 5-MAN
+      summary: >-
+        ชนะปะทะแล้วต้องแปลงเป็นของทันที ไม่ใช่ไล่เก็บคนที่เหลือ
+        ลำดับคือ objective ที่พร้อม แล้วค่อยป้อม และต้องรอเวฟก่อนตีป้อมเสมอ
+        ดู TOWER_NO_CREEP_PENALTY ประกอบ
+    source:
+      type: literature
+      ref: ID2U — Rotation ROV 2026 (มิ.ย. 2026)
+      url: https://id2u.co/blog/rov-gameplay-rotation-guide-2026
+      detail: '"Objective > kill in late game"'
+
+  - rule_id: VISION_PING_MISSING
+    name: หายจากเลนต้องบอก
+    phase: EARLY
+    priority: 50
+    patch: "1.63"
+    confidence: MEDIUM
+    action:
+      summary: >-
+        เช็ค minimap ทุก ๆ ราว 10 วินาที และ ping ทุกครั้งที่คู่แข่งในเลนหายไป
+        ข้อผิดพลาดที่ถูกยกบ่อยที่สุดคือไม่บอกแล้วโดนแกงค์ซ้ำที่เดิม
+    source:
+      type: literature
+      ref: ID2U — RoV hero by role 2026 (มิ.ย. 2026)
+      url: https://id2u.co/blog/rov-hero-by-role-guide-2026
+      detail: '"Check minimap every 10 seconds" · "ไม่ ping missing — โดน gank ซ้ำๆ"'

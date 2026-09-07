@@ -1,0 +1,98 @@
+# จังหวะ objective — ทั้งหมดมาจากหน้า "ข้อมูลสมรภูมิ" ในเกมโดยตรง
+# ไม่ใช่บทวิเคราะห์ของใคร ดู docs/16-map-guide.md
+
+rules:
+  - rule_id: OBJ_DUAL_SPAWN_2MIN
+    name: สองหลุมเกิดพร้อมกันนาทีที่ 2 ต้องเลือกฝั่ง
+    phase: EARLY
+    priority: 90
+    patch: "1.63"
+    confidence: HIGH
+    conditions:
+      - cue: นาฬิกาใกล้ 2:00 หรือใกล้ครบคูลดาวน์ 3 นาทีของหลุมที่เพิ่งเสีย
+        fact: seconds_to_objective_spawn
+        op: lte
+        value: 45
+    action:
+      shape: "3-2"
+      summary: >-
+        Dark Slayer กับ Abyssal Dragon เกิดเวลาเดียวกันและคูลดาวน์เท่ากัน
+        แปลว่าทุกรอบเป็นการเลือกว่าจะไปฝั่งไหน ไม่ใช่ไล่เก็บทีละตัว
+        ทีมที่แบ่งกำลังผิดฝั่งจะเสียของฟรีทุก 3 นาที
+      assignments:
+        - role: jungle
+          goto: หลุมที่เลือก
+          note: เข้าก่อนเกิดอย่างน้อย 30 วินาที
+        - role: support
+          goto: หลุมที่เลือก
+          note: วางตาก่อน อย่าเข้าไปยืนโล่ง
+        - role: mid
+          goto: หลุมที่เลือก
+          note: ดันเวฟมิดให้พ้นก่อนค่อยลงมา
+        - role: ds
+          goto: เลนตรงข้าม
+          note: ถือเลนกดดันให้ศัตรูต้องแบ่งคน
+        - role: dragon
+          goto: เลนตัวเอง
+          note: ฟาร์มต่อถ้าหลุมที่เลือกอยู่ไกล
+    source:
+      type: game_client
+      ref: หน้าข้อมูลสมรภูมิในเกม RoV (data/exports/mapdetal.mp4)
+      detail: >-
+        Abyssal Dragon รีเฟรชครั้งแรกนาทีที่ 2 คูลดาวน์ 3 นาที
+        Dark Slayer รีเฟรชครั้งแรกนาทีที่ 2 คูลดาวน์ 3 นาที เท่ากันทั้งคู่
+    notes: |
+      เอกสารชุดก่อนของเราเขียนว่า Dark Slayer เกิดนาทีที่ 8 ทุก 5 นาที
+      ซึ่งผิด และทำให้แผนช่วงต้นเกมทั้งหมดที่สร้างจากมันผิดตาม
+
+  - rule_id: OBJ_GOD_SLAYER_15MIN
+    name: นาทีที่ 15 หลุมหนึ่งกลายเป็น God Slayer
+    phase: BATTLE
+    priority: 95
+    patch: "1.63"
+    confidence: HIGH
+    conditions:
+      - cue: นาฬิกาถึง 15:00 แล้ว
+        fact: game_clock
+        op: gte
+        value: 900
+    action:
+      shape: 5-MAN
+      summary: >-
+        God Slayer ไม่มีหลุมของตัวเอง แต่สุ่มไปเกิดแทน Dark Slayer
+        หรือ Abyssal Dragon ตัวใดตัวหนึ่ง ต้องเช็คก่อนทุกครั้งว่ารอบนี้อยู่หลุมไหน
+        ฆ่าครบทั้ง 3 เลนจะได้ Slayer Vanguard ที่ดันป้อมได้ ซึ่งจบเกมได้จริง
+      assignments:
+        - role: support
+          goto: หลุมที่ God Slayer ไปเกิด
+          note: วางตารอบหลุมตั้งแต่ก่อนเกิด 1 นาที
+    source:
+      type: game_client
+      ref: หน้าข้อมูลสมรภูมิในเกม RoV
+      detail: >-
+        God Slayer รีเฟรชครั้งแรกนาทีที่ 15 คูลดาวน์ 3 นาที 30 วินาที
+        เป็นมอนสเตอร์ระดับ Epic ให้บัฟ Slayer's Might 90 วินาที
+    notes: |
+      ตัวอ่านสถานะ objective จาก minimap ห้ามสรุปว่าหลุมนั้นเป็น dragon เสมอ
+      ต้องแยกให้ออก หรืออย่างน้อยรายงานว่า "ไม่แน่ใจว่าตัวไหน"
+
+  - rule_id: OBJ_MIGHT_GOLEM_10MIN
+    name: Might Golem แข็งขึ้นหลังนาทีที่ 10
+    phase: LATE
+    priority: 55
+    patch: "1.63"
+    confidence: HIGH
+    conditions:
+      - cue: ผ่านนาทีที่ 10 ไปแล้ว
+        fact: game_clock
+        op: gte
+        value: 600
+    action:
+      summary: >-
+        หลังนาทีที่ 10 Might Golem ได้รับการเสริมพลัง คุ้มค่าที่จะจัดคนไปเก็บ
+        บัฟที่ได้จะตามผู้สังหาร และส่งต่อให้เพื่อนที่เข้าใกล้ได้ครั้งเดียว
+        จึงควรให้คนที่จะเข้าปะทะเป็นคนรับ ไม่ใช่คนที่จะกลับไปฟาร์ม
+    source:
+      type: game_client
+      ref: หน้าข้อมูลสมรภูมิในเกม RoV
+      detail: Might Golem ได้รับการเสริมพลังหลังเริ่มเกม 10 นาที ให้บัฟ DMG

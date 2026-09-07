@@ -300,6 +300,49 @@ table.rec tbody tr.sel { background: color-mix(in srgb, var(--amber) 10%, transp
 .ctr-head .meta { font-family: var(--fx-mono); font-size: 11px; color: var(--text-faint); }
 .empty { color: var(--text-faint); font-size: 12px; padding: 8px; }
 
+/* ── มาโคร ── */
+.mac-wrap { padding: 12px; display: grid; gap: 16px; grid-template-columns: 300px 1fr; }
+@media (max-width: 900px) { .mac-wrap { grid-template-columns: 1fr; } }
+.clock { border: 1px solid var(--line); border-radius: 3px; padding: 11px; margin-bottom: 12px; }
+.clock h3 { font-family: var(--fx-display); font-size: 12px; letter-spacing: .1em;
+  text-transform: uppercase; margin: 0 0 8px; color: var(--text-dim); }
+.clock .side { display: grid; grid-template-columns: 1fr auto; gap: 3px 8px;
+  align-items: center; font-size: 12.5px; padding: 5px 0; }
+.clock .side + .side { border-top: 1px solid var(--line-soft); }
+.tbar { position: relative; height: 6px; border-radius: 3px; background: var(--line);
+  grid-column: 1 / -1; overflow: hidden; }
+.tbar i { position: absolute; top: 0; height: 100%; }
+.tbar b { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--text-faint); left: 50%; }
+.verdict { font-size: 12px; color: var(--text-dim); grid-column: 1 / -1; line-height: 1.6; }
+.phasebar { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px; }
+.ph { font-family: var(--fx-mono); font-size: 11px; padding: 4px 9px; }
+.ph[aria-pressed="true"] { background: var(--amber); color: var(--ground); border-color: var(--amber); }
+.rule { border: 1px solid var(--line); border-radius: 3px; padding: 12px; margin-bottom: 10px; }
+.rule.hero { border-color: var(--amber); }
+.rule h4 { font-family: var(--fx-display); font-size: 14.5px; margin: 0 0 6px; letter-spacing: .01em; }
+.rule .meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
+.badge { font-family: var(--fx-mono); font-size: 9.5px; padding: 2px 6px; border-radius: 2px;
+  border: 1px solid var(--line); color: var(--text-dim); }
+.badge.game { background: var(--good); color: #fff; border-color: var(--good); }
+.badge.data { background: var(--blue); color: #fff; border-color: var(--blue); }
+.badge.lit  { background: var(--panel-2); }
+.badge.assume { background: var(--red); color: #fff; border-color: var(--red); }
+.badge.ph { color: var(--amber); border-color: var(--amber); }
+.rule .sum { font-size: 13px; line-height: 1.75; }
+.rule .cue { font-size: 12px; color: var(--text-dim); margin-top: 7px; }
+.rule .cue li { margin: 2px 0; }
+.rule .asg { display: grid; grid-template-columns: 74px 1fr; gap: 3px 9px;
+  font-size: 12px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line-soft); }
+.rule .asg b { font-family: var(--fx-mono); font-size: 11px; color: var(--amber); }
+.rule .src { font-size: 11.5px; color: var(--text-faint); margin-top: 9px;
+  padding-top: 8px; border-top: 1px solid var(--line-soft); line-height: 1.6; }
+.rule .nt { font-size: 11.5px; color: var(--text-faint); margin-top: 6px;
+  white-space: pre-wrap; line-height: 1.6; }
+.tempo-list { max-height: 300px; overflow-y: auto; }
+.tempo-row { display: grid; grid-template-columns: 1fr 54px 40px; gap: 6px;
+  align-items: center; font-size: 12px; padding: 3px 0; }
+.tempo-row .t { font-family: var(--fx-mono); font-size: 11px; text-align: right; }
+
 /* ── เลือกเลน ── */
 .lanebar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
   padding: 10px 12px; border-bottom: 1px solid var(--line); }
@@ -462,6 +505,7 @@ input.search:focus { outline: none; border-color: var(--amber); }
     <button class="tab" id="tabDraft" role="tab" aria-selected="true">Draft Room</button>
     <button class="tab" id="tabCtr" role="tab" aria-selected="false">ตัวแก้ / แพ้ทาง</button>
     <button class="tab" id="tabMap" role="tab" aria-selected="false">แมพ</button>
+    <button class="tab" id="tabMac" role="tab" aria-selected="false">มาโคร / แผน</button>
   </div>
 
   <div id="viewDraft">
@@ -668,6 +712,34 @@ input.search:focus { outline: none; border-color: var(--amber); }
     </div>
   </section>
 
+  <section id="viewMac" hidden>
+    <div class="pool" style="margin-bottom:12px">
+      <div class="pool-head">
+        <h2>มาโครและแผนการเดินเกม</h2>
+        <span class="count" id="macCount"></span>
+      </div>
+      <div class="mac-wrap">
+        <div>
+          <div class="clock" id="teamClock"></div>
+          <div class="clock">
+            <h3>ฮีโร่สายต้นเกม / ท้ายเกม</h3>
+            <p style="font-size:11.5px;color:var(--text-faint);margin:0 0 8px;line-height:1.6">
+              วัดจากความยาวเกมที่ตัวนั้นชนะ เทียบกับเกมที่แพ้ —
+              ติดลบคือชนะตอนเกมสั้น บวกคือยิ่งยืดยิ่งดี
+            </p>
+            <div class="tempo-list" id="tempoList"></div>
+          </div>
+        </div>
+        <div>
+          <div class="phasebar" id="phaseBar"></div>
+          <div id="ruleList"></div>
+          <p style="font-size:11.5px;color:var(--text-faint);margin:12px 0 0;line-height:1.7"
+             id="macNote"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <footer class="foot">
     <div>
       <h4>ข้อมูลมาจากไหน</h4>
@@ -765,6 +837,7 @@ const S = {
   ctrQuery: "",
   ctrMin: MINPAIR,
   ctrLane: "all",     // all = context=TEAM · ที่เหลือคือเลนเดียวกัน
+  macPhase: "all",
 };
 
 // ── ซีรีส์ ────────────────────────────────────────────────────────────
@@ -902,6 +975,8 @@ function render() {
   renderRecs();
   renderPool();
   renderSeries();
+  // แผนมาโครขึ้นกับตัวที่ดราฟต์ ต้องอัปเดตตามแม้จะไม่ได้เปิดแท็บอยู่
+  if (S.view === "macro") renderMacro();
 }
 
 function renderTurn() {
@@ -1254,15 +1329,175 @@ function renderMap() {
     ? "ผังโซนยืนยันแล้ว" : "ผังโซนยังไม่ได้สอบเทียบ";
 }
 
+// ── มาโคร ─────────────────────────────────────────────────────────────
+// rule ทุกข้อมาจาก knowledge/macro/**.yaml และต้องมี source เสมอ
+// ระบบไม่แต่ง rule เอง หลักการเดียวกับ heroes.yaml
+const RULES = D.macro_rules || [];
+const PHASES_TH = {
+  OPENING: "0:00-2:00 เปิดเกม", EARLY: "2:00-4:00 ต้นเกม",
+  MID: "4:00-8:00 กลางเกม", LATE: "8:00-15:00 ปลายเกม", BATTLE: "15:00+ Battle",
+};
+const PHASE_ORDER = ["OPENING","EARLY","MID","LATE","BATTLE"];
+const SRC_CLASS = {game_client:"game", derived_from_data:"data",
+                   literature:"lit", assumption:"assume"};
+const ROLE_TH = {ds:"DS", jungle:"ป่า", mid:"มิด", dragon:"ADL", support:"ซัพพอร์ต"};
+
+const heroTempo = id => { const h = HERO.get(id); return h && h.tempo != null ? h.tempo : null; };
+
+// นาฬิกาของทีม = ค่าเฉลี่ยสัญญาณช่วงเกมของตัวที่เลือกมา
+// นับเฉพาะตัวที่มีข้อมูลพอ และบอกตรง ๆ ว่านับจากกี่ตัว
+function compClock(team) {
+  const picks = of(team, "PICK");
+  const vals = picks.map(heroTempo).filter(v => v != null);
+  if (!vals.length) return null;
+  const avg = vals.reduce((a,b) => a+b, 0) / vals.length;
+  return {avg, used: vals.length, total: picks.length, picks};
+}
+
+function clockVerdict(avg) {
+  if (avg <= -0.12) return ["ทีมสายต้นเกม", "ต้องเปลี่ยนความได้เปรียบเป็นของภายในนาทีที่ 8 " +
+    "กดดันตั้งแต่ 4:00 ที่ป้องกันป่าหาย ถ้าเกมยืดไปถึง Battle จะเสียเปรียบ"];
+  if (avg >= 0.12) return ["ทีมสายท้ายเกม", "ยอมเสียพื้นที่ได้ แต่ห้ามเสียคนฟรี " +
+    "เป้าหมายคือพาเกมไปถึง 15:00 ที่ God Slayer เกิด แล้วค่อยหาปะทะ"];
+  return ["ทีมกลาง ๆ", "ไม่ได้ถูกบังคับให้รีบจบหรือยืดเกม " +
+    "ให้ดูนาฬิกาของฝั่งตรงข้ามแล้วเล่นสวนทางกับเขา"];
+}
+
+function renderClock() {
+  const box = el("teamClock");
+  const rows = ["blue","red"].map(t => {
+    const c = compClock(t);
+    const col = t === "blue" ? "var(--blue)" : "var(--red)";
+    if (!c) return `<div class="side"><span style="color:${col}">${escape(teamName(t))}</span>
+      <span style="color:var(--text-faint);font-size:11.5px">ยังไม่ได้เลือกตัว</span></div>`;
+    const pct = 50 + c.avg * 50;
+    const [label, why] = clockVerdict(c.avg);
+    return `<div class="side">
+      <span style="color:${col}">${escape(teamName(t))} — <b>${escape(label)}</b></span>
+      <span style="font-family:var(--fx-mono);font-size:11px">${c.avg>0?"+":""}${c.avg.toFixed(3)}</span>
+      <span class="tbar"><i style="background:${col};${c.avg<0
+        ? `right:50%;width:${(50-pct).toFixed(1)}%` : `left:50%;width:${(pct-50).toFixed(1)}%`}"></i><b></b></span>
+      <span class="verdict">${escape(why)}
+        <br><span style="color:var(--text-faint)">นับจาก ${c.used}/${c.total} ตัวที่มีข้อมูลพอ</span></span>
+    </div>`;
+  }).join("");
+  box.innerHTML = `<h3>นาฬิกาของทีมจากดราฟต์</h3>${rows}
+    <p style="font-size:11.5px;color:var(--text-faint);margin:9px 0 0;line-height:1.6">
+      ซ้าย = ต้องรีบจบ · ขวา = ยิ่งยืดยิ่งดี · เส้นกลางคือกลาง ๆ
+      สัญญาณนี้ปนกับความแข็งของทีมที่หยิบตัวนั้น ใช้จัดลำดับ ไม่ใช่คำตัดสิน</p>`;
+}
+
+function renderTempoList() {
+  const rows = D.heroes
+    .filter(h => h.tempo != null && h.tempo_n >= 25)
+    .sort((a,b) => a.tempo - b.tempo);
+  const show = [...rows.slice(0,8), null, ...rows.slice(-8)];
+  el("tempoList").innerHTML = show.map(h => {
+    if (!h) return `<div style="border-top:1px dashed var(--line);margin:6px 0"></div>`;
+    const col = h.tempo < 0 ? "var(--amber)" : "var(--good)";
+    return `<div class="tempo-row">
+      <span>${escape(h.name)}</span>
+      <span class="t" style="color:${col}">${h.tempo>0?"+":""}${h.tempo.toFixed(2)}</span>
+      <span class="t" style="color:var(--text-faint)">${h.tempo_n}</span>
+    </div>`;
+  }).join("");
+}
+
+function ruleHTML(r, isHero) {
+  const cls = SRC_CLASS[r.src] || "lit";
+  const assign = r.assign.length ? `<div class="asg">` + r.assign.map(a =>
+    `<b>${escape(ROLE_TH[a.role] || a.role)}</b><span>${escape(a.goto)}${
+      a.note ? ` — <span style="color:var(--text-dim)">${escape(a.note)}</span>` : ""}</span>`
+  ).join("") + `</div>` : "";
+  const cues = r.cues.length ? `<div class="cue"><b>เมื่อไร</b><ul>` +
+    r.cues.map(c => `<li>${escape(c)}</li>`).join("") + `</ul></div>` : "";
+  return `<div class="rule ${isHero ? "hero" : ""}">
+    <h4>${escape(r.name)}</h4>
+    <div class="meta">
+      <span class="badge ${cls}">${escape(r.src_label)}</span>
+      <span class="badge ph">${escape(PHASES_TH[r.phase] || r.phase)}</span>
+      <span class="badge">มั่นใจ ${escape(r.conf)}</span>
+      ${r.patch ? `<span class="badge">แพตช์ ${escape(r.patch)}</span>` : ""}
+      ${isHero ? `<span class="badge" style="border-color:var(--amber);color:var(--amber)">ตรงกับตัวที่ดราฟต์</span>` : ""}
+    </div>
+    ${r.summary ? `<div class="sum">${escape(r.summary)}</div>` : ""}
+    ${cues}${assign}
+    <div class="src"><b>ที่มา</b> ${escape(r.src_ref)}${
+      r.src_url ? ` · <a href="${escape(r.src_url)}" target="_blank" rel="noopener">ลิงก์</a>` : ""}${
+      r.src_detail ? `<br>${escape(r.src_detail)}` : ""}</div>
+    ${r.notes ? `<div class="nt">${escape(r.notes.trim())}</div>` : ""}
+  </div>`;
+}
+
+function renderMacro() {
+  renderClock();
+  renderTempoList();
+
+  const drafted = new Set([...of("blue","PICK"), ...of("red","PICK")]);
+  const counts = {};
+  for (const ph of PHASE_ORDER) counts[ph] = RULES.filter(r => r.phase === ph).length;
+
+  el("phaseBar").innerHTML =
+    `<button class="ph" data-p="all" aria-pressed="${S.macPhase==="all"}">ทุกช่วง</button>` +
+    PHASE_ORDER.filter(ph => counts[ph]).map(ph =>
+      `<button class="ph" data-p="${ph}" aria-pressed="${S.macPhase===ph}">${
+        escape(PHASES_TH[ph])}<span style="opacity:.6;margin-left:5px">${counts[ph]}</span></button>`
+    ).join("");
+
+  // rule ที่ผูกกับตัวที่ดราฟต์มา แสดงแยกด้านบนเสมอ ไม่ให้ตัวกรองช่วงบัง
+  // เพราะนี่คือคำถามหลัก "ดราฟต์ตัวนี้มาแล้วต้องเล่นยังไง"
+  const hit = r => r.heroes.length && r.heroes.some(h => drafted.has(h));
+  const hero = RULES.filter(hit).sort((a,b) => b.priority - a.priority);
+  const heroIds = new Set(hero.map(r => r.id));
+
+  let list = S.macPhase === "all" ? RULES : RULES.filter(r => r.phase === S.macPhase);
+  list = list.filter(r => !heroIds.has(r.id))
+             .sort((a,b) => (b.priority-a.priority) ||
+                            (PHASE_ORDER.indexOf(a.phase)-PHASE_ORDER.indexOf(b.phase)));
+
+  const heroBlock = hero.length
+    ? `<h3 style="font-family:var(--fx-display);font-size:12px;letter-spacing:.1em;
+         text-transform:uppercase;margin:0 0 8px;color:var(--amber)">
+         ตัวที่ดราฟต์มา — ${hero.length} ข้อ</h3>` +
+      hero.map(r => ruleHTML(r, true)).join("") +
+      `<h3 style="font-family:var(--fx-display);font-size:12px;letter-spacing:.1em;
+         text-transform:uppercase;margin:18px 0 8px;color:var(--text-dim)">แผนทั่วไป</h3>`
+    : "";
+
+  el("ruleList").innerHTML = heroBlock + (list.length
+    ? list.map(r => ruleHTML(r, false)).join("")
+    : `<p class="empty">ยังไม่มี rule ในช่วงนี้ — เพิ่มได้ที่ knowledge/macro/</p>`);
+
+  const src = D.macro_sources || {};
+  el("macCount").textContent = `${RULES.length} rule`;
+  const un = (D.macro_unverified || []).length;
+  el("macNote").innerHTML =
+    `<b>rule ทุกข้อมาจาก <code>knowledge/macro/</code> และต้องมีที่มาติดมาเสมอ</b> — ` +
+    `ระบบไม่แต่ง rule เอง หลักการเดียวกับ <code>heroes.yaml</code><br>` +
+    Object.entries(src).map(([k,v]) =>
+      `<span class="badge ${SRC_CLASS[k]||"lit"}">${escape(k)}</span> ${v}`).join(" · ") +
+    `<br>` + (un
+      ? `<b style="color:var(--red)">มี ${un} rule ที่ยังเป็นสมมติฐาน</b> — แสดงไว้ให้เห็น ไม่ได้ซ่อน`
+      : `ยังไม่มี rule ที่เป็นสมมติฐานล้วน ทุกข้ออ้างอิงตัวเกม ข้อมูลแข่ง หรือบทความที่ลิงก์ได้`) +
+    `<br><b>⚠️ ยังไม่ได้ประเมินอัตโนมัติ</b> ช่อง "เมื่อไร" เป็น checklist ให้คนอ่าน ` +
+    `ไม่ใช่เงื่อนไขที่ระบบตรวจเอง เพราะยังไม่มีสถานะเกมสดจาก vision pipeline ` +
+    `(docs/11-macro-planner.md §3)<br>` +
+    `<b>ที่ยังขาด</b> ความรู้จากคลิป TikTok/YouTube ที่คุณบอกมา ระบบอ่านวิดีโอไม่ได้ ` +
+    `ถ้าถอดเป็นข้อความได้ ใส่เป็น rule ใหม่ที่ <code>source.type: coach_input</code>`;
+}
+
 function setView(v) {
   S.view = v;
   el("viewDraft").hidden = v !== "draft";
   el("viewCtr").hidden = v !== "counter";
   el("viewMap").hidden = v !== "map";
+  el("viewMac").hidden = v !== "macro";
   el("tabDraft").setAttribute("aria-selected", String(v === "draft"));
   el("tabCtr").setAttribute("aria-selected", String(v === "counter"));
   el("tabMap").setAttribute("aria-selected", String(v === "map"));
+  el("tabMac").setAttribute("aria-selected", String(v === "macro"));
   if (v === "counter") renderCtr();
+  if (v === "macro") renderMacro();
 }
 
 const escape = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -1309,6 +1544,11 @@ el("boPick").addEventListener("click", e => {
 el("tabDraft").onclick = () => setView("draft");
 el("tabCtr").onclick   = () => setView("counter");
 el("tabMap").onclick   = () => setView("map");
+el("tabMac").onclick   = () => setView("macro");
+el("phaseBar").addEventListener("click", e => {
+  const b = e.target.closest(".ph"); if (!b) return;
+  S.macPhase = b.dataset.p; renderMacro();
+});
 el("zoneOn").addEventListener("change", e => { el("zoneSvg").hidden = !e.target.checked; });
 el("zoneLab").addEventListener("change", e => {
   for (const t of el("zoneSvg").querySelectorAll(".zname")) t.style.display = e.target.checked ? "" : "none";
@@ -1377,6 +1617,7 @@ if (EV.teams) {
   el("evAdl").textContent = adl ? Math.round(adl*100) + "%" : "—";
 }
 if (!LANES.length) el("laneBar").hidden = true;
+if (!RULES.length) { el("tabMac").disabled = true; el("tabMac").title = "ยังไม่มี rule ใน knowledge/macro/"; }
 
 if (D.game_map) { el("gameMap").src = D.game_map; renderMap(); }
 else { el("tabMap").disabled = true; el("tabMap").title = "ยังไม่มีภาพแผนที่ — รัน scripts/rectify_map.py"; }

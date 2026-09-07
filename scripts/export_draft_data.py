@@ -25,6 +25,7 @@ from rov.draft.lanes import (  # noqa: E402
 )
 from rov.draft.meta import pool  # noqa: E402
 from rov.draft.stats import MIN_GAMES_RELIABLE, SHRINKAGE_K  # noqa: E402
+from rov.macro.plays import MacroBook  # noqa: E402
 
 # เก็บเฉพาะคู่ที่มีข้อมูลพอ เพื่อไม่ให้ไฟล์ใหญ่เกินจำเป็น
 MIN_PAIR_GAMES = 8
@@ -65,6 +66,8 @@ def main() -> int:
         clean = re.sub(r"\s*\([^)]*\)", "", raw).strip()
         return clean or raw
 
+    st_tendency = stats.game_length_tendency
+
     heroes = []
     for h in stats.ranked_by_presence():
         heroes.append(
@@ -77,6 +80,12 @@ def main() -> int:
                 "w": h.wins,
                 "pres": round(stats.presence_rate(h.hero_id), 4),
                 "wr": round(h.adjusted_win_rate(prior), 4),
+                # สัญญาณช่วงเกมที่วัดจากความยาวเกมที่ชนะเทียบกับที่แพ้
+                # None แปลว่าข้อมูลไม่พอ — หน้าเว็บต้องไม่เดาแทน
+                "tempo": (lambda t: None if t[0] is None else round(t[0], 3))(
+                    st_tendency(h.hero_id)
+                ),
+                "tempo_n": st_tendency(h.hero_id)[1],
             }
         )
 
@@ -107,6 +116,33 @@ def main() -> int:
         for hero, cnt in lane_usage(all_series).items():
             usage_out[hero] = {ln.value: n for ln, n in cnt.most_common()}
 
+    # ── macro knowledge base ─────────────────────────────────────────
+    book = MacroBook.load()
+    macro_rules = []
+    for r in book.rules:
+        macro_rules.append({
+            "id": r.rule_id,
+            "name": r.name,
+            "phase": r.phase.value,
+            "priority": r.priority,
+            "conf": r.confidence.value,
+            "patch": r.patch,
+            "heroes": r.heroes,
+            "cues": [c.cue for c in r.conditions],
+            "summary": r.action.summary,
+            "shape": r.action.shape.value if r.action.shape else None,
+            "assign": [
+                {"role": a.role.value, "goto": a.goto, "note": a.note}
+                for a in r.action.assignments
+            ],
+            "src": r.source.type,
+            "src_label": r.source.label,
+            "src_ref": r.source.ref,
+            "src_detail": r.source.detail,
+            "src_url": r.source.url,
+            "notes": r.notes,
+        })
+
     data = {
         "generated": "2026-09-06",
         "total_games": stats.total_games,
@@ -131,6 +167,10 @@ def main() -> int:
         "lane_matchups": lane_pack,
         "lane_usage": usage_out,
         "lane_evidence": evidence,
+        # คลังความรู้มาโคร — ทุกข้อมี source ติดมาด้วยเสมอ
+        "macro_rules": macro_rules,
+        "macro_sources": book.counts_by_source(),
+        "macro_unverified": [r.rule_id for r in book.audit()],
     }
 
     out_path = Path("data/exports/draft_data.json")
@@ -142,6 +182,7 @@ def main() -> int:
     size_kb = out_path.stat().st_size / 1024
     print(f"เขียน {out_path}  ({size_kb:.0f} KB)")
     print(f"  เกม        {data['total_games']}")
+    print(f"  macro      {len(macro_rules)} rule · {book.counts_by_source()}")
     print(f"  lane pair  {len(lane_pack)} (>= {MIN_LANE_PAIR_GAMES} เกม) "
           f"· หลักฐานช่อง={'ผ่าน' if evidence['passes'] else 'ไม่ผ่าน'}")
     print(f"  ฮีโร่       {len(heroes)}  (มี class {sum(1 for h in heroes if h['cls'])})")
