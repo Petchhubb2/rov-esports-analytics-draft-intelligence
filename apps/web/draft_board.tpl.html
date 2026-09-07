@@ -233,6 +233,43 @@ table.rec tbody tr.sel { background: color-mix(in srgb, var(--amber) 10%, transp
 .comp .cv { font-family: var(--fx-mono); text-align: right; font-variant-numeric: tabular-nums; }
 .comp .cd { color: var(--text-dim); font-size: 11px; }
 
+/* ── portrait ── */
+.pic {
+  flex: 0 0 auto; width: 26px; height: 26px; border-radius: 2px;
+  background: var(--line-soft) center/cover no-repeat;
+  border: 1px solid var(--line);
+}
+.pic.sm { width: 20px; height: 20px; }
+.hero .pic { width: 30px; height: 30px; }
+.hero .top { align-items: center; }
+.rec .pic { display: inline-block; vertical-align: middle; margin-right: 6px; }
+.why .pic { width: 44px; height: 44px; float: left; margin: 0 9px 4px 0; }
+
+/* ── zone map ── */
+.mapcard {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 4px; box-shadow: var(--shadow); overflow: hidden;
+}
+.mapcard h2 {
+  font-family: var(--fx-display); font-size: 13px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; margin: 0;
+  padding: 9px 12px; border-bottom: 1px solid var(--line); color: var(--text-dim);
+}
+.mapbox {
+  padding: 12px; display: grid; gap: 12px 18px;
+  grid-template-columns: minmax(0, 320px) 1fr; align-items: start;
+}
+@media (max-width: 720px) { .mapbox { grid-template-columns: 1fr; } }
+.mapbox img {
+  display: block; width: 100%; max-width: 320px;
+  border-radius: 3px; border: 1px solid var(--line);
+  image-rendering: pixelated;   /* ผังโซนเป็นภาพ raster ไม่ต้องเกลี่ยขอบ */
+}
+.mapbox figcaption { font-size: 11.5px; color: var(--text-faint); margin-top: 8px; }
+.zlegend { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 8px; font-size: 11px; }
+.zlegend span { display: inline-flex; align-items: center; gap: 5px; color: var(--text-dim); }
+.zlegend i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+
 /* ── pool ── */
 .pool { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; box-shadow: var(--shadow); }
 .pool-head {
@@ -383,6 +420,26 @@ input.search:focus { outline: none; border-color: var(--amber); }
     <span class="used" id="usedRed">—</span>
   </div>
 
+  <section class="mapcard" id="mapcard" hidden>
+    <h2>Zone Map</h2>
+    <figure class="mapbox" style="margin:0">
+      <img id="zonemap" alt="ผังโซนของแมพ Antaris Battlefield">
+      <div class="zlegend">
+        <span><i style="background:#586056"></i>เลน</span>
+        <span><i style="background:#224228"></i>ป่า</span>
+        <span><i style="background:#2c5c80"></i>แม่น้ำ</span>
+        <span><i style="background:#80683a"></i>รอบหลุม</span>
+        <span><i style="background:#c48c2c"></i>หลุม objective</span>
+        <span><i style="background:#283e56"></i>ฐาน</span>
+      </div>
+      <figcaption>
+        ผังนี้เป็นภาพที่ระบบวาดเองจาก <code>configs/zones/rov_map_v1.yaml</code>
+        ไม่ใช่ภาพจากตัวเกม · <b>ยังไม่ได้เทียบกับ minimap จริง</b>
+        ทิศทางที่สมมติไว้คือฐานน้ำเงินมุมซ้ายล่าง แม่น้ำจากซ้ายบนไปขวาล่าง
+      </figcaption>
+    </figure>
+  </section>
+
   <section class="pool">
     <div class="pool-head">
       <h2>Hero Pool</h2>
@@ -441,6 +498,11 @@ const SEQ = [
 const BANS = 4, PICKS = 5;
 
 const CLS_ABBR = {assassin:"ASN", mage:"MAG", marksman:"MKS", support:"SUP", tank:"TNK", warrior:"WAR"};
+
+// รูปฮีโร่ — มีเฉพาะตอนรันในเครื่องที่ดาวน์โหลดไว้แล้ว
+// เวอร์ชันที่เผยแพร่จะไม่มีรูป แล้วช่องรูปจะว่างไว้เฉย ๆ ไม่พัง
+const PICS = D.pics || {};
+const picStyle = id => PICS[id] ? `style="background-image:url('${PICS[id]}')"` : "";
 
 const HERO = new Map(D.heroes.map(h => [h.id, h]));
 const MU = new Map(D.matchups.map(([a,b,g,w]) => [a+"|"+b, {g,w}]));
@@ -601,6 +663,7 @@ function slotHTML(hero, i, kind, isActive) {
   const h = HERO.get(hero);
   const cls = (h.cls||[]).map(c => CLS_ABBR[c]||c).join(" ");
   return `<div class="slot ${kind}"><span class="idx">${kind==="ban"?"B":"P"}${i+1}</span>
+    <span class="pic sm" ${picStyle(hero)}></span>
     <span class="nm">${escape(h.name)}</span><span class="cls">${cls}</span></div>`;
 }
 
@@ -633,7 +696,7 @@ function renderRecs() {
     const bar = (k,cl) => `<span class="bar ${cl}"><i style="height:${c[k].v.toFixed(0)}%"></i></span>`;
     return `<tr data-h="${s.h.id}" class="${S.picked===s.h.id?"sel":""}">
       <td class="l rank">${i+1}</td>
-      <td class="l"><span class="hname">${escape(s.h.name)}</span></td>
+      <td class="l"><span class="pic sm" ${picStyle(s.h.id)}></span><span class="hname">${escape(s.h.name)}</span></td>
       <td class="total">${s.total.toFixed(1)}</td>
       <td><span class="bars">${bar("meta","m")}${bar("winrate","w")}${bar("counter","c")}${bar("synergy","s")}</span></td>
       <td class="thin">${s.h.p}${s.h.p < D.min_games_reliable ? ' <span class="unsure">*</span>' : ""}</td>
@@ -642,7 +705,7 @@ function renderRecs() {
 
   const focus = sugs.find(s => s.h.id === S.picked) || sugs[0];
   el("why").innerHTML = focus ? `
-    <h3>${escape(focus.h.name)}</h3>
+    <h3><span class="pic" ${picStyle(focus.h.id)}></span>${escape(focus.h.name)}</h3>
     ${focus.reasons.length ? `<ul>${focus.reasons.map(r=>`<li>${escape(r)}</li>`).join("")}</ul>` : ""}
     <div class="comp">
       ${["meta","winrate","counter","synergy"].map(k => `
@@ -672,7 +735,7 @@ function renderPool() {
     return `<button class="hero ${gone?"gone":""} ${lk?"locked":""} ${recIds.has(h.id)?"rec":""} ${h.pres>=.4?"hot":""}"
       data-h="${h.id}" ${gone||lk?"disabled":""}
       title="pick ${h.p} · ban ${h.b} · wr ${h.wr.toFixed(3)} · presence ${Math.round(h.pres*100)}%">
-      <span class="top"><span class="hn">${escape(h.name)}</span><span class="hc">${cls}</span></span>
+      <span class="top"><span class="pic" ${picStyle(h.id)}></span><span class="hn">${escape(h.name)}</span><span class="hc">${cls}</span></span>
       <span class="meter"><i style="width:${Math.min(100,h.pres*100).toFixed(0)}%"></i></span>
       ${lk ? '<span class="flag">ใช้แล้วในซีรีส์</span>' : ""}
     </button>`;
@@ -747,6 +810,14 @@ el("prov").innerHTML = `<b>${D.total_games}</b> เกมจริง · <b>${D.
   `blue side <b>${(D.blue_side_wr*100).toFixed(1)}%</b> · ยาวกลาง <b>${(D.median_length/60).toFixed(1)}</b> นาที`;
 el("srcList").textContent = D.sources.map(s => `${s.label} ${s.games} เกม`).join(" · ");
 el("kv").textContent = K;
+
+// zone map มีเฉพาะตอนรันในเครื่อง
+if (D.zone_map) {
+  const img = el("zonemap");
+  img.addEventListener("load", () => el("mapcard").hidden = false);
+  img.addEventListener("error", () => el("mapcard").hidden = true);
+  img.src = D.zone_map;
+}
 
 render();
 })();

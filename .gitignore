@@ -24,3 +24,6 @@ data/videos/_test_*
 
 # ผลลัพธ์ที่สร้างขึ้น ไม่ต้อง commit
 data/exports/
+
+# ภาพจากภายนอก ไม่ commit (ดู data/assets/heroes/ATTRIBUTION.md)
+data/assets/

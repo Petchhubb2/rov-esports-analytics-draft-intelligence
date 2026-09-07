@@ -733,6 +733,136 @@ def draft_cache() -> None:
     typer.echo(f"  ที่อยู่  {st['root']}")
 
 
+# --------------------------------------------------------------- assets
+
+
+assets_app = typer.Typer(help="ภาพประกอบ (hero icon, zone map)", no_args_is_help=True)
+app.add_typer(assets_app, name="assets")
+
+
+@assets_app.command("heroes")
+def assets_heroes(
+    out: str = typer.Option("data/assets/heroes"),
+    meta_only: bool = typer.Option(
+        False, "--meta-only", help="ดึงเฉพาะ URL ไม่ดาวน์โหลดไฟล์"
+    ),
+) -> None:
+    """ดาวน์โหลดภาพฮีโร่จาก Liquipedia Commons
+
+    เคารพกติกา 1 request ต่อ 2 วินาที ไฟล์ที่มีอยู่แล้วจะถูกข้าม
+    อ่านเรื่องลิขสิทธิ์ที่ data/assets/heroes/ATTRIBUTION.md ก่อนนำไปเผยแพร่
+    """
+    from rov.draft.importer.assets import (
+        download_hero_icons,
+        hero_image_titles,
+        resolve_urls,
+    )
+    from rov.draft.importer.liquipedia import LiquipediaClient
+
+    c = LiquipediaClient()
+    if meta_only:
+        titles = hero_image_titles(c)
+        urls = resolve_urls(c, sorted(set(titles.values())))
+        typer.echo(f"ฮีโร่ {len(titles)} ตัว · หา URL ได้ {len(urls)}")
+        return
+
+    typer.echo("กำลังดาวน์โหลด — หน่วง 2 วินาทีต่อไฟล์ตามกติกาของ Liquipedia")
+    res = download_hero_icons(c, out_dir=out)
+    typer.echo(res.report())
+    typer.secho(
+        f"\nอ่าน {out}/ATTRIBUTION.md ก่อนนำภาพไปเผยแพร่สาธารณะ",
+        fg=typer.colors.YELLOW,
+    )
+
+
+@assets_app.command("zone-map")
+def assets_zone_map(
+    zones_file: str = typer.Option("configs/zones/rov_map_v1.yaml"),
+    out: str = typer.Option("data/exports/zone_map.png"),
+) -> None:
+    """วาดภาพ zone map จาก config — เป็นภาพของเราเอง ไม่ติดลิขสิทธิ์ใคร"""
+    import json
+
+    import cv2
+    import numpy as np
+
+    from rov.config.zones import RASTER_SIZE, ZoneMap
+
+    kind_color = {
+        "base": (86, 62, 40), "lane": (96, 122, 88), "jungle": (40, 66, 34),
+        "river": (128, 92, 44), "approach": (58, 104, 128), "objective": (44, 140, 196),
+    }
+    zm = ZoneMap.load(zones_file)
+    zm.build()
+    raster = zm._raster
+    img = np.full((RASTER_SIZE, RASTER_SIZE, 3), (26, 22, 18), np.uint8)
+    meta = []
+    for i, z in enumerate(zm.zones, start=1):
+        img[raster == i] = kind_color.get(z.kind, (90, 90, 90))
+        ys, xs = np.nonzero(raster == i)
+        if len(xs):
+            meta.append({
+                "id": z.id, "kind": z.kind, "region": z.region,
+                "cx": round(float(xs.mean()) / RASTER_SIZE, 4),
+                "cy": round(float(ys.mean()) / RASTER_SIZE, 4),
+            })
+    img[cv2.Canny((raster % 251).astype(np.uint8), 1, 1) > 0] = (150, 165, 175)
+
+    p = Path(out)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    cv2.imwrite(str(p), img)
+    p.with_name("zone_meta.json").write_text(
+        json.dumps(meta, ensure_ascii=False, indent=1), encoding="utf-8"
+    )
+    typer.echo(f"เขียน {p} · {len(meta)} zone · ครอบคลุม {zm.coverage_fraction():.1%}")
+
+
+@assets_app.command("status")
+def assets_status(out: str = typer.Option("data/assets/heroes")) -> None:
+    """ดูว่ามีภาพอะไรอยู่แล้วบ้าง"""
+    d = Path(out)
+    files = sorted(p for p in d.glob("*") if p.suffix.lower() in (".jpg", ".png"))
+    total = sum(p.stat().st_size for p in files)
+    typer.echo(f"ภาพฮีโร่   {len(files)} ไฟล์ · {total / 1024:.0f} KB · {d}")
+    zm = Path("data/exports/zone_map.png")
+    typer.echo(f"zone map  {'มี' if zm.exists() else 'ยังไม่มี'} · {zm}")
+    if not (d / "ATTRIBUTION.md").exists() and files:
+        typer.secho("ไม่พบ ATTRIBUTION.md", fg=typer.colors.YELLOW)
+
+
+@app.command("web")
+def web(
+    port: int = typer.Option(8000),
+    root: str = typer.Option("data/exports", help="โฟลเดอร์ที่จะเสิร์ฟ"),
+) -> None:
+    """เปิดหน้าเว็บ draft ในเครื่อง
+
+    ต้องสร้างไฟล์ก่อนด้วย
+        python scripts/export_draft_data.py
+        python scripts/build_draft_page.py
+    """
+    import functools
+    import http.server
+    import socketserver
+
+    d = Path(root)
+    page = d / "draft_board.html"
+    if not page.exists():
+        typer.secho(f"ยังไม่มี {page}", fg=typer.colors.RED)
+        typer.echo("รัน scripts/export_draft_data.py แล้ว scripts/build_draft_page.py ก่อน")
+        raise typer.Exit(1)
+
+    handler = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(d))
+    with socketserver.TCPServer(("127.0.0.1", port), handler) as srv:
+        url = f"http://127.0.0.1:{port}/draft_board.html"
+        typer.secho(f"เปิดที่ {url}", fg=typer.colors.GREEN)
+        typer.echo("กด Ctrl+C เพื่อหยุด")
+        try:
+            srv.serve_forever()
+        except KeyboardInterrupt:
+            typer.echo("\nหยุดแล้ว")
+
+
 # --------------------------------------------------------------- misc
 
 

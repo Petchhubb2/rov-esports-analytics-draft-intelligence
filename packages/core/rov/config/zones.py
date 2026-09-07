@@ -13,7 +13,7 @@ from typing import Literal
 
 import numpy as np
 import yaml
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, model_validator
 
 ZoneKind = Literal["lane", "jungle", "river", "objective", "approach", "base"]
 
@@ -24,24 +24,46 @@ RASTER_SIZE = 512
 NO_ZONE = 0  # index 0 สงวนไว้สำหรับ "ไม่อยู่ใน zone ใดเลย"
 
 
+Poly = list[tuple[float, float]]
+
+
 class ZoneDef(BaseModel):
+    """หนึ่ง zone อาจมีหลายชิ้น
+
+    เลนกลางถูกแม่น้ำตัดออกเป็นสองท่อน แต่ยังเป็นเลนเดียวกันในเชิงความหมาย
+    ถ้าเก็บได้ชิ้นเดียวจะเสียครึ่งหนึ่งของเลนไปเงียบ ๆ
+    """
+
     id: str
     kind: ZoneKind
-    polygon: list[tuple[float, float]] = Field(min_length=3)
+    polygon: Poly | None = None  # รูปแบบเดิม ชิ้นเดียว
+    polygons: list[Poly] | None = None  # หลายชิ้น
     parent: str | None = None
     # macro region ใช้ตัดสินว่าการย้าย zone นับเป็น rotation หรือไม่
     # การเดินภายใน region เดียวกันไม่ใช่ rotation
     region: str | None = None
 
-    @field_validator("polygon")
-    @classmethod
-    def _check_bounds(cls, v: list[tuple[float, float]]) -> list[tuple[float, float]]:
-        for x, y in v:
-            if not (-0.05 <= x <= 1.05 and -0.05 <= y <= 1.05):
-                raise ValueError(
-                    f"จุด ({x}, {y}) อยู่นอกพิกัด normalized — polygon ต้องอยู่ในช่วง 0..1"
-                )
-        return v
+    @model_validator(mode="after")
+    def _check_shape(self) -> ZoneDef:
+        if not self.polygon and not self.polygons:
+            raise ValueError(f"zone {self.id} ต้องมี polygon หรือ polygons อย่างน้อยหนึ่งอย่าง")
+        for poly in self.parts:
+            if len(poly) < 3:
+                raise ValueError(f"zone {self.id} มีชิ้นที่มีจุดน้อยกว่า 3")
+            for x, y in poly:
+                if not (-0.05 <= x <= 1.05 and -0.05 <= y <= 1.05):
+                    raise ValueError(
+                        f"zone {self.id} มีจุด ({x}, {y}) อยู่นอกพิกัด normalized "
+                        "— polygon ต้องอยู่ในช่วง 0..1"
+                    )
+        return self
+
+    @property
+    def parts(self) -> list[Poly]:
+        """ทุกชิ้นของ zone นี้"""
+        if self.polygons:
+            return self.polygons
+        return [self.polygon] if self.polygon else []
 
 
 class ZoneMap(BaseModel):
@@ -79,13 +101,14 @@ class ZoneMap(BaseModel):
 
         # วาดตามลำดับในไฟล์ zone ที่อยู่ท้ายทับ zone ที่อยู่ต้น
         # จึงควรเรียง zone กว้าง (lane) ไว้ต้น และ zone แคบ (objective) ไว้ท้าย
+        scale = RASTER_SIZE - 1
         for idx, z in enumerate(self.zones, start=1):
-            scale = RASTER_SIZE - 1
-            pts = np.array(
-                [[round(x * scale), round(y * scale)] for x, y in z.polygon],
-                dtype=np.int32,
-            )
-            cv2.fillPoly(raster, [pts], color=int(idx))
+            parts = [
+                np.array([[round(x * scale), round(y * scale)] for x, y in poly],
+                         dtype=np.int32)
+                for poly in z.parts
+            ]
+            cv2.fillPoly(raster, parts, color=int(idx))
 
         # ระยะจากแต่ละ pixel ถึงขอบของ zone ที่ตัวเองอยู่
         # ใช้ทำ margin ใน hysteresis เพื่อไม่ให้ zone กระพริบตอนเดินเลียบขอบ

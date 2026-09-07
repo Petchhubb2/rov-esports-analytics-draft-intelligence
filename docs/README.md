@@ -21,6 +21,7 @@
 | 11 | [macro-planner.md](11-macro-planner.md) | Macro Knowledge Base · Rule Engine · Win Condition · Actual vs Recommended |
 | 12 | [cross-league-meta.md](12-cross-league-meta.md) | **เมต้าข้ามลีก** ไทย RPL เทียบ ไต้หวัน GCS · 861 เกม · ตัวแก้ |
 | 13 | [draft-simulator.md](13-draft-simulator.md) | **คู่มือใช้ Draft Simulator** · อ่านผลอย่างไร · ข้อจำกัด |
+| 14 | [deployment.md](14-deployment.md) | **จากเครื่องตัวเองไปเซิร์ฟเวอร์จริง** · ลิขสิทธิ์ภาพ · สิ่งที่ยังขาด |
 
 > ลำดับความน่าเชื่อถือเมื่อเอกสารขัดแย้งกัน: **09/10 > 08 > 01–07**
 > 01–07 เขียนจากแผนแนวคิดแรก · 08 ข้อเท็จจริงจากการค้น · 09 ผลจากการรันจริง
@@ -34,7 +35,7 @@ Video Analysis  ·  Draft System  ·  Scouting
                   Macro Planner  →  Intelligence  →  Dashboard
 ```
 
-รวม 44 โมดูล · สถานะปัจจุบัน ✅ 7 · 🟡 11 · ⬜ 27
+รวม 44 โมดูล · สถานะปัจจุบัน ✅ 13 · 🟡 13 · ⬜ 19
 ดูแผนที่เต็มใน [10-blueprint-alignment.md](10-blueprint-alignment.md)
 
 ## สรุปสั้นที่สุด
@@ -61,10 +62,11 @@ Dashboard               ██                     5%
 |--------|-----|
 | แพตช์ปัจจุบัน | 1.63 |
 | ฮีโร่ทั้งหมด / ที่มีข้อมูล pro | 126 / 98 |
-| แมพ | Antaris Battlefield · 3 เลน · ป่า 4 ส่วนต่อฝั่ง |
+| แมพ | Antaris Battlefield · 3 เลน · ป่า 4 ส่วนต่อฝั่ง · ผังโซนสร้างจากกฎแล้ว **ยังไม่ยืนยันกับ minimap จริง** |
 | Objective | Abyssal Dragon (2:00 ทุก 2 นาที) · Dark Slayer (8:00 ทุก 5 นาที) |
 | กติกา draft | Global Ban-Pick = soft fearless (ห้ามใช้ตัวของตัวเองซ้ำในซีรีส์) |
 | แหล่งข้อมูล draft | Liquipedia API · ดึงแล้ว 861 เกม จาก RPL ไทย และ GCS ไต้หวัน |
-| คำถามที่ยังไม่มีคำตอบ | spectator minimap มี fog หรือไม่ · ลำดับ ban/pick ที่แน่นอน |
+| ภาพประกอบ | hero icon 132 ภาพ (ลิขสิทธิ์ Garena/TiMi ดู [14](14-deployment.md) §2.1) |
+| คำถามที่ยังไม่มีคำตอบ | spectator minimap มี fog หรือไม่ · ลำดับ ban/pick · ทิศทางแมพ |
 
 รายละเอียดและแหล่งอ้างอิงอยู่ใน [08-game-reference.md](08-game-reference.md)

@@ -121,10 +121,27 @@ def test_zone_out_of_bounds_is_none():
 
 
 def test_edge_distance_is_larger_at_zone_centre():
+    """หาจุดกึ่งกลางจาก raster จริง ไม่ผูกกับพิกัดที่เขียนตายตัว
+
+    เพราะ polygon สร้างใหม่ได้จาก scripts/gen_zone_map.py
+    การเขียนพิกัดตายตัวจะพังทุกครั้งที่รูปร่างแมพเปลี่ยน
+    """
+    import numpy as np
+    from rov.config.zones import RASTER_SIZE
+
     zm = ZoneMap.load(ZONE_FILE)
-    centre = zm.edge_distance(0.73, 0.73)
-    edge = zm.edge_distance(0.675, 0.73)
-    assert centre > edge
+    zm.build()
+    idx = zm._names.index("DRAGON_PIT")
+    ys, xs = np.nonzero(zm._raster == idx)
+    cx, cy = xs.mean() / RASTER_SIZE, ys.mean() / RASTER_SIZE
+
+    centre = zm.edge_distance(cx, cy)
+    # ขยับไปทางขอบของ zone เดียวกัน
+    near_edge = max(
+        zm.edge_distance(x / RASTER_SIZE, cy)
+        for x in (xs.min() + 2, xs.max() - 2)
+    )
+    assert centre > near_edge
 
 
 def test_batch_lookup_matches_single_lookup():
