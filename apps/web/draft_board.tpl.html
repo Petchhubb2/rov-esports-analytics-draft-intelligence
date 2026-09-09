@@ -300,6 +300,33 @@ table.rec tbody tr.sel { background: color-mix(in srgb, var(--amber) 10%, transp
 .ctr-head .meta { font-family: var(--fx-mono); font-size: 11px; color: var(--text-faint); }
 .empty { color: var(--text-faint); font-size: 12px; padding: 8px; }
 
+/* ── ประวัติดราฟต์รายเกม ── */
+.hgame { border: 1px solid var(--line); border-radius: 3px; margin: 0 12px 10px;
+  overflow: hidden; }
+.hgame.decider { border-color: var(--amber); }
+.hhead { display: flex; flex-wrap: wrap; align-items: center; gap: 10px;
+  padding: 7px 11px; background: var(--panel-2); border-bottom: 1px solid var(--line); }
+.hhead b { font-family: var(--fx-display); font-size: 13px; letter-spacing: .03em; }
+.hhead .who { font-family: var(--fx-mono); font-size: 11.5px; }
+.hhead .who.b { color: var(--blue); } .hhead .who.r { color: var(--red); }
+.hhead .note { font-family: var(--fx-mono); font-size: 10px; color: var(--amber);
+  margin-left: auto; }
+.hside { display: grid; grid-template-columns: minmax(84px, max-content) 34px 1fr;
+  gap: 4px 9px; align-items: center; padding: 7px 11px; font-size: 12.5px; }
+.hside + .hside { border-top: 1px solid var(--line-soft); }
+.hside .tm { font-family: var(--fx-mono); font-size: 11.5px; font-weight: 600;
+  grid-row: span 2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hside.b .tm { color: var(--blue); } .hside.r .tm { color: var(--red); }
+.hside .lab { font-family: var(--fx-display); font-size: 9.5px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--text-faint); }
+.hrow { display: flex; flex-wrap: wrap; gap: 4px; }
+.hh { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px 2px 2px;
+  border: 1px solid var(--line); border-radius: 2px; background: var(--panel-2);
+  font-size: 11.5px; }
+.hh.ban { opacity: .55; text-decoration: line-through; }
+.hh.again { border-color: var(--amber); }
+.hh .pic { width: 17px; height: 17px; border-radius: 2px; }
+
 /* ── ข้อมูลเราว่ายังไง ── */
 .chk { margin-top: 9px; padding: 9px 10px; border-radius: 3px; font-size: 12px;
   line-height: 1.65; border-left: 3px solid var(--line); background: var(--panel-2); }
@@ -605,6 +632,17 @@ input.search:focus { outline: none; border-color: var(--amber); }
     </div>
   </div>
 
+  <section class="pool" id="histCard" hidden style="margin-bottom:12px">
+    <div class="pool-head">
+      <h2>ประวัติดราฟต์ในซีรีส์</h2>
+      <span class="count" id="histCount"></span>
+      <span style="font-size:11.5px;color:var(--text-faint)">
+        เก็บไว้จนกว่าจะกด “ล้างซีรีส์” · ปุ่ม “เริ่มใหม่” ล้างแค่เกมที่กำลังดราฟต์
+      </span>
+    </div>
+    <div id="histList"></div>
+  </section>
+
   <section class="mapcard" id="mapcard" hidden>
     <h2>Zone Map</h2>
     <figure class="mapbox" style="margin:0">
@@ -839,9 +877,10 @@ const S = {
   moves: [],           // {i, team, action, hero}
   swapped: false,      // ฝั่งไหนคือทีมไหน
   bo: 3,               // รูปแบบซีรีส์ 1/3/5/7
-  // ผลของเกมที่จบไปแล้ว — เก็บทั้งผู้ชนะและตัวที่แต่ละฝั่งเลือก
-  // เก็บเป็นประวัติเต็ม ไม่ใช่ยอดสะสม เพื่อให้ย้อนผลเกมล่าสุดได้
-  results: [],         // [{w:"blue"|"red", picks:{blue:[...], red:[...]}}]
+  // ผลของเกมที่จบไปแล้ว — เก็บ "ทั้งกระดาน" ของเกมนั้นไว้เลย
+  // ไม่ใช่แค่ตัวที่เลือก เพราะต้องย้อนดูได้ว่าเกมนั้นแบนอะไรไปบ้าง
+  // อยู่จนกว่าจะกดล้างซีรีส์ ปุ่มเริ่มใหม่ไม่แตะตรงนี้
+  results: [],         // [{w:"blue"|"red", moves:[{team,action,hero}]}]
   filter: "all",
   query: "",
   picked: null,        // ฮีโร่ที่เลือกดูรายละเอียด
@@ -876,10 +915,14 @@ const taken = () => new Set(S.moves.map(m => m.hero));
 const of = (team, action) => S.moves.filter(m => m.team===team && m.action===action).map(m => m.hero);
 const teamName = t => document.getElementById(t==="blue" ? "nameBlue" : "nameRed").value || t.toUpperCase();
 
+// ดึง ban/pick ของฝั่งหนึ่งออกจากกระดานที่เก็บไว้
+const movesOf = (moves, team, action) =>
+  moves.filter(m => m.team === team && m.action === action).map(m => m.hero);
+
 function lockedFor(team) {
   const out = new Set();
   if (gbpOff()) return out;
-  for (const r of S.results) for (const h of r.picks[team]) out.add(h);
+  for (const r of S.results) for (const h of movesOf(r.moves, team, "PICK")) out.add(h);
   return out;
 }
 
@@ -988,6 +1031,7 @@ function render() {
   renderRecs();
   renderPool();
   renderSeries();
+  renderHistory();
   // แผนมาโครขึ้นกับตัวที่ดราฟต์ ต้องอัปเดตตามแม้จะไม่ได้เปิดแท็บอยู่
   if (S.view === "macro") renderMacro();
 }
@@ -1137,6 +1181,54 @@ function renderSeries() {
       : '<span style="color:var(--text-faint)">ยังไม่ได้ใช้ตัวไหน</span>'
     ) + "</span>";
   }
+}
+
+function heroChip(id, kind, again) {
+  const h = HERO.get(id);
+  return `<span class="hh ${kind} ${again ? "again" : ""}"${
+    again ? ' title="ตัวนี้ทีมนี้เคยเลือกไปแล้วในเกมก่อนหน้า"' : ""}>
+    <span class="pic" ${picStyle(id)}></span>${escape(h ? h.name : id)}</span>`;
+}
+
+function renderHistory() {
+  const card = el("histCard");
+  if (!S.results.length) {
+    // ล้าง DOM ด้วย ไม่ใช่แค่ซ่อน ไม่งั้นประวัติเก่าค้างอยู่ข้างใน
+    card.hidden = true;
+    el("histList").innerHTML = "";
+    el("histCount").textContent = "";
+    return;
+  }
+  card.hidden = false;
+  el("histCount").textContent = `${S.results.length} เกม`;
+
+  el("histList").innerHTML = S.results.map((r, i) => {
+    // ตัวที่ทีมนี้เคยเลือกในเกมก่อน ๆ — ใช้ไฮไลต์ว่าซ้ำหรือไม่
+    const before = {blue: new Set(), red: new Set()};
+    for (let k = 0; k < i; k++)
+      for (const t of ["blue","red"])
+        for (const h of movesOf(S.results[k].moves, t, "PICK")) before[t].add(h);
+
+    const decider = GBP.resetOnFinalGame && S.bo > 1 && i + 1 >= S.bo;
+    const side = t => {
+      const bans = movesOf(r.moves, t, "BAN"), picks = movesOf(r.moves, t, "PICK");
+      return `<div class="hside ${t[0]}">
+        <span class="tm">${escape(teamName(t))}</span>
+        <span class="lab">แบน</span>
+        <span class="hrow">${bans.map(h => heroChip(h, "ban", false)).join("") || "—"}</span>
+        <span class="lab">เลือก</span>
+        <span class="hrow">${picks.map(h => heroChip(h, "pick", before[t].has(h))).join("") || "—"}</span>
+      </div>`;
+    };
+    return `<div class="hgame ${decider ? "decider" : ""}">
+      <div class="hhead">
+        <b>เกมที่ ${i + 1}</b>
+        <span class="who ${r.w[0]}">${escape(teamName(r.w))} ชนะ</span>
+        ${decider ? '<span class="note">เกมตัดสิน — Normal Ban-Pick</span>' : ""}
+      </div>
+      ${side("blue")}${side("red")}
+    </div>`;
+  }).join("");
 }
 
 // ── ตัวแก้ / แพ้ทาง ───────────────────────────────────────────────────
@@ -1542,13 +1634,17 @@ el("reset").onclick = () => { S.moves = []; S.picked = null; render(); };
 el("swap").onclick = () => {
   const a = el("nameBlue"), b = el("nameRed");
   [a.value, b.value] = [b.value, a.value];
-  S.results = S.results.map(r => ({w: other(r.w), picks: {blue: r.picks.red, red: r.picks.blue}}));
+  S.results = S.results.map(r => ({
+    w: other(r.w),
+    moves: r.moves.map(m => ({...m, team: other(m.team)})),
+  }));
   S.moves = S.moves.map(m => ({...m, team: other(m.team)}));
   render();
 };
 function recordWin(w) {
   if (turn() || seriesWinner()) return;
-  S.results.push({w, picks: {blue: of("blue","PICK"), red: of("red","PICK")}});
+  // เก็บกระดานทั้งใบ ทั้งแบนและเลือก ตามลำดับที่เกิดจริง
+  S.results.push({w, moves: S.moves.map(m => ({team: m.team, action: m.action, hero: m.hero}))});
   S.moves = []; S.picked = null; render();
 }
 el("winBlue").onclick = () => recordWin("blue");
