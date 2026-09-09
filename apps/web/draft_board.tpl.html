@@ -300,6 +300,66 @@ table.rec tbody tr.sel { background: color-mix(in srgb, var(--amber) 10%, transp
 .ctr-head .meta { font-family: var(--fx-mono); font-size: 11px; color: var(--text-faint); }
 .empty { color: var(--text-faint); font-size: 12px; padding: 8px; }
 
+/* ── แนะนำสองคอลัมน์ ── */
+.rec2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+@media (max-width: 780px) { .rec2 { grid-template-columns: 1fr; } }
+/* วางสองตารางเคียงกันแล้วช่องละราว 270px ยัด 5 คอลัมน์ไม่ลง หัวตารางจะล้น
+   ต้องวัดความกว้างของ "แผง" ไม่ใช่ของจอ เพราะแผงนี้เป็นคอลัมน์กลางของกระดาน
+   จอ 1589px แผงยังกว้างแค่ 537px อยู่ดี — media query จึงใช้ไม่ได้
+   ค่าเริ่มต้นคือซ่อน ถ้าเบราว์เซอร์ไม่รองรับ container query ก็ยังอ่านออก
+   รายละเอียดสี่องค์ประกอบยังดูได้เต็ม ๆ ในแผงล่าง */
+.recs { container-type: inline-size; }
+.rec2 .barcol { display: none; }
+@container (min-width: 660px) { .rec2 .barcol { display: table-cell; } }
+.rec2 .rec th, .rec2 .rec td { padding-left: 5px; padding-right: 5px; }
+.rec2 .rec .hname { max-width: 108px; overflow: hidden; text-overflow: ellipsis;
+  white-space: nowrap; display: inline-block; vertical-align: middle; }
+.reccol { min-width: 0; }
+.reccol + .reccol { border-left: 1px solid var(--line); }
+@media (max-width: 780px) { .reccol + .reccol { border-left: 0; border-top: 1px solid var(--line); } }
+.reccol > h3 {
+  font-family: var(--fx-display); font-size: 11.5px; font-weight: 600;
+  letter-spacing: .09em; text-transform: uppercase; margin: 0;
+  padding: 7px 10px; color: var(--text-faint);
+  border-bottom: 1px solid var(--line-soft); display: flex; gap: 7px; align-items: baseline;
+}
+.reccol.on > h3 { color: var(--amber); background: color-mix(in srgb, var(--amber) 9%, transparent); }
+.reccol > h3 .sub { font-family: var(--fx-body); font-size: 10.5px; letter-spacing: 0;
+  text-transform: none; font-weight: 400; color: var(--text-faint); }
+.reccol.off { opacity: .62; }
+
+/* ── ตัวแก้ที่ศัตรูเปิดมา ── */
+.answer { padding: 9px 11px; border-top: 1px solid var(--line); }
+.answer h3 { font-family: var(--fx-display); font-size: 11.5px; font-weight: 600;
+  letter-spacing: .09em; text-transform: uppercase; margin: 0 0 7px; color: var(--red); }
+.ansrow { display: grid; grid-template-columns: minmax(96px, max-content) 1fr;
+  gap: 5px 10px; align-items: center; padding: 4px 0; font-size: 12.5px; }
+.ansrow + .ansrow { border-top: 1px solid var(--line-soft); }
+.ansrow .vs { display: inline-flex; align-items: center; gap: 5px; }
+.ansrow .vs .pic { width: 19px; height: 19px; border-radius: 2px; }
+.ansrow .ln { font-family: var(--fx-mono); font-size: 9.5px; color: var(--text-faint); }
+.ansrow .picks { display: flex; flex-wrap: wrap; gap: 4px; }
+.acand { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px 2px 2px;
+  border: 1px solid var(--good); border-radius: 2px; font-size: 11.5px;
+  background: color-mix(in srgb, var(--good) 10%, transparent); }
+.acand.gone { border-color: var(--line); background: var(--panel-2); opacity: .5; }
+.acand .pic { width: 17px; height: 17px; border-radius: 2px; }
+.acand b { font-family: var(--fx-mono); font-size: 10.5px; color: var(--good); }
+.acand .n { font-family: var(--fx-mono); font-size: 9.5px; color: var(--text-faint); }
+
+/* ── ควรเปิดตำแหน่งไหน ── */
+.roles { padding: 9px 11px; border-top: 1px solid var(--line); }
+.roles h3 { font-family: var(--fx-display); font-size: 11.5px; font-weight: 600;
+  letter-spacing: .09em; text-transform: uppercase; margin: 0 0 7px; color: var(--text-dim); }
+.rolerow { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 6px; }
+.rchip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px;
+  border: 1px solid var(--line); border-radius: 2px; font-size: 11.5px; }
+.rchip.done { opacity: .5; }
+.rchip.done .who { text-decoration: none; }
+.rchip.safe { border-color: var(--good); color: var(--good); }
+.rchip.hold { border-color: var(--amber); color: var(--amber); }
+.rchip .who { font-family: var(--fx-mono); font-size: 10.5px; color: var(--text-faint); }
+
 /* ── ประวัติดราฟต์รายเกม ── */
 .hgame { border: 1px solid var(--line); border-radius: 3px; margin: 0 12px 10px;
   overflow: hidden; }
@@ -581,17 +641,42 @@ input.search:focus { outline: none; border-color: var(--amber); }
         <h2 id="recTitle">คำแนะนำ</h2>
         <p id="recSub"></p>
       </div>
-      <div style="overflow-x:auto">
-        <table class="rec">
-          <thead>
-            <tr>
-              <th class="l">#</th><th class="l">ฮีโร่</th>
-              <th>รวม</th><th>meta · wr · ctr · syn</th><th>เกม</th>
-            </tr>
-          </thead>
-          <tbody id="recBody"></tbody>
-        </table>
+
+      <div class="rec2">
+        <div class="reccol" id="colBan">
+          <h3>ควรแบน <span class="sub">มองจากมุมศัตรู</span></h3>
+          <table class="rec">
+            <thead><tr>
+              <th class="l">#</th><th class="l">ฮีโร่</th><th>รวม</th>
+              <th class="barcol">META·WR·CTR·SYN</th><th class="thin">เกม</th>
+            </tr></thead>
+            <tbody id="banBody"></tbody>
+          </table>
+        </div>
+        <div class="reccol" id="colPick">
+          <h3>ควรเลือก <span class="sub">เข้ากับทีมเรา</span></h3>
+          <table class="rec">
+            <thead><tr>
+              <th class="l">#</th><th class="l">ฮีโร่</th><th>รวม</th>
+              <th class="barcol">META·WR·CTR·SYN</th><th class="thin">เกม</th>
+            </tr></thead>
+            <tbody id="pickBody"></tbody>
+          </table>
+        </div>
       </div>
+
+      <div class="answer" id="answerBox" hidden>
+        <h3 id="answerTitle">ตัวแก้ที่ศัตรูเปิดมาแล้ว</h3>
+        <div id="answerList"></div>
+      </div>
+
+      <div class="roles" id="rolesBox">
+        <h3>ควรเปิดตำแหน่งไหน</h3>
+        <div class="rolerow" id="roleRow"></div>
+        <p style="font-size:11.5px;color:var(--text-faint);margin:0;line-height:1.6"
+           id="roleNote"></p>
+      </div>
+
       <div class="why" id="why"></div>
     </section>
 
@@ -977,17 +1062,18 @@ function synergyWith(hero, allies) {
   return [total, `จาก ${used}/${allies.length} คู่ที่มีข้อมูล`];
 }
 
-function recommend(limit = 8, minGames = 5) {
-  const t = turn();
-  if (!t) return [];
-  const isBan = t.action === "BAN";
+// action/team ส่งเข้ามาตรง ๆ เพื่อคิดทั้งสองฝั่งพร้อมกันได้
+// ไม่ผูกกับ turn() แล้ว เพราะหน้าเว็บโชว์ทั้งแบนและเลือกในเวลาเดียวกัน
+function recommend(action, team, limit = 8, minGames = 5) {
+  if (!team) return [];
+  const isBan = action === "BAN";
   // ตอนแบน มองจากมุมศัตรู — เราอยากตัดตัวที่ดีต่อ "เขา"
-  const subject = isBan ? other(t.team) : t.team;
+  const subject = isBan ? other(team) : team;
   const ours = of(subject, "PICK"), theirs = of(other(subject), "PICK");
 
   const tk = taken();
   let legal = D.heroes.filter(h => !tk.has(h.id) && h.p >= minGames);
-  if (t.action === "PICK") legal = legal.filter(h => !lockedFor(t.team).has(h.id));
+  if (!isBan) legal = legal.filter(h => !lockedFor(team).has(h.id));
   // ไม่แนะนำให้แบนตัวที่ศัตรูใช้ไม่ได้อยู่แล้ว — เสียตาแบนเปล่า
   if (isBan) legal = legal.filter(h => !lockedFor(subject).has(h.id));
   if (!legal.length) return [];
@@ -1074,31 +1160,173 @@ function renderSides() {
   }
 }
 
-function renderRecs() {
-  const t = turn();
-  const sugs = recommend();
-  el("recTitle").textContent = t
-    ? `แนะนำให้${t.action==="BAN"?"แบน":"เลือก"} — ${teamName(t.team)}`
-    : "ดราฟต์จบแล้ว";
-  el("recSub").textContent = t
-    ? (t.action==="BAN"
-        ? "ตอนแบน ระบบมองจากมุมศัตรู แล้วเสนอตัดตัวที่ดีต่อเขาที่สุด"
-        : "เรียงตามคะแนนรวมของสี่องค์ประกอบ")
-    : "กด เริ่มใหม่ เพื่อดราฟต์อีกครั้ง หรือบันทึกเกมนี้ไปเกมถัดไป";
-
-  el("recBody").innerHTML = sugs.length ? sugs.map((s,i) => {
+function recRows(sugs) {
+  if (!sugs.length)
+    return `<tr><td colspan="5" class="l thin" style="padding:14px 8px">ไม่มีตัวเลือกที่มีข้อมูลพอ</td></tr>`;
+  return sugs.map((s, i) => {
     const c = s.c;
-    const bar = (k,cl) => `<span class="bar ${cl}"><i style="height:${c[k].v.toFixed(0)}%"></i></span>`;
-    return `<tr data-h="${s.h.id}" class="${S.picked===s.h.id?"sel":""}">
-      <td class="l rank">${i+1}</td>
+    const bar = (k, cl) => `<span class="bar ${cl}"><i style="height:${c[k].v.toFixed(0)}%"></i></span>`;
+    return `<tr data-h="${s.h.id}" class="${S.picked === s.h.id ? "sel" : ""}">
+      <td class="l rank">${i + 1}</td>
       <td class="l"><span class="pic sm" ${picStyle(s.h.id)}></span><span class="hname">${escape(s.h.name)}</span></td>
       <td class="total">${s.total.toFixed(1)}</td>
-      <td><span class="bars">${bar("meta","m")}${bar("winrate","w")}${bar("counter","c")}${bar("synergy","s")}</span></td>
+      <td class="barcol"><span class="bars">${bar("meta","m")}${bar("winrate","w")}${bar("counter","c")}${bar("synergy","s")}</span></td>
       <td class="thin">${s.h.p}${s.h.p < D.min_games_reliable ? ' <span class="unsure">*</span>' : ""}</td>
     </tr>`;
-  }).join("") : `<tr><td colspan="5" class="l thin" style="padding:14px 8px">ไม่มีตัวเลือกที่มีข้อมูลพอ</td></tr>`;
+  }).join("");
+}
 
-  const focus = sugs.find(s => s.h.id === S.picked) || sugs[0];
+// ── ตัวแก้สิ่งที่ศัตรูเปิดมาแล้ว ──────────────────────────────────────
+// ใช้ข้อมูลเลนก่อนเสมอ เพราะการประกบกันจริงอยู่ในเลนเดียวกัน
+// ถ้าเลนนั้นข้อมูลไม่พอค่อยถอยไปใช้ context=TEAM แล้วบอกให้รู้ว่าถอย
+function answersTo(enemyId, minG) {
+  const lane = LANES.length ? (LANES
+    .map(ln => [ln, laneCount(enemyId, ln)])
+    .sort((a, b) => b[1] - a[1])[0] || [null, 0]) : [null, 0];
+  const tot = laneTotal(enemyId);
+  const share = tot ? lane[1] / tot : 0;
+
+  const out = [];
+  if (lane[0] && share >= 0.5) {
+    for (const h of D.heroes) {
+      if (h.id === enemyId) continue;
+      const m = LMU.get(lane[0] + "|" + h.id + "|" + enemyId);
+      if (!m || m.g < minG) continue;
+      out.push({id: h.id, name: h.name, g: m.g, w: m.w, sc: cscore(m.g, m.w), ctx: "LANE"});
+    }
+  }
+  if (out.length < 3) {
+    for (const h of D.heroes) {
+      if (h.id === enemyId || out.some(o => o.id === h.id)) continue;
+      const m = MU.get(h.id + "|" + enemyId);
+      if (!m || m.g < MINPAIR) continue;
+      out.push({id: h.id, name: h.name, g: m.g, w: m.w, sc: cscore(m.g, m.w), ctx: "TEAM"});
+    }
+  }
+  out.sort((a, b) => b.sc - a.sc);
+  return {lane: lane[0], share, list: out.filter(o => o.sc > 0).slice(0, 4)};
+}
+
+function renderAnswers() {
+  const t = turn();
+  const box = el("answerBox");
+  // มองจากมุม "ทีมที่ถึงตา" ว่าอีกฝั่งเปิดอะไรมาแล้ว
+  const me = t ? t.team : "blue";
+  const enemy = of(other(me), "PICK");
+  if (!enemy.length) { box.hidden = true; return; }
+  box.hidden = false;
+  el("answerTitle").textContent =
+    `ตัวแก้ที่ ${teamName(other(me))} เปิดมาแล้ว — สำหรับ ${teamName(me)}`;
+
+  const tk = taken(), locked = lockedFor(me);
+  el("answerList").innerHTML = enemy.map(id => {
+    const h = HERO.get(id);
+    const a = answersTo(id, MINLANE);
+    const laneTag = a.lane
+      ? `${LANE_TH[a.lane] || a.lane} ${Math.round(a.share * 100)}%` : "ไม่รู้เลน";
+    const cands = a.list.length ? a.list.map(o => {
+      const gone = tk.has(o.id) || locked.has(o.id);
+      return `<span class="acand ${gone ? "gone" : ""}" data-h="${o.id}"
+        title="${escape(o.name)} เจอ ${escape(h ? h.name : id)} ${o.w}-${o.g - o.w} · context=${o.ctx}${
+          gone ? " · หยิบไม่ได้แล้ว" : ""}">
+        <span class="pic" ${picStyle(o.id)}></span>${escape(o.name)}
+        <b>${o.sc > 0 ? "+" : ""}${o.sc.toFixed(1)}</b><span class="n">n=${o.g}</span></span>`;
+    }).join("") : `<span style="font-size:11.5px;color:var(--text-faint)">ยังไม่มีคู่ที่ข้อมูลถึงเกณฑ์</span>`;
+    return `<div class="ansrow">
+      <span class="vs"><span class="pic" ${picStyle(id)}></span>
+        <span>${escape(h ? h.name : id)}<br><span class="ln">${escape(laneTag)}</span></span></span>
+      <span class="picks">${cands}</span>
+    </div>`;
+  }).join("");
+}
+
+// ── ควรเปิดตำแหน่งไหน ────────────────────────────────────────────────
+// เลนของแต่ละตัวมาจากข้อมูลแข่งจริง ส่วนลำดับที่ควรเปิดมาจากคลิปสอน
+// (DRAFT_OPEN_THE_SAFE_ROLE_FIRST และ DRAFT_HIDE_JUNGLE_UNTIL_LAST)
+function mainLaneOf(id) {
+  const tot = laneTotal(id);
+  if (!tot) return null;
+  const best = LANES.map(ln => [ln, laneCount(id, ln)]).sort((a, b) => b[1] - a[1])[0];
+  return best && best[1] ? {lane: best[0], share: best[1] / tot} : null;
+}
+
+function renderRoles() {
+  const box = el("rolesBox");
+  if (!LANES.length) { box.hidden = true; return; }
+  box.hidden = false;
+  const t = turn();
+  const me = t ? t.team : "blue";
+  const picks = of(me, "PICK");
+
+  const by = {};
+  for (const id of picks) {
+    const m = mainLaneOf(id);
+    if (m) (by[m.lane] = by[m.lane] || []).push({id, share: m.share});
+  }
+
+  el("roleRow").innerHTML = LANES.map(ln => {
+    const got = by[ln] || [];
+    const cls = got.length ? "done" : (ln === "mid" ? "safe" : ln === "jungle" ? "hold" : "");
+    const who = got.length
+      ? got.map(g => escape(HERO.get(g.id) ? HERO.get(g.id).name : g.id) +
+          (g.share < 0.7 ? ` (เฟลก ${Math.round(g.share*100)}%)` : "")).join(", ")
+      : "ยังไม่เปิด";
+    return `<span class="rchip ${cls}">${escape(LANE_TH[ln] || ln)}
+      <span class="who">${who}</span></span>`;
+  }).join("");
+
+  const open = LANES.filter(ln => !(by[ln] || []).length);
+  const enemyOpen = new Set();
+  for (const id of of(other(me), "PICK")) {
+    const m = mainLaneOf(id);
+    if (m && m.share >= 0.5) enemyOpen.add(m.lane);
+  }
+  const answerable = open.filter(ln => enemyOpen.has(ln));
+
+  let msg = "";
+  if (!open.length) {
+    msg = "เปิดครบทุกตำแหน่งแล้ว";
+  } else {
+    const bits = [];
+    if (answerable.length)
+      bits.push(`<b>ตอบตำแหน่งที่เขาเปิดแล้วก่อน</b> — ` +
+        answerable.map(ln => escape(LANE_TH[ln])).join(", ") +
+        ` (อย่าปลายพิกตำแหน่งที่ยังไม่มีใครเปิด)`);
+    if (open.includes("mid"))
+      bits.push(`เปิด <b>มิด</b> ก่อนได้ ถูกสวนตรง ๆ ยากกว่าเปิดออฟ`);
+    if (open.includes("jungle") && open.length > 1)
+      bits.push(`เก็บ <b>ป่า</b> ไว้ท้ายสุด จะได้ไม่บอกเขาว่าตัวเฟลกลงเลนไหน`);
+    msg = bits.join(" · ");
+  }
+  el("roleNote").innerHTML = msg +
+    `<br><span style="opacity:.85">เลนของแต่ละตัวมาจากข้อมูลแข่งจริง ` +
+    `ส่วนลำดับที่ควรเปิดมาจากคลิปสอน ดูที่แท็บมาโคร</span>`;
+}
+
+function renderRecs() {
+  const t = turn();
+  const banSugs  = recommend("BAN",  t ? t.team : "blue");
+  const pickSugs = recommend("PICK", t ? t.team : "blue");
+
+  el("recTitle").textContent = t
+    ? `ตาของ ${teamName(t.team)} — ${t.action === "BAN" ? "แบน" : "เลือก"}`
+    : "ดราฟต์จบแล้ว";
+  el("recSub").textContent = t
+    ? "แสดงทั้งสองฝั่งพร้อมกัน ช่องที่เป็นตาปัจจุบันถูกเน้นไว้"
+    : "กด เริ่มใหม่ เพื่อดราฟต์อีกครั้ง หรือบันทึกผลเกมนี้ไปเกมถัดไป";
+
+  el("colBan").className  = "reccol " + (t ? (t.action === "BAN"  ? "on" : "off") : "off");
+  el("colPick").className = "reccol " + (t ? (t.action === "PICK" ? "on" : "off") : "off");
+  el("banBody").innerHTML  = recRows(banSugs);
+  el("pickBody").innerHTML = recRows(pickSugs);
+
+  renderAnswers();
+  renderRoles();
+
+  // แผงเหตุผลตามตัวที่คลิกดู มองหาในทั้งสองรายการ
+  const all = [...pickSugs, ...banSugs];
+  const focus = all.find(x => x.h.id === S.picked) ||
+                (t && t.action === "BAN" ? banSugs[0] : pickSugs[0]);
   el("why").innerHTML = focus ? `
     <h3><span class="pic" ${picStyle(focus.h.id)}></span>${escape(focus.h.name)}</h3>
     ${focus.reasons.length ? `<ul>${focus.reasons.map(r=>`<li>${escape(r)}</li>`).join("")}</ul>` : ""}
@@ -1113,7 +1341,7 @@ function renderRecs() {
 function renderPool() {
   const tk = taken(), t = turn();
   const locked = t ? lockedFor(t.team) : new Set();
-  const recIds = new Set(recommend(8).map(s => s.h.id));
+  const recIds = new Set(t ? recommend(t.action, t.team, 8).map(s => s.h.id) : []);
   const q = S.query.trim().toLowerCase();
 
   const list = D.heroes.filter(h => {
@@ -1621,13 +1849,24 @@ el("grid").addEventListener("click", e => {
   const b = e.target.closest(".hero"); if (!b || b.disabled) return;
   apply(b.dataset.h);
 });
-el("recBody").addEventListener("click", e => {
-  const tr = e.target.closest("tr"); if (!tr || !tr.dataset.h) return;
-  S.picked = S.picked === tr.dataset.h ? null : tr.dataset.h;
-  renderRecs();
-});
-el("recBody").addEventListener("dblclick", e => {
-  const tr = e.target.closest("tr"); if (tr && tr.dataset.h) apply(tr.dataset.h);
+for (const id of ["banBody", "pickBody"]) {
+  el(id).addEventListener("click", e => {
+    const tr = e.target.closest("tr"); if (!tr || !tr.dataset.h) return;
+    S.picked = S.picked === tr.dataset.h ? null : tr.dataset.h;
+    renderRecs();
+  });
+  el(id).addEventListener("dblclick", e => {
+    const tr = e.target.closest("tr"); if (tr && tr.dataset.h) apply(tr.dataset.h);
+  });
+}
+// กดตัวแก้ที่ระบบเสนอแล้วหยิบได้เลย ถ้าตานี้เป็นตาเลือก
+el("answerList").addEventListener("click", e => {
+  const c = e.target.closest(".acand");
+  if (!c || c.classList.contains("gone")) return;
+  const id = c.dataset.h;
+  if (!id) return;
+  const t = turn();
+  if (t && t.action === "PICK") apply(id); else { S.picked = id; renderRecs(); }
 });
 el("undo").onclick = () => { S.moves.pop(); S.picked = null; render(); };
 el("reset").onclick = () => { S.moves = []; S.picked = null; render(); };
