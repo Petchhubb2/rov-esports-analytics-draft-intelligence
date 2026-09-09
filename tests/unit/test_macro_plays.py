@@ -61,6 +61,33 @@ def test_data_source_must_carry_numbers():
         MacroRule.model_validate(bad)
 
 
+def test_claim_our_data_contradicts_cannot_be_high_confidence():
+    bad = _rule(
+        source={"type": "coach_input", "ref": "โค้ชคนหนึ่ง", "detail": "เขาว่างั้น"},
+        data_check={"verdict": "disagrees", "detail": "ข้อมูลบอกตรงข้าม", "n": 90},
+        confidence="HIGH",
+    )
+    with pytest.raises(ValidationError, match="ไม่เห็นด้วย"):
+        MacroRule.model_validate(bad)
+
+
+def test_contradicted_claim_is_fine_at_lower_confidence():
+    ok = _rule(
+        source={"type": "coach_input", "ref": "โค้ชคนหนึ่ง", "detail": "เขาว่างั้น"},
+        data_check={"verdict": "disagrees", "detail": "ข้อมูลบอกตรงข้าม", "n": 90},
+        confidence="LOW",
+    )
+    r = MacroRule.model_validate(ok)
+    assert r.data_check.label == "ข้อมูลเราไม่เห็นด้วย"
+
+
+def test_draft_stage_rules_have_no_phase():
+    r = MacroRule.model_validate(_rule(rule_id="D", phase=None))
+    assert r.phase is None
+    book = MacroBook.model_validate({"rules": [r.model_dump()]})
+    assert [x.rule_id for x in book.draft_rules()] == ["D"]
+
+
 def test_priority_is_bounded():
     with pytest.raises(ValidationError):
         MacroRule.model_validate(_rule(priority=140))
@@ -145,17 +172,38 @@ def test_shipped_rules_cover_every_phase():
 
 
 def test_shipped_rules_are_not_mostly_guesses():
+    """ทุกชนิดที่ไม่ใช่ assumption ถือว่ามีที่มา รวม coach_input ด้วย
+
+    coach_input ตรวจอัตโนมัติไม่ได้ แต่มันระบุตัวคนพูดและคลิปต้นทางได้
+    ต่างจาก assumption ที่ไม่มีอะไรรองรับเลย
+    """
     book = MacroBook.load()
     counts = book.counts_by_source()
-    grounded = (
-        counts.get("game_client", 0)
-        + counts.get("derived_from_data", 0)
-        + counts.get("literature", 0)
-    )
-    assert grounded >= len(book.rules) - counts.get("assumption", 0)
-    assert counts.get("assumption", 0) * 2 <= len(book.rules), (
+    guesses = counts.get("assumption", 0)
+    assert guesses * 2 <= len(book.rules), (
         "สมมติฐานเกินครึ่งคลัง — ต้องหาที่มาให้แน่นกว่านี้ก่อนเอาไปใช้"
     )
+
+
+def test_coach_rules_quote_the_source():
+    """rule จากคลิปต้องยกคำพูดต้นทางมา ไม่งั้นย้อนไปเช็คไม่ได้ว่าตีความถูกไหม"""
+    for r in MacroBook.load().rules:
+        if r.source.type == "coach_input":
+            assert r.source.detail, f"{r.rule_id}: coach_input ต้องมี detail ที่ยกคำพูดมา"
+
+
+def test_contradicted_rules_are_surfaced_not_hidden():
+    book = MacroBook.load()
+    for r in book.contradicted():
+        assert r.confidence is not Confidence.HIGH
+        assert r.data_check.detail, f"{r.rule_id}: ต้องบอกว่าข้อมูลค้านยังไง"
+
+
+def test_data_check_verdicts_carry_numbers():
+    for r in MacroBook.load().rules:
+        dc = r.data_check
+        if dc and dc.verdict in ("agrees", "disagrees"):
+            assert dc.n, f"{r.rule_id}: ตัดสินว่า{dc.verdict}แล้วต้องบอกจำนวนเกม"
 
 
 def test_external_sources_link_back():

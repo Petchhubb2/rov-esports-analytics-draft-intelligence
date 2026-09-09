@@ -59,6 +59,28 @@ class Source(BaseModel):
         return SOURCE_LABEL[self.type]
 
 
+class DataCheck(BaseModel):
+    """ข้อมูลแข่งจริงของเราว่าอย่างไรกับข้ออ้างนี้
+
+    rule ที่มาจากโค้ชหรือคลิปสอนเป็นความรู้เชิงกลไก ส่วนข้อมูลของเรา
+    วัดผลแพ้ชนะของทั้งเกม สองอย่างนี้ไม่เท่ากันและขัดกันได้โดยไม่มีใครผิด
+    เก็บทั้งคู่ไว้ให้เห็นพร้อมกัน ดีกว่าเลือกเชื่อข้างเดียวเงียบ ๆ
+    """
+
+    verdict: Literal["agrees", "disagrees", "mixed", "insufficient"]
+    detail: str
+    n: int | None = None
+
+    @property
+    def label(self) -> str:
+        return {
+            "agrees": "ข้อมูลเราเห็นด้วย",
+            "disagrees": "ข้อมูลเราไม่เห็นด้วย",
+            "mixed": "ข้อมูลเราเห็นด้วยบางส่วน",
+            "insufficient": "ข้อมูลเราไม่พอจะตัดสิน",
+        }[self.verdict]
+
+
 class Condition(BaseModel):
     """เงื่อนไขของ rule
 
@@ -87,13 +109,15 @@ class Action(BaseModel):
 class MacroRule(BaseModel):
     rule_id: str
     name: str
-    phase: GamePhase
+    # None = ใช้ตอนหน้าดราฟต์ ก่อนเกมเริ่ม ยังไม่มีนาฬิกา
+    phase: GamePhase | None = None
     priority: int = Field(ge=0, le=100, default=50)
     conditions: list[Condition] = Field(default_factory=list)
     action: Action
     patch: str | None = None
     confidence: Confidence = Confidence.MEDIUM
     source: Source
+    data_check: DataCheck | None = None
     notes: str | None = None
     # rule ที่ผูกกับฮีโร่บางตัว — ว่างแปลว่าใช้ได้ทั่วไป
     heroes: list[str] = Field(default_factory=list)
@@ -105,6 +129,19 @@ class MacroRule(BaseModel):
             raise ValueError(
                 f"{self.rule_id}: source เป็น assumption จะมี confidence HIGH ไม่ได้ "
                 "(docs/11-macro-planner.md §2)"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _contradicted_claims_cannot_be_high(self) -> MacroRule:
+        """ข้อมูลเราค้านอยู่ แต่ยังกล้าติดป้ายมั่นใจสูง = หลอกคนอ่าน"""
+        if (
+            self.data_check is not None
+            and self.data_check.verdict == "disagrees"
+            and self.confidence is Confidence.HIGH
+        ):
+            raise ValueError(
+                f"{self.rule_id}: ข้อมูลของเราไม่เห็นด้วย จะมี confidence HIGH ไม่ได้"
             )
         return self
 
@@ -140,9 +177,20 @@ class MacroBook(BaseModel):
                 rules.append(rule)
         return cls(rules=rules)
 
-    def by_phase(self, phase: GamePhase) -> list[MacroRule]:
+    def by_phase(self, phase: GamePhase | None) -> list[MacroRule]:
+        """phase=None คืน rule ของหน้าดราฟต์"""
         out = [r for r in self.rules if r.phase is phase]
         return sorted(out, key=lambda r: -r.priority)
+
+    def draft_rules(self) -> list[MacroRule]:
+        return self.by_phase(None)
+
+    def contradicted(self) -> list[MacroRule]:
+        """ข้อที่ข้อมูลเราค้าน — ต้องหยิบมาโชว์เหมือน audit()"""
+        return [
+            r for r in self.rules
+            if r.data_check and r.data_check.verdict == "disagrees"
+        ]
 
     def for_heroes(self, hero_ids: set[str]) -> list[MacroRule]:
         """rule ที่ผูกกับฮีโร่ที่ดราฟต์มา — ตอบคำถาม 'ดราฟต์ตัวนี้ต้องเล่นยังไง'"""

@@ -300,6 +300,19 @@ table.rec tbody tr.sel { background: color-mix(in srgb, var(--amber) 10%, transp
 .ctr-head .meta { font-family: var(--fx-mono); font-size: 11px; color: var(--text-faint); }
 .empty { color: var(--text-faint); font-size: 12px; padding: 8px; }
 
+/* ── ข้อมูลเราว่ายังไง ── */
+.chk { margin-top: 9px; padding: 9px 10px; border-radius: 3px; font-size: 12px;
+  line-height: 1.65; border-left: 3px solid var(--line); background: var(--panel-2); }
+.chk.agrees    { border-left-color: var(--good); }
+.chk.disagrees { border-left-color: var(--red); }
+.chk.mixed     { border-left-color: var(--amber); }
+.chk b { display: block; margin-bottom: 3px; }
+.chk.agrees b    { color: var(--good); }
+.chk.disagrees b { color: var(--red); }
+.chk.mixed b     { color: var(--amber); }
+.badge.coach { background: var(--amber); color: var(--ground); border-color: var(--amber); }
+.badge.draft { color: var(--blue); border-color: var(--blue); }
+
 /* ── มาโคร ── */
 .mac-wrap { padding: 12px; display: grid; gap: 16px; grid-template-columns: 300px 1fr; }
 @media (max-width: 900px) { .mac-wrap { grid-template-columns: 1fr; } }
@@ -1334,12 +1347,14 @@ function renderMap() {
 // ระบบไม่แต่ง rule เอง หลักการเดียวกับ heroes.yaml
 const RULES = D.macro_rules || [];
 const PHASES_TH = {
-  OPENING: "0:00-2:00 เปิดเกม", EARLY: "2:00-4:00 ต้นเกม",
+  DRAFT: "หน้าดราฟต์", OPENING: "0:00-2:00 เปิดเกม", EARLY: "2:00-4:00 ต้นเกม",
   MID: "4:00-8:00 กลางเกม", LATE: "8:00-15:00 ปลายเกม", BATTLE: "15:00+ Battle",
 };
-const PHASE_ORDER = ["OPENING","EARLY","MID","LATE","BATTLE"];
+// null = หน้าดราฟต์ ก่อนเกมเริ่ม จึงไม่มีนาฬิกา
+const PHASE_ORDER = ["DRAFT","OPENING","EARLY","MID","LATE","BATTLE"];
+const phaseOf = r => r.phase || "DRAFT";
 const SRC_CLASS = {game_client:"game", derived_from_data:"data",
-                   literature:"lit", assumption:"assume"};
+                   literature:"lit", assumption:"assume", coach_input:"coach"};
 const ROLE_TH = {ds:"DS", jungle:"ป่า", mid:"มิด", dragon:"ADL", support:"ซัพพอร์ต"};
 
 const heroTempo = id => { const h = HERO.get(id); return h && h.tempo != null ? h.tempo : null; };
@@ -1415,7 +1430,7 @@ function ruleHTML(r, isHero) {
     <h4>${escape(r.name)}</h4>
     <div class="meta">
       <span class="badge ${cls}">${escape(r.src_label)}</span>
-      <span class="badge ph">${escape(PHASES_TH[r.phase] || r.phase)}</span>
+      <span class="badge ${r.phase ? "ph" : "draft"}">${escape(PHASES_TH[phaseOf(r)])}</span>
       <span class="badge">มั่นใจ ${escape(r.conf)}</span>
       ${r.patch ? `<span class="badge">แพตช์ ${escape(r.patch)}</span>` : ""}
       ${isHero ? `<span class="badge" style="border-color:var(--amber);color:var(--amber)">ตรงกับตัวที่ดราฟต์</span>` : ""}
@@ -1425,6 +1440,9 @@ function ruleHTML(r, isHero) {
     <div class="src"><b>ที่มา</b> ${escape(r.src_ref)}${
       r.src_url ? ` · <a href="${escape(r.src_url)}" target="_blank" rel="noopener">ลิงก์</a>` : ""}${
       r.src_detail ? `<br>${escape(r.src_detail)}` : ""}</div>
+    ${r.check ? `<div class="chk ${r.check.verdict}">
+      <b>${escape(r.check.label)}${r.check.n ? ` · จาก ${r.check.n.toLocaleString()} เกม` : ""}</b>
+      ${escape(r.check.detail)}</div>` : ""}
     ${r.notes ? `<div class="nt">${escape(r.notes.trim())}</div>` : ""}
   </div>`;
 }
@@ -1435,7 +1453,7 @@ function renderMacro() {
 
   const drafted = new Set([...of("blue","PICK"), ...of("red","PICK")]);
   const counts = {};
-  for (const ph of PHASE_ORDER) counts[ph] = RULES.filter(r => r.phase === ph).length;
+  for (const ph of PHASE_ORDER) counts[ph] = RULES.filter(r => phaseOf(r) === ph).length;
 
   el("phaseBar").innerHTML =
     `<button class="ph" data-p="all" aria-pressed="${S.macPhase==="all"}">ทุกช่วง</button>` +
@@ -1450,10 +1468,10 @@ function renderMacro() {
   const hero = RULES.filter(hit).sort((a,b) => b.priority - a.priority);
   const heroIds = new Set(hero.map(r => r.id));
 
-  let list = S.macPhase === "all" ? RULES : RULES.filter(r => r.phase === S.macPhase);
+  let list = S.macPhase === "all" ? RULES : RULES.filter(r => phaseOf(r) === S.macPhase);
   list = list.filter(r => !heroIds.has(r.id))
-             .sort((a,b) => (b.priority-a.priority) ||
-                            (PHASE_ORDER.indexOf(a.phase)-PHASE_ORDER.indexOf(b.phase)));
+             .sort((a,b) => (PHASE_ORDER.indexOf(phaseOf(a))-PHASE_ORDER.indexOf(phaseOf(b))) ||
+                            (b.priority-a.priority));
 
   const heroBlock = hero.length
     ? `<h3 style="font-family:var(--fx-display);font-size:12px;letter-spacing:.1em;
@@ -1471,6 +1489,8 @@ function renderMacro() {
   const src = D.macro_sources || {};
   el("macCount").textContent = `${RULES.length} rule`;
   const un = (D.macro_unverified || []).length;
+  const bad = (D.macro_contradicted || []).length;
+  const checked = RULES.filter(r => r.check).length;
   el("macNote").innerHTML =
     `<b>rule ทุกข้อมาจาก <code>knowledge/macro/</code> และต้องมีที่มาติดมาเสมอ</b> — ` +
     `ระบบไม่แต่ง rule เอง หลักการเดียวกับ <code>heroes.yaml</code><br>` +
@@ -1478,12 +1498,14 @@ function renderMacro() {
       `<span class="badge ${SRC_CLASS[k]||"lit"}">${escape(k)}</span> ${v}`).join(" · ") +
     `<br>` + (un
       ? `<b style="color:var(--red)">มี ${un} rule ที่ยังเป็นสมมติฐาน</b> — แสดงไว้ให้เห็น ไม่ได้ซ่อน`
-      : `ยังไม่มี rule ที่เป็นสมมติฐานล้วน ทุกข้ออ้างอิงตัวเกม ข้อมูลแข่ง หรือบทความที่ลิงก์ได้`) +
+      : `ยังไม่มี rule ที่เป็นสมมติฐานล้วน ทุกข้ออ้างอิงตัวเกม ข้อมูลแข่ง คลิปสอน หรือบทความที่ลิงก์ได้`) +
+    `<br><b>ตรวจกับข้อมูลของเราแล้ว ${checked} ข้อ</b>` + (bad
+      ? ` — ในนั้น <b style="color:var(--red)">${bad} ข้อที่ข้อมูล 861 เกมของเราค้าน</b> ` +
+        `เก็บไว้ทั้งคู่ให้เห็นพร้อมกัน ไม่ได้ลบทิ้งและไม่ได้เชื่อข้างเดียว`
+      : "") +
     `<br><b>⚠️ ยังไม่ได้ประเมินอัตโนมัติ</b> ช่อง "เมื่อไร" เป็น checklist ให้คนอ่าน ` +
     `ไม่ใช่เงื่อนไขที่ระบบตรวจเอง เพราะยังไม่มีสถานะเกมสดจาก vision pipeline ` +
-    `(docs/11-macro-planner.md §3)<br>` +
-    `<b>ที่ยังขาด</b> ความรู้จากคลิป TikTok/YouTube ที่คุณบอกมา ระบบอ่านวิดีโอไม่ได้ ` +
-    `ถ้าถอดเป็นข้อความได้ ใส่เป็น rule ใหม่ที่ <code>source.type: coach_input</code>`;
+    `(docs/11-macro-planner.md §3)`;
 }
 
 function setView(v) {

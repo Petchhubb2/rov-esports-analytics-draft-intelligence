@@ -123,7 +123,8 @@ def main() -> int:
         macro_rules.append({
             "id": r.rule_id,
             "name": r.name,
-            "phase": r.phase.value,
+            # None = ใช้ตอนหน้าดราฟต์ ก่อนเกมเริ่ม
+            "phase": r.phase.value if r.phase else None,
             "priority": r.priority,
             "conf": r.confidence.value,
             "patch": r.patch,
@@ -140,6 +141,16 @@ def main() -> int:
             "src_ref": r.source.ref,
             "src_detail": r.source.detail,
             "src_url": r.source.url,
+            "check": (
+                {
+                    "verdict": r.data_check.verdict,
+                    "label": r.data_check.label,
+                    "detail": r.data_check.detail,
+                    "n": r.data_check.n,
+                }
+                if r.data_check
+                else None
+            ),
             "notes": r.notes,
         })
 
@@ -171,6 +182,7 @@ def main() -> int:
         "macro_rules": macro_rules,
         "macro_sources": book.counts_by_source(),
         "macro_unverified": [r.rule_id for r in book.audit()],
+        "macro_contradicted": [r.rule_id for r in book.contradicted()],
     }
 
     out_path = Path("data/exports/draft_data.json")
@@ -183,6 +195,9 @@ def main() -> int:
     print(f"เขียน {out_path}  ({size_kb:.0f} KB)")
     print(f"  เกม        {data['total_games']}")
     print(f"  macro      {len(macro_rules)} rule · {book.counts_by_source()}")
+    print(f"             หน้าดราฟต์ {len(book.draft_rules())} · "
+          f"ข้อมูลเราค้าน {len(book.contradicted())} · "
+          f"สมมติฐาน {len(book.audit())}")
     print(f"  lane pair  {len(lane_pack)} (>= {MIN_LANE_PAIR_GAMES} เกม) "
           f"· หลักฐานช่อง={'ผ่าน' if evidence['passes'] else 'ไม่ผ่าน'}")
     print(f"  ฮีโร่       {len(heroes)}  (มี class {sum(1 for h in heroes if h['cls'])})")
