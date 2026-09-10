@@ -347,6 +347,28 @@ table.rec tbody tr.sel { background: color-mix(in srgb, var(--amber) 10%, transp
 .acand b { font-family: var(--fx-mono); font-size: 10.5px; color: var(--good); }
 .acand .n { font-family: var(--fx-mono); font-size: 9.5px; color: var(--text-faint); }
 
+/* ── คู่คอมโบของทีมเรา ── */
+.combo { padding: 9px 11px; border-top: 1px solid var(--line); }
+.combo h3 { font-family: var(--fx-display); font-size: 11.5px; font-weight: 600;
+  letter-spacing: .09em; text-transform: uppercase; margin: 0 0 7px; color: var(--good); }
+.ccand { display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px 2px 2px;
+  border: 1px solid var(--good); border-radius: 2px; font-size: 11.5px;
+  background: color-mix(in srgb, var(--good) 10%, transparent); cursor: pointer; }
+.ccand.gone { border-color: var(--line); background: var(--panel-2); opacity: .5; cursor: default; }
+.ccand.bad { border-color: var(--red); background: color-mix(in srgb, var(--red) 10%, transparent); }
+.ccand .pic { width: 17px; height: 17px; border-radius: 2px; }
+.ccand b { font-family: var(--fx-mono); font-size: 10.5px; color: var(--good); }
+.ccand.bad b { color: var(--red); }
+.ccand .n { font-family: var(--fx-mono); font-size: 9.5px; color: var(--text-faint); }
+
+/* ── น้ำหนักที่ใช้ตอนนี้ ── */
+.wts { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center;
+  font-family: var(--fx-mono); font-size: 10px; color: var(--text-faint);
+  padding: 5px 11px; border-top: 1px solid var(--line-soft); }
+.wts i { display: inline-block; width: 26px; height: 4px; border-radius: 2px;
+  background: var(--line); overflow: hidden; vertical-align: 1px; position: relative; }
+.wts i b { position: absolute; inset: 0 auto 0 0; display: block; }
+
 /* ── ควรเปิดตำแหน่งไหน ── */
 .roles { padding: 9px 11px; border-top: 1px solid var(--line); }
 .roles h3 { font-family: var(--fx-display); font-size: 11.5px; font-weight: 600;
@@ -718,6 +740,13 @@ input.search:focus { outline: none; border-color: var(--amber); }
         <h3 id="answerTitle">ตัวแก้ที่ศัตรูเปิดมาแล้ว</h3>
         <div id="answerList"></div>
       </div>
+
+      <div class="combo" id="comboBox" hidden>
+        <h3 id="comboTitle">คู่คอมโบกับตัวที่เราเปิดไปแล้ว</h3>
+        <div id="comboList"></div>
+      </div>
+
+      <div class="wts" id="wtsBox"></div>
 
       <div class="roles" id="rolesBox">
         <h3>ควรเปิดตำแหน่งไหน</h3>
@@ -1110,10 +1139,35 @@ function apply(hero) {
 }
 
 // ── คำแนะนำ — พอร์ตจาก rov/draft/recommend.py ────────────────────────
-const W = {meta:.30, winrate:.30, counter:.25, synergy:.15};
+//
+// น้ำหนักไม่คงที่แล้ว มันขยับตามว่า "รู้บริบทของเกมนี้มากแค่ไหน"
+//
+// ปัญหาของน้ำหนักคงที่ meta .30 / wr .30 / ctr .25 / syn .15 คือ
+// ต้นดราฟต์ยังไม่มีใครเปิดตัว ctr กับ syn ไม่มีข้อมูล ได้ค่ากลางไปทั้งคู่
+// คะแนนรวมจึงเหลือแต่ meta กับ win rate ซึ่งเป็นค่าเฉลี่ยข้ามทุกเกม
+// ผลคือมันเชียร์ตัววินเรทสูงเหมือนเดิมทุกครั้ง ไม่สนว่าอีกฝั่งเปิดอะไรมา
+//
+// พอฝั่งตรงข้ามเปิดตัวมาแล้ว เรามีข้อมูลเฉพาะเกมนี้ ควรเชื่อมันมากกว่า
+// ค่าเฉลี่ยรวม น้ำหนักจึงไหลจาก meta/wr ไปทาง counter/synergy ตามจำนวนตัวที่เปิด
+function weightsFor(nEnemy, nAlly) {
+  // ไต่แบบอิ่มตัว ไม่ใช่เส้นตรง — ตัวแรกที่เปิดมาให้ข้อมูลเยอะที่สุด
+  // ตัวที่ห้าเพิ่มอีกไม่มากแล้ว เส้นตรงทำให้ต้นดราฟต์สัญญาณจางเกินจริง
+  //
+  // ปลอดภัยที่จะให้น้ำหนักสูง เพราะ cscore ถ่วงด้วยขนาดตัวอย่างมาแล้ว
+  // คู่ที่ข้อมูลน้อยจะได้ค่าใกล้ศูนย์เอง การเพิ่มน้ำหนักจึงไม่ขยาย noise
+  const e = nEnemy / (nEnemy + 1.2);
+  const a = nAlly / (nAlly + 1.2);
+  const counter = 0.08 + 0.40 * e;   // .08 -> .44
+  const synergy = 0.05 + 0.25 * a;   // .05 -> .28
+  const rest = 1 - counter - synergy;
+  return {meta: rest * 0.45, winrate: rest * 0.55, counter, synergy};
+}
+const W_LABEL = {meta: "meta", winrate: "win rate", counter: "counter", synergy: "synergy"};
+const W_COLOR = {meta: "var(--text-faint)", winrate: "var(--good)",
+                 counter: "var(--blue)", synergy: "var(--amber)"};
 
 function counterAgainst(hero, enemies) {
-  if (!enemies.length) return [0, "ศัตรูยังไม่ได้เลือก จึงยังคิด counter ไม่ได้"];
+  if (!enemies.length) return [0, "ศัตรูยังไม่ได้เลือก จึงยังคิด counter ไม่ได้", 0];
   let total = 0, used = 0, best = null;
   for (const e of enemies) {
     const m = MU.get(hero+"|"+e);
@@ -1122,22 +1176,31 @@ function counterAgainst(hero, enemies) {
     total += sc; used++;
     if (!best || sc > best[1]) best = [e, sc];
   }
-  if (!used) return [0, `ยังไม่มีคู่ที่ถึง ${MINPAIR} เกมกับตัวที่ศัตรูเลือก`];
+  if (!used) return [0, `ยังไม่มีคู่ที่ถึง ${MINPAIR} เกมกับตัวที่ศัตรูเลือก`, 0];
+  // เฉลี่ยต่อ "ตัวที่ศัตรูเปิดมา" ไม่ใช่ต่อคู่ที่มีข้อมูล
+  // คู่ที่ไม่มีข้อมูลจึงถ่วงลงมาหาศูนย์เอง ตามที่ควรเป็น
+  total /= Math.max(1, enemies.length);
   let d = `จาก ${used}/${enemies.length} คู่ที่มีข้อมูล`;
   if (best && best[1] > 0.5) d += ` · เด่นเมื่อเจอ ${HERO.get(best[0]).name} (${best[1]>0?"+":""}${best[1].toFixed(1)})`;
-  return [total, d];
+  return [total, d, used];
 }
 
 function synergyWith(hero, allies) {
-  if (!allies.length) return [0, "ทีมยังไม่ได้เลือก จึงยังคิด synergy ไม่ได้"];
-  let total = 0, used = 0;
+  if (!allies.length) return [0, "ทีมยังไม่ได้เลือก จึงยังคิด synergy ไม่ได้", 0];
+  let total = 0, used = 0, best = null;
   for (const a of allies) {
     const m = SY.get(syKey(hero, a));
     if (!m || m.g < MINPAIR) continue;
-    total += cscore(m.g, m.w); used++;
+    const sc = cscore(m.g, m.w);
+    total += sc; used++;
+    if (!best || sc > best[1]) best = [a, sc];
   }
-  if (!used) return [0, `ยังไม่มีคู่ที่ถึง ${MINPAIR} เกมกับตัวที่ทีมเลือก`];
-  return [total, `จาก ${used}/${allies.length} คู่ที่มีข้อมูล`];
+  if (!used) return [0, `ยังไม่มีคู่ที่ถึง ${MINPAIR} เกมกับตัวที่ทีมเลือก`, 0];
+  total /= Math.max(1, allies.length);
+  let d = `จาก ${used}/${allies.length} คู่ที่มีข้อมูล`;
+  if (best && best[1] > 0.5)
+    d += ` · เข้าคู่กับ ${HERO.get(best[0]).name} (${best[1] > 0 ? "+" : ""}${best[1].toFixed(1)})`;
+  return [total, d, used];
 }
 
 // action/team ส่งเข้ามาตรง ๆ เพื่อคิดทั้งสองฝั่งพร้อมกันได้
@@ -1156,17 +1219,18 @@ function recommend(action, team, limit = 8, minGames = 5) {
   if (isBan) legal = legal.filter(h => !lockedFor(subject).has(h.id));
   if (!legal.length) return [];
 
+  const W = weightsFor(theirs.length, ours.length);
   const pres = legal.map(h => h.pres);
   const pLo = Math.min(...pres), pHi = Math.max(...pres);
 
   const out = legal.map(h => {
-    const [cRaw, cDet] = counterAgainst(h.id, theirs);
-    const [sRaw, sDet] = synergyWith(h.id, ours);
+    const [cRaw, cDet, cN] = counterAgainst(h.id, theirs);
+    const [sRaw, sDet, sN] = synergyWith(h.id, ours);
     const c = {
       meta:    {label:"Meta",     v: scale(h.pres, pLo, pHi), d:`pick ${h.p} ban ${h.b} จาก ${D.total_games} เกม`},
       winrate: {label:"Win rate", v: scale(h.wr, .42, .58),   d:`${h.wr.toFixed(3)} จาก ${h.p} เกม (ถ่วงตัวอย่างแล้ว)`},
-      counter: {label:"Counter",  v: scale(cRaw, -6, 6), raw:cRaw, d:cDet},
-      synergy: {label:"Synergy",  v: scale(sRaw, -6, 6), raw:sRaw, d:sDet},
+      counter: {label:"Counter",  v: scale(cRaw, -3, 3), raw:cRaw, d:cDet, n:cN},
+      synergy: {label:"Synergy",  v: scale(sRaw, -3, 3), raw:sRaw, d:sDet, n:sN},
     };
     const total = Object.entries(W).reduce((s,[k,w]) => s + w*c[k].v, 0);
     return {h, total, c, reasons: reasons(h, c, isBan)};
@@ -1179,8 +1243,12 @@ function reasons(h, c, isBan) {
   const r = [];
   if (h.pres >= .5) r.push(`อยู่ในเมตาหนัก presence ${Math.round(h.pres*100)}%`);
   if (h.b > h.p*2 && h.b >= 20) r.push(`ถูกแบนมากกว่าถูกเลือก ${h.b} ต่อ ${h.p} — ทีมอาชีพกลัวตัวนี้`);
-  if (c.counter.raw > 2) r.push("ได้เปรียบตัวที่ศัตรูเลือกไปแล้ว");
-  if (c.counter.raw < -2) r.push("เสียเปรียบตัวที่ศัตรูเลือกไปแล้ว");
+  if (c.counter.raw > 1) r.push("ได้เปรียบตัวที่ศัตรูเลือกไปแล้ว");
+  if (c.counter.raw < -1) r.push("เสียเปรียบตัวที่ศัตรูเลือกไปแล้ว");
+  if (c.synergy.raw > 1) r.push("เข้าคู่กับตัวที่ทีมเราเลือกไปแล้ว");
+  if (c.synergy.raw < -1) r.push("ไม่เข้ากับตัวที่ทีมเราเลือกไปแล้ว");
+  if (!c.counter.n && !c.synergy.n)
+    r.push("ยังไม่มีข้อมูลคู่กับตัวที่เปิดมา คะแนนนี้จึงมาจากค่าเฉลี่ยรวมล้วน ๆ");
   if (h.p < D.min_games_reliable) r.push(`ข้อมูลยังน้อย ${h.p} เกม ตัวเลขยังไม่นิ่ง`);
   if (isBan && h.pres >= .4) r.push("แบนแล้วตัดตัวเลือกหลักของศัตรูได้");
   return r;
@@ -1284,6 +1352,78 @@ function answersTo(enemyId, minG) {
   }
   out.sort((a, b) => b.sc - a.sc);
   return {lane: lane[0], share, list: out.filter(o => o.sc > 0).slice(0, 4)};
+}
+
+// ── คู่คอมโบกับตัวที่ทีมเราเปิดไปแล้ว ────────────────────────────────
+// กระจกเงาของกล่องตัวแก้ แต่มองจากฝั่งเพื่อนแทนฝั่งศัตรู
+// ตอบคำถาม "เปิดตัวนี้มาแล้วควรเล่นตัวไหนคู่กัน"
+function partnersFor(allyId, minG) {
+  const out = [];
+  for (const h of D.heroes) {
+    if (h.id === allyId) continue;
+    const m = SY.get(syKey(h.id, allyId));
+    if (!m || m.g < minG) continue;
+    out.push({id: h.id, name: h.name, g: m.g, w: m.w, sc: cscore(m.g, m.w)});
+  }
+  out.sort((a, b) => b.sc - a.sc);
+  return out;
+}
+
+function renderCombos() {
+  const t = turn();
+  const box = el("comboBox");
+  const me = t ? t.team : "blue";
+  const mine = of(me, "PICK");
+  if (!mine.length) { box.hidden = true; return; }
+  box.hidden = false;
+  el("comboTitle").textContent = `คู่คอมโบกับตัวที่ ${teamName(me)} เปิดไปแล้ว`;
+
+  const tk = taken(), locked = lockedFor(me);
+  el("comboList").innerHTML = mine.map(id => {
+    const h = HERO.get(id);
+    const all = partnersFor(id, MINPAIR);
+    const good = all.filter(o => o.sc > 0).slice(0, 4);
+    // คู่ที่ห้ามเล่นด้วยกันสำคัญพอ ๆ กับคู่ที่ดี เอามาโชว์ด้วยหนึ่งตัว
+    const worst = all.length ? all[all.length - 1] : null;
+    const bad = worst && worst.sc < -1.5 ? [worst] : [];
+    const chip = (o, isBad) => {
+      const gone = tk.has(o.id) || locked.has(o.id);
+      return `<span class="ccand ${isBad ? "bad" : ""} ${gone ? "gone" : ""}" data-h="${o.id}"
+        title="${escape(o.name)} คู่กับ ${escape(h ? h.name : id)} ${o.w}-${o.g - o.w}${
+          isBad ? " · คู่นี้ผลแย่" : ""}${gone ? " · หยิบไม่ได้แล้ว" : ""}">
+        <span class="pic" ${picStyle(o.id)}></span>${escape(o.name)}
+        <b>${o.sc > 0 ? "+" : ""}${o.sc.toFixed(1)}</b><span class="n">n=${o.g}</span></span>`;
+    };
+    const body = good.length || bad.length
+      ? good.map(o => chip(o, false)).join("") +
+        (bad.length ? `<span style="color:var(--text-faint);font-size:11px;margin:0 3px">ห้ามคู่กับ</span>` +
+          bad.map(o => chip(o, true)).join("") : "")
+      : `<span style="font-size:11.5px;color:var(--text-faint)">ยังไม่มีคู่ที่ข้อมูลถึงเกณฑ์</span>`;
+    const ml = mainLaneOf(id);
+    return `<div class="ansrow">
+      <span class="vs"><span class="pic" ${picStyle(id)}></span>
+        <span>${escape(h ? h.name : id)}<br><span class="ln">${
+          escape(ml ? (LANE_TH[ml.lane] || ml.lane) : "ไม่รู้เลน")}</span></span></span>
+      <span class="picks">${body}</span>
+    </div>`;
+  }).join("");
+}
+
+// แสดงน้ำหนักที่ใช้อยู่จริงตอนนี้ ให้เห็นว่าทำไมอันดับถึงเปลี่ยน
+function renderWeights() {
+  const t = turn();
+  const team = t ? t.team : "blue";
+  const nE = of(other(team), "PICK").length, nA = of(team, "PICK").length;
+  const W = weightsFor(nE, nA);
+  el("wtsBox").innerHTML =
+    `<span>น้ำหนักตอนนี้</span>` +
+    Object.entries(W).map(([k, w]) =>
+      `<span>${W_LABEL[k]} <i><b style="width:${(w*100).toFixed(0)}%;background:${W_COLOR[k]}"></b></i> ${
+        (w*100).toFixed(0)}%</span>`).join("") +
+    `<span style="margin-left:auto">ศัตรูเปิด ${nE} · เราเปิด ${nA} — ` +
+    (nE + nA === 0
+      ? "ยังไม่มีบริบท จึงพึ่งค่าเฉลี่ยรวมก่อน"
+      : "ยิ่งเปิดตัวมาก ยิ่งเชื่อ counter/synergy มากกว่าค่าเฉลี่ยรวม") + `</span>`;
 }
 
 function renderAnswers() {
@@ -1400,6 +1540,8 @@ function renderRecs() {
   el("pickBody").innerHTML = recRows(pickSugs);
 
   renderAnswers();
+  renderCombos();
+  renderWeights();
   renderRoles();
 
   // แผงเหตุผลตามตัวที่คลิกดู มองหาในทั้งสองรายการ
@@ -2188,15 +2330,17 @@ for (const id of ["banBody", "pickBody"]) {
     const tr = e.target.closest("tr"); if (tr && tr.dataset.h) apply(tr.dataset.h);
   });
 }
-// กดตัวแก้ที่ระบบเสนอแล้วหยิบได้เลย ถ้าตานี้เป็นตาเลือก
-el("answerList").addEventListener("click", e => {
-  const c = e.target.closest(".acand");
-  if (!c || c.classList.contains("gone")) return;
-  const id = c.dataset.h;
-  if (!id) return;
-  const t = turn();
-  if (t && t.action === "PICK") apply(id); else { S.picked = id; renderRecs(); }
-});
+// กดตัวที่ระบบเสนอ (ทั้งตัวแก้และคู่คอมโบ) แล้วหยิบได้เลยถ้าตานี้เป็นตาเลือก
+for (const [boxId, cls] of [["answerList", ".acand"], ["comboList", ".ccand"]]) {
+  el(boxId).addEventListener("click", e => {
+    const c = e.target.closest(cls);
+    if (!c || c.classList.contains("gone")) return;
+    const id = c.dataset.h;
+    if (!id) return;
+    const t = turn();
+    if (t && t.action === "PICK") apply(id); else { S.picked = id; renderRecs(); }
+  });
+}
 el("undo").onclick = () => { S.moves.pop(); S.picked = null; render(); };
 el("reset").onclick = () => { S.moves = []; S.picked = null; render(); };
 el("swap").onclick = () => {

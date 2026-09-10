@@ -6,7 +6,7 @@ import pytest
 from rov.domain.enums import DraftAction, Team
 from rov.draft.importer.parser import GameDraft, SeriesDraft
 from rov.draft.meta import Region, pool
-from rov.draft.recommend import recommend
+from rov.draft.recommend import recommend, weights_for
 from rov.draft.state import DraftFormat, DraftState, IllegalMove
 
 FORMAT_FILE = "configs/draft/format.yaml"
@@ -263,3 +263,43 @@ def test_no_recommendation_when_draft_complete(fmt):
             break
         st.apply(h)
     assert recommend(st, p) == []
+
+
+# --------------------------------------------- น้ำหนักที่ขยับตามบริบท
+
+
+def test_weights_always_sum_to_one():
+    for ne in range(6):
+        for na in range(5):
+            w = weights_for(ne, na)
+            assert abs(sum(w.values()) - 1.0) < 1e-9, (ne, na, w)
+
+
+def test_with_no_picks_the_averages_carry_the_score():
+    """ยังไม่มีใครเปิดตัว ก็ไม่มีบริบท ต้องพึ่ง meta กับ win rate เป็นหลัก"""
+    w = weights_for(0, 0)
+    assert w["meta"] + w["winrate"] > 0.85
+    assert w["counter"] < 0.10 and w["synergy"] < 0.10
+
+
+def test_weight_moves_to_counter_as_the_enemy_opens_up():
+    """นี่คือหัวใจของการแก้ — เปิดตัวมากขึ้น ต้องเชื่อบริบทมากกว่าค่าเฉลี่ยรวม"""
+    seq = [weights_for(n, 0)["counter"] for n in range(6)]
+    assert seq == sorted(seq), "counter ต้องไม่ลดลงเมื่อศัตรูเปิดตัวเพิ่ม"
+    assert seq[-1] > seq[0] * 3, "ตอนเปิดครบต้องหนักกว่าตอนยังไม่เปิดหลายเท่า"
+    # ไต่แบบอิ่มตัว ตัวแรกต้องให้ข้อมูลมากกว่าตัวที่ห้า
+    assert seq[1] - seq[0] > seq[5] - seq[4]
+
+
+def test_weight_moves_to_synergy_as_our_team_fills_up():
+    seq = [weights_for(0, n)["synergy"] for n in range(5)]
+    assert seq == sorted(seq)
+    assert seq[-1] > seq[0] * 3
+
+
+def test_winrate_loses_ground_once_the_draft_is_known():
+    """เคสที่ผู้ใช้ติดมา — วินเรทสูงต้องไม่ครองอันดับตลอดไป"""
+    early = weights_for(0, 0)
+    late = weights_for(5, 4)
+    assert late["winrate"] < early["winrate"] / 2
+    assert late["counter"] > late["winrate"]

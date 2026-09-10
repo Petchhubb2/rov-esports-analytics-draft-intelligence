@@ -81,3 +81,67 @@ def test_series_state_is_derived_not_duplicated(tpl):
     """
     assert "S.used" not in tpl, "S.used ถูกแทนด้วย lockedFor() ที่คิดจากประวัติแล้ว"
     assert "const winsOf = t => S.results.filter" in tpl
+
+
+def test_js_weight_formula_matches_python(tpl):
+    """สูตรน้ำหนักถูกเขียนสองที่ ต้องให้ค่าตรงกัน
+
+    JS ใช้บนหน้าเว็บ Python ใช้ใน CLI และ engine
+    ถ้าสองอันเพี้ยนกัน คำแนะนำจะต่างกันโดยไม่มีใครรู้
+    เทสต์นี้แกะค่าคงที่ออกจาก JS แล้วเทียบกับ weights_for() ของจริง
+    """
+    from rov.draft.recommend import weights_for
+
+    m = re.search(
+        r"const e = nEnemy / \(nEnemy \+ ([\d.]+)\);\s*"
+        r"const a = nAlly / \(nAlly \+ ([\d.]+)\);\s*"
+        r"const counter = ([\d.]+) \+ ([\d.]+) \* e;.*?"
+        r"const synergy = ([\d.]+) \+ ([\d.]+) \* a;",
+        tpl,
+        re.S,
+    )
+    assert m, "หาสูตรน้ำหนักใน template ไม่เจอ"
+    ke, ka, c0, cs, s0, ss = (float(x) for x in m.groups())
+
+    def js(n_enemy: int, n_ally: int) -> dict[str, float]:
+        e = n_enemy / (n_enemy + ke)
+        a = n_ally / (n_ally + ka)
+        counter = c0 + cs * e
+        synergy = s0 + ss * a
+        rest = 1.0 - counter - synergy
+        return {
+            "meta": rest * 0.45,
+            "winrate": rest * 0.55,
+            "counter": counter,
+            "synergy": synergy,
+        }
+
+    for ne in range(6):
+        for na in range(5):
+            a, b = js(ne, na), weights_for(ne, na)
+            for k in a:
+                assert abs(a[k] - b[k]) < 1e-9, (ne, na, k, a[k], b[k])
+
+
+def test_js_component_scale_matches_python(tpl):
+    """ช่วงสเกลของ counter/synergy ต้องตรงกันสองฝั่ง
+
+    ถ้าฝั่งหนึ่งใช้ -6..6 อีกฝั่งใช้ -3..3 คะแนนจะคนละสเกลกันเงียบ ๆ
+    """
+    import inspect
+
+    from rov.draft import recommend as rec
+
+    src = inspect.getsource(rec)
+    for name in ("Counter", "Synergy"):
+        key = name.lower()
+        py = re.search(
+            rf'"{key}", "{name}", \w+_raw, _scale\(\w+_raw, ([-\d.]+), ([\d.]+)\)', src
+        )
+        assert py, f"หาสเกลของ {name} ฝั่ง Python ไม่เจอ"
+        js = re.search(
+            rf'{key}: {{label:"{name}",\s*v: scale\(\w+Raw, ([-\d.]+), ([\d.]+)\)', tpl
+        )
+        assert js, f"หาสเกลของ {name} ฝั่ง JS ไม่เจอ"
+        assert float(py.group(1)) == float(js.group(1))
+        assert float(py.group(2)) == float(js.group(2))

@@ -27,15 +27,49 @@ from rov.draft.state import DraftState
 
 # น้ำหนักเริ่มต้น ยังไม่ผ่านการ validate ด้วยผลแพ้ชนะ
 # ต้อง fit ด้วย logistic regression เมื่อมีข้อมูลพอ (docs/06 §6)
+#
+# ใช้เฉพาะตอนที่ยังไม่มีใครเปิดตัว ปกติ recommend() จะคำนวณน้ำหนักใหม่
+# ตามจำนวนตัวที่เปิดมาแล้วด้วย weights_for() ดูเหตุผลที่นั่น
 DEFAULT_WEIGHTS = {
-    "meta": 0.30,
-    "winrate": 0.30,
-    "counter": 0.25,
-    "synergy": 0.15,
+    "meta": 0.39,
+    "winrate": 0.48,
+    "counter": 0.08,
+    "synergy": 0.05,
 }
 
 # จำนวนเกมขั้นต่ำของคู่ ก่อนจะนำ matchup มาคิด
 MIN_PAIR_GAMES = 8
+
+
+def weights_for(n_enemy: int, n_ally: int) -> dict[str, float]:
+    """น้ำหนักที่ขยับตามว่ารู้บริบทของเกมนี้มากแค่ไหน
+
+    ปัญหาของน้ำหนักคงที่ (meta .30 / wr .30 / counter .25 / synergy .15)
+    คือต้นดราฟต์ยังไม่มีใครเปิดตัว counter กับ synergy ไม่มีข้อมูลเลย
+    ได้ค่ากลางไปทั้งคู่ คะแนนรวมจึงเหลือแต่ meta กับ win rate
+    ซึ่งเป็นค่าเฉลี่ยข้ามทุกเกม ผลคือมันเชียร์ตัว win rate สูงเหมือนกันทุกครั้ง
+    ไม่ว่าอีกฝั่งจะเปิดอะไรมา
+
+    พอฝั่งตรงข้ามเปิดตัวแล้ว เรามีข้อมูลเฉพาะเกมนี้ ซึ่งควรเชื่อมากกว่า
+    ค่าเฉลี่ยรวม น้ำหนักจึงไหลจาก meta/winrate ไปทาง counter/synergy
+
+    ไต่แบบอิ่มตัว ไม่ใช่เส้นตรง เพราะตัวแรกที่เปิดมาให้ข้อมูลเยอะที่สุด
+    ตัวที่ห้าเพิ่มอีกไม่มากแล้ว
+
+    ปลอดภัยที่จะให้น้ำหนักสูง เพราะ counter_score ถ่วงด้วยขนาดตัวอย่างมาแล้ว
+    คู่ที่ข้อมูลน้อยจะได้ค่าใกล้ศูนย์เอง การเพิ่มน้ำหนักจึงไม่ขยาย noise
+    """
+    e = n_enemy / (n_enemy + 1.2)
+    a = n_ally / (n_ally + 1.2)
+    counter = 0.08 + 0.40 * e
+    synergy = 0.05 + 0.25 * a
+    rest = 1.0 - counter - synergy
+    return {
+        "meta": rest * 0.45,
+        "winrate": rest * 0.55,
+        "counter": counter,
+        "synergy": synergy,
+    }
 
 
 @dataclass
@@ -78,7 +112,6 @@ def recommend(
     if turn is None:
         return []
 
-    w = {**DEFAULT_WEIGHTS, **(weights or {})}
     stats = pooled.stats
     prior = stats.baseline_win_rate
     team = turn.team_enum
@@ -88,6 +121,11 @@ def recommend(
     subject = team.opponent if is_ban else team
     ours = state.picks(subject)
     theirs = state.picks(subject.opponent)
+
+    # น้ำหนักขึ้นกับว่าเปิดตัวกันไปแล้วกี่ตัว
+    # ถ้าผู้เรียกส่ง weights มาเอง ให้ทับลงบนค่าที่คำนวณได้
+    # ส่งมาบางคีย์ก็ได้ ที่เหลือใช้ค่าไดนามิก
+    w = {**weights_for(len(theirs), len(ours)), **(weights or {})}
 
     legal = state.legal_moves()
     if is_ban:
@@ -120,12 +158,12 @@ def recommend(
 
         c_raw, c_detail = _counter_against(pooled, hid, theirs, prior)
         s.components["counter"] = Component(
-            "counter", "Counter", c_raw, _scale(c_raw, -6.0, 6.0), c_detail
+            "counter", "Counter", c_raw, _scale(c_raw, -3.0, 3.0), c_detail
         )
 
         y_raw, y_detail = _synergy_with(pooled, hid, ours, prior)
         s.components["synergy"] = Component(
-            "synergy", "Synergy", y_raw, _scale(y_raw, -6.0, 6.0), y_detail
+            "synergy", "Synergy", y_raw, _scale(y_raw, -3.0, 3.0), y_detail
         )
 
         s.total = sum(w[k] * c.scaled for k, c in s.components.items())
@@ -139,7 +177,15 @@ def recommend(
 def _counter_against(
     pooled: PooledStats, hero: str, enemies: list[str], prior: float
 ) -> tuple[float, str]:
-    """ผลรวมความได้เปรียบของ hero เมื่อเจอฮีโร่ที่ศัตรูเลือกไปแล้ว"""
+    """ความได้เปรียบเฉลี่ยของ hero เมื่อเจอฮีโร่ที่ศัตรูเลือกไปแล้ว
+
+    เฉลี่ยต่อ "ตัวที่ศัตรูเปิดมา" ไม่ใช่ต่อคู่ที่มีข้อมูล คู่ที่ไม่มีข้อมูล
+    จึงถ่วงค่าลงมาหาศูนย์เอง
+
+    เดิมใช้ผลรวม ซึ่งปนสองเรื่องเข้าด้วยกัน — ความแรงของผล กับจำนวนที่รู้
+    ทำให้ต้นดราฟต์สัญญาณจางเกินจริง ตอนนี้แยกกัน ค่านี้บอกความแรง
+    ส่วนจำนวนที่รู้ไปอยู่ที่น้ำหนักใน weights_for()
+    """
     if not enemies:
         return 0.0, "ศัตรูยังไม่ได้เลือก จึงยังคิด counter ไม่ได้"
     total = 0.0
@@ -156,6 +202,7 @@ def _counter_against(
             best = (e, sc)
     if used == 0:
         return 0.0, f"ยังไม่มีคู่ที่ถึง {MIN_PAIR_GAMES} เกมกับตัวที่ศัตรูเลือก"
+    total /= max(1, len(enemies))
     detail = f"จาก {used}/{len(enemies)} คู่ที่มีข้อมูล"
     if best and best[1] > 0.5:
         detail += f" · เด่นเมื่อเจอ {best[0]} ({best[1]:+.1f})"
@@ -187,6 +234,7 @@ def _synergy_with(
         used += 1
     if used == 0:
         return 0.0, f"ยังไม่มีคู่ที่ถึง {MIN_PAIR_GAMES} เกมกับตัวที่ทีมเลือก"
+    total /= max(1, len(allies))
     return total, f"จาก {used}/{len(allies)} คู่ที่มีข้อมูล"
 
 
