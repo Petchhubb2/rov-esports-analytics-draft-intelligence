@@ -42,6 +42,24 @@ class GlobalBanPick(BaseModel):
     source: str | None = None
 
 
+class TurnClock(BaseModel):
+    """เวลาต่อหนึ่งตา — ใช้บนกระดานเว็บ
+
+    ⚠️ ค่าเริ่มต้นยังไม่ยืนยัน หาไม่พบทั้งในหน้ารายการแข่งของ Liquipedia
+    และในคลิปสอนดราฟต์ที่อยู่ใน knowledge/raw/ จึงใส่ค่ามาตรฐานของ MOBA ไว้
+    แล้วกำกับ verified: false ตามหลักเดียวกับลำดับ ban/pick
+
+    ยืนยันได้ด้วยการดูคลิปแข่งหนึ่งคลิปแล้วจับเวลาหนึ่งตา
+    """
+
+    ban: int = 30
+    pick: int = 30
+    # เวลาสำรองที่สะสมได้ต่อทีม 0 = ไม่มี
+    reserve: int = 0
+    verified: bool = False
+    source: str | None = None
+
+
 class SideSelection(BaseModel):
     """สิทธิ์เลือกฝั่ง — มีผลต่อคำแนะนำระดับซีรีส์
 
@@ -64,6 +82,7 @@ class DraftFormat(BaseModel):
     picks_per_team: int = 5
     global_ban_pick: GlobalBanPick = Field(default_factory=GlobalBanPick)
     side_selection: SideSelection = Field(default_factory=SideSelection)
+    turn_clock: TurnClock = Field(default_factory=TurnClock)
     sequence: list[TurnSpec] = Field(default_factory=list)
     # ที่มาของลำดับสลับแบน/เลือก — ว่างแปลว่ายังเดาอยู่
     sequence_source: str | None = None

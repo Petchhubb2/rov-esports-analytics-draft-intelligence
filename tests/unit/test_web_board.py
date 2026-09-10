@@ -256,3 +256,25 @@ def test_js_and_python_agree_on_a_real_composition(tpl):
     by_label = {d.label: d.value for d in rep.dimensions.values()}
     for label, expected in js.items():
         assert by_label[label] == pytest.approx(expected, abs=0.05), label
+
+
+def test_js_turn_clock_matches_format_yaml(tpl, fmt):
+    """เวลาต่อตาบนเว็บต้องตรงกับ turn_clock ใน format.yaml
+
+    ค่านี้ยังไม่ยืนยันกับการแข่งจริง เมื่อวันหนึ่งจับเวลาจากคลิปได้แล้ว
+    จะได้แก้ที่ config ที่เดียวแล้วรู้ทันทีว่าต้องตามไปแก้ JS ด้วย
+    """
+    m = re.search(
+        r"const CLOCK = \{ban: (\d+), pick: (\d+), verified: (true|false)\};", tpl
+    )
+    assert m, "หา const CLOCK ใน template ไม่เจอ"
+    assert int(m.group(1)) == fmt.turn_clock.ban
+    assert int(m.group(2)) == fmt.turn_clock.pick
+    assert (m.group(3) == "true") is fmt.turn_clock.verified
+
+
+def test_unverified_clock_must_say_so_on_screen(tpl, fmt):
+    """ถ้าเวลายังไม่ยืนยัน หน้าเว็บต้องบอกผู้ใช้ ห้ามแสดงเป็นตัวเลขลอย ๆ"""
+    if fmt.turn_clock.verified:
+        pytest.skip("เวลายืนยันแล้ว ไม่ต้องมีคำเตือน")
+    assert "ยังไม่ยืนยัน" in tpl, "นาฬิกาที่ยังไม่ยืนยันต้องมีคำเตือนใน template"

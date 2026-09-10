@@ -213,10 +213,12 @@ def main() -> int:
                 "blue_wins": prof.blue_wins,
                 "first": prof.first_seen.isoformat() if prof.first_seen else None,
                 "last": prof.last_seen.isoformat() if prof.last_seen else None,
-                "picks": dict(prof.pick_counts.most_common(40)),
-                "bans": dict(prof.ban_counts.most_common(20)),
+                # ตัดหางทิ้ง — หน้าเว็บแสดงอย่างมากเลนละ 5 ตัว กับแบน 6 ตัว
+                # สองชุดนี้กิน 39% ของข้อมูลทั้งไฟล์ ตัวที่หยิบครั้งเดียวไม่บอกอะไร
+                "picks": dict(prof.pick_counts.most_common(20)),
+                "bans": dict(prof.ban_counts.most_common(10)),
                 "lanes": {
-                    lane.value: dict(pool.most_common(12))
+                    lane.value: dict(pool.most_common(8))
                     for lane, pool in prof.lane_pools.items()
                 },
                 "bans_vs": [
@@ -229,7 +231,7 @@ def main() -> int:
                         "score": round(t.score, 1),
                         "why": t.reason,
                     }
-                    for t in target_bans(prof, league_pick_rate, limit=10)
+                    for t in target_bans(prof, league_pick_rate, limit=8)
                 ],
             }
         return out

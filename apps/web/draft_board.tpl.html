@@ -100,6 +100,17 @@ body {
   font-family: var(--fx-mono); font-size: 11px; color: var(--text-faint);
   padding-right: 10px; border-right: 1px solid var(--line);
 }
+/* นาฬิกาต่อตา — ค่าเวลายังไม่ยืนยัน จึงต้องมี hint บอกเสมอ */
+.clockbox { display: flex; align-items: center; gap: 6px; padding-left: 10px;
+  border-left: 1px solid var(--line); }
+.clockbox button { font-size: 12px; padding: 2px 8px; line-height: 1.5; }
+.cnum { font-family: var(--fx-mono); font-size: 18px; font-weight: 600;
+  min-width: 2.6em; text-align: right; color: var(--text-dim);
+  font-variant-numeric: tabular-nums; }
+.clockbox.run .cnum { color: var(--text); }
+.clockbox.warn .cnum { color: var(--amber); }
+.clockbox.out .cnum { color: var(--red); }
+.chint { font-size: 10px; color: var(--text-faint); line-height: 1.3; max-width: 7em; }
 .now { font-family: var(--fx-display); font-size: 19px; font-weight: 600; letter-spacing: .01em; }
 .now .who { text-transform: uppercase; }
 .now.blue .who { color: var(--blue); }
@@ -402,6 +413,20 @@ table.rec tbody tr.sel { background: color-mix(in srgb, var(--amber) 10%, transp
 .cdims .hi i { background: var(--good); }
 .cnote { font-size: 10.5px; color: var(--text-faint); margin: 7px 0 0; line-height: 1.6; }
 .cnote.warn { color: var(--amber); }
+/* แถบค้นหา rule มาโคร */
+.macbar { display: flex; gap: 8px; align-items: center; margin: 0 0 10px; }
+.macbar input { flex: 1; min-width: 0; font: inherit; font-size: 12.5px;
+  padding: 5px 9px; background: var(--panel); color: var(--text);
+  border: 1px solid var(--line); border-radius: 3px; }
+.macbar button { font-size: 11.5px; padding: 5px 10px; white-space: nowrap; }
+
+/* rule พับได้ — เปิดทั้ง 42 ข้อพร้อมกันทำให้หน้ายาวเกิน 12,000px จนใช้ไม่ได้ */
+.rule > h4 { cursor: pointer; user-select: none; }
+.rule > h4::before { content: "▸"; display: inline-block; width: 1em;
+  color: var(--text-faint); transition: transform .12s; }
+.rule.open > h4::before { transform: rotate(90deg); }
+.rule .body { display: none; }
+.rule.open .body { display: block; }
 .psteps { padding: 10px 12px; border-top: 1px solid var(--line); }
 .psteps h3 { font-family: var(--fx-display); font-size: 11.5px; letter-spacing: .09em;
   text-transform: uppercase; margin: 0 0 7px; color: var(--text-dim); }
@@ -747,6 +772,11 @@ input.search:focus { outline: none; border-color: var(--amber); }
   <div class="turnbar" id="turnbar">
     <div class="step" id="step">—</div>
     <div class="now" id="now">—</div>
+    <div class="clockbox" id="clockbox">
+      <button id="clockToggle" title="เริ่ม/หยุดนาฬิกา">▶</button>
+      <span class="cnum" id="clockNum">—</span>
+      <span class="chint" id="clockHint">นาฬิกา</span>
+    </div>
     <div class="spacer"></div>
     <div class="btn-row">
       <button id="undo">↶ ย้อน</button>
@@ -1064,6 +1094,11 @@ input.search:focus { outline: none; border-color: var(--amber); }
         </div>
         <div>
           <div class="phasebar" id="phaseBar"></div>
+          <div class="macbar">
+            <input id="macSearch" type="search" placeholder="ค้นหาในชื่อ สรุป หรือฮีโร่..."
+                   autocomplete="off">
+            <button id="macExpand" type="button">กางทั้งหมด</button>
+          </div>
           <div id="ruleList"></div>
           <p style="font-size:11.5px;color:var(--text-faint);margin:12px 0 0;line-height:1.7"
              id="macNote"></p>
@@ -1119,6 +1154,10 @@ const SEQ = [
 ].map(([phase, team, action]) => ({phase, team, action}));
 const BANS = 4, PICKS = 5;
 
+// เวลาต่อหนึ่งตา — สำเนาของ turn_clock ใน configs/draft/format.yaml
+// ⚠️ ยังไม่ยืนยันกับการแข่งจริง หน้าเว็บจึงต้องบอกผู้ใช้ว่าเป็นค่าตั้งเอง
+const CLOCK = {ban: 30, pick: 30, verified: false};
+
 const CLS_ABBR = {assassin:"ASN", mage:"MAG", marksman:"MKS", support:"SUP", tank:"TNK", warrior:"WAR"};
 
 // รูปฮีโร่ — มีเฉพาะตอนรันในเครื่องที่ดาวน์โหลดไว้แล้ว
@@ -1171,6 +1210,8 @@ const S = {
   ctrMin: MINPAIR,
   ctrLane: "all",     // all = context=TEAM · ที่เหลือคือเลนเดียวกัน
   macPhase: "all",
+  macQuery: "",        // คำค้นในแท็บมาโคร
+  macOpen: false,      // กาง rule ทั้งหมดอยู่หรือเปล่า
   // กระดานวางหมาก — ตำแหน่งเป็น normalized 0..1 เก็บตาม key ของหมาก
   wbPos: {},
   wbZones: true,
@@ -1228,6 +1269,7 @@ function apply(hero) {
   if (!t || why(hero)) return false;
   S.moves.push({i: S.moves.length, team: t.team, action: t.action, hero});
   S.picked = null;
+  clockReset();          // ตาใหม่ได้เวลาใหม่ · เดินต่อถ้าเดินอยู่ก่อนหน้า
   render();
   return true;
 }
@@ -1499,6 +1541,7 @@ const el = id => document.getElementById(id);
 
 function render() {
   renderTurn();
+  renderClockBox();
   renderSides();
   renderRecs();
   renderPool();
@@ -1509,6 +1552,59 @@ function render() {
   // แผนมาโครกับถาดหมากขึ้นกับตัวที่ดราฟต์ ต้องอัปเดตตาม
   if (S.view === "macro") renderMacro();
   if (S.view === "map" && D.minimap) renderBoard();
+}
+
+// ── นาฬิกาต่อตา ───────────────────────────────────────────────────────
+//
+// ตั้งใจให้ "เตือน" ไม่ใช่ "บังคับ" — หมดเวลาแล้วไม่แย่งเลือกตัวให้เอง
+// เพราะเวลาที่ใช้ยังไม่ยืนยันกับการแข่งจริง (ดู CLOCK และ format.yaml)
+// การให้ระบบตัดสินใจแทนบนค่าที่ยังไม่ยืนยัน อันตรายกว่าปล่อยให้คนกดเอง
+const CK = {running: false, left: 0, timer: null};
+
+function clockFor(t) {
+  return t ? (t.action === "BAN" ? CLOCK.ban : CLOCK.pick) : 0;
+}
+
+function clockReset(start) {
+  CK.left = clockFor(turn());
+  if (start !== undefined) CK.running = start;
+  renderClockBox();
+}
+
+function clockTick() {
+  if (!CK.running) return;
+  if (CK.left > 0) CK.left--;
+  renderClockBox();
+}
+
+function clockToggle() {
+  if (!turn()) return;
+  CK.running = !CK.running;
+  if (CK.running && CK.left <= 0) CK.left = clockFor(turn());
+  renderClockBox();
+}
+
+function renderClockBox() {
+  const box = el("clockbox"); if (!box) return;
+  const t = turn();
+  if (!t) {
+    CK.running = false;
+    box.className = "clockbox";
+    el("clockNum").textContent = "—";
+    el("clockToggle").textContent = "▶";
+    el("clockToggle").disabled = true;
+    el("clockHint").textContent = "จบแล้ว";
+    return;
+  }
+  el("clockToggle").disabled = false;
+  el("clockToggle").textContent = CK.running ? "❚❚" : "▶";
+  el("clockNum").textContent = CK.left > 0 ? CK.left : "0";
+  const frac = CK.left / Math.max(1, clockFor(t));
+  box.className = "clockbox" +
+    (CK.left <= 0 ? " out" : frac <= 0.34 ? " warn" : CK.running ? " run" : "");
+  el("clockHint").innerHTML = CK.left <= 0
+    ? "หมดเวลา"
+    : `${clockFor(t)} วิ/ตา${CLOCK.verified ? "" : "<br>ค่าตั้งเอง ยังไม่ยืนยัน"}`;
 }
 
 function renderTurn() {
@@ -2717,7 +2813,7 @@ function renderTempoList() {
   }).join("");
 }
 
-function ruleHTML(r, isHero) {
+function ruleHTML(r, isHero, open) {
   const cls = SRC_CLASS[r.src] || "lit";
   const assign = r.assign.length ? `<div class="asg">` + r.assign.map(a =>
     `<b>${escape(ROLE_TH[a.role] || a.role)}</b><span>${escape(a.goto)}${
@@ -2725,7 +2821,8 @@ function ruleHTML(r, isHero) {
   ).join("") + `</div>` : "";
   const cues = r.cues.length ? `<div class="cue"><b>เมื่อไร</b><ul>` +
     r.cues.map(c => `<li>${escape(c)}</li>`).join("") + `</ul></div>` : "";
-  return `<div class="rule ${isHero ? "hero" : ""}">
+  return `<div class="rule ${isHero ? "hero" : ""}${open ? " open" : ""}" data-rule="${
+    escape(r.id)}">
     <h4>${escape(r.name)}</h4>
     <div class="meta">
       <span class="badge ${cls}">${escape(r.src_label)}</span>
@@ -2735,6 +2832,7 @@ function ruleHTML(r, isHero) {
       ${isHero ? `<span class="badge" style="border-color:var(--amber);color:var(--amber)">ตรงกับตัวที่ดราฟต์</span>` : ""}
     </div>
     ${r.summary ? `<div class="sum">${escape(r.summary)}</div>` : ""}
+    <div class="body">
     ${cues}${assign}
     <div class="src"><b>ที่มา</b> ${escape(r.src_ref)}${
       r.src_url ? ` · <a href="${escape(r.src_url)}" target="_blank" rel="noopener">ลิงก์</a>` : ""}${
@@ -2743,6 +2841,7 @@ function ruleHTML(r, isHero) {
       <b>${escape(r.check.label)}${r.check.n ? ` · จาก ${r.check.n.toLocaleString()} เกม` : ""}</b>
       ${escape(r.check.detail)}</div>` : ""}
     ${r.notes ? `<div class="nt">${escape(r.notes.trim())}</div>` : ""}
+    </div>
   </div>`;
 }
 
@@ -2767,23 +2866,46 @@ function renderMacro() {
   const hero = RULES.filter(hit).sort((a,b) => b.priority - a.priority);
   const heroIds = new Set(hero.map(r => r.id));
 
+  // ค้นหาในชื่อ สรุป cue และรายชื่อฮีโร่ — ค้นแล้วกางให้เลย ไม่ต้องกดซ้ำ
+  const q = (S.macQuery || "").trim().toLowerCase();
+  const match = r => !q || [
+    r.name, r.summary, r.id, (r.heroes||[]).join(" "), (r.cues||[]).join(" "),
+  ].join(" ").toLowerCase().includes(q);
+
   let list = S.macPhase === "all" ? RULES : RULES.filter(r => phaseOf(r) === S.macPhase);
-  list = list.filter(r => !heroIds.has(r.id))
+  list = list.filter(r => !heroIds.has(r.id)).filter(match)
              .sort((a,b) => (PHASE_ORDER.indexOf(phaseOf(a))-PHASE_ORDER.indexOf(phaseOf(b))) ||
                             (b.priority-a.priority));
+  const heroList = hero.filter(match);
 
-  const heroBlock = hero.length
+  // เปิดอัตโนมัติเมื่อ (ก) เป็น rule ของตัวที่ดราฟต์มา — คือคำถามหลัก
+  // (ข) กำลังค้นหาอยู่  (ค) ผู้ใช้กดกางทั้งหมด  ที่เหลือพับไว้
+  const openAll = !!S.macOpen || !!q;
+
+  const heroBlock = heroList.length
     ? `<h3 style="font-family:var(--fx-display);font-size:12px;letter-spacing:.1em;
          text-transform:uppercase;margin:0 0 8px;color:var(--amber)">
-         ตัวที่ดราฟต์มา — ${hero.length} ข้อ</h3>` +
-      hero.map(r => ruleHTML(r, true)).join("") +
+         ตัวที่ดราฟต์มา — ${heroList.length} ข้อ</h3>` +
+      heroList.map(r => ruleHTML(r, true, true)).join("") +
       `<h3 style="font-family:var(--fx-display);font-size:12px;letter-spacing:.1em;
          text-transform:uppercase;margin:18px 0 8px;color:var(--text-dim)">แผนทั่วไป</h3>`
     : "";
 
   el("ruleList").innerHTML = heroBlock + (list.length
-    ? list.map(r => ruleHTML(r, false)).join("")
-    : `<p class="empty">ยังไม่มี rule ในช่วงนี้ — เพิ่มได้ที่ knowledge/macro/</p>`);
+    ? list.map(r => ruleHTML(r, false, openAll)).join("")
+    : `<p class="empty">${q
+        ? "ไม่พบ rule ที่ตรงกับคำค้น"
+        : "ยังไม่มี rule ในช่วงนี้ — เพิ่มได้ที่ knowledge/macro/"}</p>`);
+
+  // พับ/กางทีละข้อ — ผูกที่หัวข้อ ไม่ใช่ทั้งกล่อง จะได้เลือกข้อความข้างในได้
+  for (const h of el("ruleList").querySelectorAll(".rule > h4"))
+    h.onclick = () => h.parentElement.classList.toggle("open");
+
+  const btn = el("macExpand");
+  if (btn) {
+    btn.textContent = openAll ? "พับทั้งหมด" : "กางทั้งหมด";
+    btn.disabled = !!q;   // ตอนค้นหาอยู่ กางให้แล้ว ปุ่มจึงไม่มีความหมาย
+  }
 
   const src = D.macro_sources || {};
   el("macCount").textContent = `${RULES.length} rule`;
@@ -2850,8 +2972,18 @@ for (const [boxId, cls] of [["answerList", ".acand"], ["comboList", ".ccand"]]) 
     if (t && t.action === "PICK") apply(id); else { S.picked = id; renderRecs(); }
   });
 }
-el("undo").onclick = () => { S.moves.pop(); S.picked = null; render(); };
-el("reset").onclick = () => { S.moves = []; S.picked = null; render(); };
+el("undo").onclick = () => {
+  S.moves.pop(); S.picked = null;
+  clockReset(false);     // ย้อนแล้วหยุดนาฬิกา ให้คนกดเริ่มเองเมื่อพร้อม
+  render();
+};
+el("reset").onclick = () => {
+  S.moves = []; S.picked = null;
+  clockReset(false);
+  render();
+};
+el("clockToggle").onclick = clockToggle;
+setInterval(clockTick, 1000);
 el("swap").onclick = () => {
   const a = el("nameBlue"), b = el("nameRed");
   [a.value, b.value] = [b.value, a.value];
@@ -2888,6 +3020,10 @@ el("phaseBar").addEventListener("click", e => {
   const b = e.target.closest(".ph"); if (!b) return;
   S.macPhase = b.dataset.p; renderMacro();
 });
+el("macSearch").addEventListener("input", e => {
+  S.macQuery = e.target.value; renderMacro();
+});
+el("macExpand").onclick = () => { S.macOpen = !S.macOpen; renderMacro(); };
 el("zoneOn").addEventListener("change", e => { S.wbZones = e.target.checked; drawZones(); });
 el("zoneLab").addEventListener("change", e => { S.wbLabels = e.target.checked; drawZones(); });
 el("markOn").addEventListener("change", e => { S.wbMarks = e.target.checked; drawMarks(); });
@@ -2980,6 +3116,7 @@ if (D.teams && Object.keys(D.teams).length) {
   el("scoutCard").hidden = true;
 }
 
+clockReset(false);   // ตั้งเวลาของตาแรกไว้ แต่ยังไม่เดินจนกว่าจะกด ▶
 render();
 renderCtr();
 })();
