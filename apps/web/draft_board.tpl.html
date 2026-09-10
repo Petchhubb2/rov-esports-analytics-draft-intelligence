@@ -318,6 +318,9 @@ table.rec tbody tr.sel { background: color-mix(in srgb, var(--amber) 10%, transp
 .rec2 .barcol { display: none; }
 @container (min-width: 660px) { .rec2 .barcol { display: table-cell; } }
 .rec2 .rec th, .rec2 .rec td { padding-left: 5px; padding-right: 5px; }
+.rec tr.offrole { opacity: .5; }
+.offrole-tag { font-family: var(--fx-mono); font-size: 9px; padding: 1px 4px; margin-left: 5px;
+  border: 1px solid var(--line); border-radius: 2px; color: var(--text-faint); vertical-align: 1px; }
 .rec2 .rec .hname { max-width: 108px; overflow: hidden; text-overflow: ellipsis;
   white-space: nowrap; display: inline-block; vertical-align: middle; }
 .reccol { min-width: 0; }
@@ -1201,6 +1204,45 @@ function apply(hero) {
   return true;
 }
 
+// ── ตำแหน่งที่ยังเปิดอยู่ ────────────────────────────────────────────
+// เลนที่ทีมนั้น "ปิดไปแล้ว" คือเลนที่มีตัวหลักลงไปแล้ว
+// ต้องลงเลนนั้น **มากกว่าครึ่ง** ถึงจะนับว่าปิด ไม่ใช่มากกว่าเท่ากับ
+// เพราะตัวที่เล่นสองเลน 50/50 เราไม่รู้ว่ามันจะลงเลนไหน ถือว่ายังไม่ปิดทั้งคู่ปลอดภัยกว่า
+const LANE_OWN_SHARE = 0.5;
+function filledLanes(team) {
+  const out = new Set();
+  for (const id of of(team, "PICK")) {
+    const m = mainLaneOf(id);
+    if (m && m.share > LANE_OWN_SHARE) out.add(m.lane);
+  }
+  return out;
+}
+
+function neededLanes(team) {
+  const filled = filledLanes(team);
+  return new Set(LANES.filter(ln => !filled.has(ln)));
+}
+
+// สัดส่วนการเล่นของฮีโร่ที่ตกอยู่ในเลนที่ฝ่ายนั้นยังต้องการ
+//
+// นี่คือตัวแก้ปัญหา "แบนเมจทั้งที่เขามีเมจแล้ว"
+// ถ้าเขาเปิดเมจ โรม แครี่ ไปแล้ว เหลือแต่ป่ากับออฟ การแบนเมจอีกตัว
+// คือแบนทิ้งเปล่า เพราะเขาไม่มีช่องจะใส่แล้ว ต้องไปตัดป่ากับออฟแทน
+// เรื่องเดียวกันกับตอนเลือก — ไม่ควรหยิบเมจตัวที่สองมาทับตำแหน่งเดิม
+function roleFit(heroId, need) {
+  const tot = laneTotal(heroId);
+  if (!tot || need.size === 0 || need.size === LANES.length) return 1;
+  let hit = 0;
+  for (const ln of need) hit += laneCount(heroId, ln);
+  return hit / tot;
+}
+
+// แปลงเป็นตัวคูณ ไม่ใช่องค์ประกอบที่เอาไปเฉลี่ย
+// เพราะมันไม่ใช่ "ดีอีกแบบหนึ่ง" แต่เป็น "เรื่องนี้เกี่ยวกับตาปัจจุบันไหม"
+// ตัวที่ตำแหน่งเต็มแล้วเก่งแค่ไหนก็ไม่ควรขึ้นมาบัง ไม่ใช่แค่โดนหักคะแนนนิดหน่อย
+const ROLE_FLOOR = 0.35;
+const roleMul = fit => ROLE_FLOOR + (1 - ROLE_FLOOR) * fit;
+
 // ── คำแนะนำ — พอร์ตจาก rov/draft/recommend.py ────────────────────────
 //
 // น้ำหนักไม่คงที่แล้ว มันขยับตามว่า "รู้บริบทของเกมนี้มากแค่ไหน"
@@ -1283,6 +1325,8 @@ function recommend(action, team, limit = 8, minGames = 5) {
   if (!legal.length) return [];
 
   const W = weightsFor(theirs.length, ours.length);
+  // ตอนแบนมองจากมุมศัตรู ตำแหน่งที่ต้องดูจึงเป็นตำแหน่งที่ "เขา" ยังไม่เปิด
+  const need = neededLanes(subject);
   const pres = legal.map(h => h.pres);
   const pLo = Math.min(...pres), pHi = Math.max(...pres);
 
@@ -1295,15 +1339,28 @@ function recommend(action, team, limit = 8, minGames = 5) {
       counter: {label:"Counter",  v: scale(cRaw, -3, 3), raw:cRaw, d:cDet, n:cN},
       synergy: {label:"Synergy",  v: scale(sRaw, -3, 3), raw:sRaw, d:sDet, n:sN},
     };
-    const total = Object.entries(W).reduce((s,[k,w]) => s + w*c[k].v, 0);
-    return {h, total, c, reasons: reasons(h, c, isBan)};
+    const base = Object.entries(W).reduce((s,[k,w]) => s + w*c[k].v, 0);
+    const fit = roleFit(h.id, need);
+    const total = base * roleMul(fit);
+    return {h, total, base, fit, need, c, reasons: reasons(h, c, isBan, fit, need)};
   });
   out.sort((a,b) => b.total - a.total);
   return out.slice(0, limit);
 }
 
-function reasons(h, c, isBan) {
+function reasons(h, c, isBan, fit, need) {
   const r = [];
+  if (need && need.size && need.size < LANES.length) {
+    const names = [...need].map(l => LANE_TH[l] || l).join(", ");
+    if (fit <= 0.25)
+      r.push(isBan
+        ? `ตำแหน่งนี้เขาเปิดไปแล้ว แบนไปก็ไม่ได้ตัดอะไร เขาเหลือแค่ ${names}`
+        : `ตำแหน่งนี้ทีมเราเปิดไปแล้ว เราเหลือแค่ ${names}`);
+    else if (fit >= 0.75)
+      r.push(isBan
+        ? `ตรงตำแหน่งที่เขายังไม่เปิด (${names})`
+        : `เติมตำแหน่งที่เรายังขาด (${names})`);
+  }
   if (h.pres >= .5) r.push(`อยู่ในเมตาหนัก presence ${Math.round(h.pres*100)}%`);
   if (h.b > h.p*2 && h.b >= 20) r.push(`ถูกแบนมากกว่าถูกเลือก ${h.b} ต่อ ${h.p} — ทีมอาชีพกลัวตัวนี้`);
   if (c.counter.raw > 1) r.push("ได้เปรียบตัวที่ศัตรูเลือกไปแล้ว");
@@ -1377,9 +1434,12 @@ function recRows(sugs) {
   return sugs.map((s, i) => {
     const c = s.c;
     const bar = (k, cl) => `<span class="bar ${cl}"><i style="height:${c[k].v.toFixed(0)}%"></i></span>`;
-    return `<tr data-h="${s.h.id}" class="${S.picked === s.h.id ? "sel" : ""}">
+    const dim = s.fit != null && s.fit <= 0.25;
+    return `<tr data-h="${s.h.id}" class="${S.picked === s.h.id ? "sel" : ""} ${dim ? "offrole" : ""}"
+      ${dim ? 'title="ตำแหน่งนี้เปิดไปแล้ว คะแนนถูกหักลงเพราะไม่ตรงกับสิ่งที่ยังต้องการ"' : ""}>
       <td class="l rank">${i + 1}</td>
-      <td class="l"><span class="pic sm" ${picStyle(s.h.id)}></span><span class="hname">${escape(s.h.name)}</span></td>
+      <td class="l"><span class="pic sm" ${picStyle(s.h.id)}></span><span class="hname">${escape(s.h.name)}</span>${
+        dim ? '<span class="offrole-tag">ตำแหน่งเต็ม</span>' : ""}</td>
       <td class="total">${s.total.toFixed(1)}</td>
       <td class="barcol"><span class="bars">${bar("meta","m")}${bar("winrate","w")}${bar("counter","c")}${bar("synergy","s")}</span></td>
       <td class="thin">${s.h.p}${s.h.p < D.min_games_reliable ? ' <span class="unsure">*</span>' : ""}</td>
@@ -1767,6 +1827,17 @@ function renderRecs() {
 
   el("colBan").className  = "reccol " + (t ? (t.action === "BAN"  ? "on" : "off") : "off");
   el("colPick").className = "reccol " + (t ? (t.action === "PICK" ? "on" : "off") : "off");
+
+  // บอกให้เห็นว่ากำลังเล็งตำแหน่งไหนอยู่ ทั้งฝั่งเขาและฝั่งเรา
+  const me = t ? t.team : "blue";
+  const say = set => set.size === LANES.length ? "ยังไม่เปิดเลย"
+            : set.size === 0 ? "เปิดครบแล้ว"
+            : [...set].map(l => LANE_TH[l] || l).join(", ");
+  const nEnemy = neededLanes(other(me)), nMine = neededLanes(me);
+  const bh = el("colBan").querySelector("h3 .sub");
+  const ph = el("colPick").querySelector("h3 .sub");
+  if (bh) bh.textContent = `ตัดตำแหน่งที่เขายังขาด — ${say(nEnemy)}`;
+  if (ph) ph.textContent = `เติมตำแหน่งที่เรายังขาด — ${say(nMine)}`;
   el("banBody").innerHTML  = recRows(banSugs);
   el("pickBody").innerHTML = recRows(pickSugs);
 

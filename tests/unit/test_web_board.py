@@ -145,3 +145,24 @@ def test_js_component_scale_matches_python(tpl):
         assert js, f"หาสเกลของ {name} ฝั่ง JS ไม่เจอ"
         assert float(py.group(1)) == float(js.group(1))
         assert float(py.group(2)) == float(js.group(2))
+
+
+def test_js_role_fit_matches_python(tpl):
+    """ตัวคูณเรื่องตำแหน่งถูกเขียนสองที่ ต้องให้ค่าตรงกัน
+
+    นี่คือส่วนที่ทำให้ระบบเลิกแนะนำแบนเมจทั้งที่อีกฝั่งมีเมจแล้ว
+    ถ้าสองฝั่งเพี้ยนกัน CLI กับหน้าเว็บจะเสนอคนละอันดับ
+    """
+    from rov.draft.recommend import LANE_OWN_SHARE, ROLE_FLOOR
+
+    floor = re.search(r"const ROLE_FLOOR = ([\d.]+);", tpl)
+    assert floor, "หา ROLE_FLOOR ใน template ไม่เจอ"
+    assert float(floor.group(1)) == ROLE_FLOOR
+
+    own = re.search(r"const LANE_OWN_SHARE = ([\d.]+);", tpl)
+    assert own, "หา LANE_OWN_SHARE ใน template ไม่เจอ"
+    assert float(own.group(1)) == LANE_OWN_SHARE
+
+    # ต้องเป็น "มากกว่า" ไม่ใช่ "มากกว่าเท่ากับ" ทั้งสองฝั่ง
+    assert "m.share > LANE_OWN_SHARE" in tpl
+    assert "roleMul = fit => ROLE_FLOOR + (1 - ROLE_FLOOR) * fit" in tpl

@@ -303,3 +303,65 @@ def test_winrate_loses_ground_once_the_draft_is_known():
     late = weights_for(5, 4)
     assert late["winrate"] < early["winrate"] / 2
     assert late["counter"] > late["winrate"]
+
+
+# ------------------------------------- ตำแหน่งที่อีกฝั่งยังไม่เปิด
+
+
+LU = {
+    "b_ds": {"ds": 100},
+    "b_jgl": {"jungle": 100},
+    "b_mid": {"mid": 100},
+    "b_adl": {"dragon": 100},
+    "b_sup": {"support": 100},
+    "flex": {"ds": 60, "jungle": 40},
+    "half": {"ds": 50, "mid": 50},
+}
+LN = ["ds", "jungle", "mid", "dragon", "support"]
+
+
+def test_a_filled_lane_is_no_longer_needed():
+    from rov.draft.recommend import needed_lanes
+
+    assert needed_lanes([], LU, LN) == set(LN)
+    assert needed_lanes(["b_mid"], LU, LN) == {"ds", "jungle", "dragon", "support"}
+    assert needed_lanes(["b_mid", "b_sup", "b_adl"], LU, LN) == {"ds", "jungle"}
+
+
+def test_a_flex_hero_only_closes_the_lane_it_mostly_plays():
+    """ตัวที่เล่นสองเลนครึ่ง ๆ ไม่ควรไปปิดเลนที่มันอาจไม่ได้ลง"""
+    from rov.draft.recommend import needed_lanes
+
+    # flex ลง ds 60% ถือว่าปิด ds
+    assert "ds" not in needed_lanes(["flex"], LU, LN)
+    assert "jungle" in needed_lanes(["flex"], LU, LN)
+    # half ลงคนละ 50% ไม่ถึงเกณฑ์ ไม่ปิดเลนไหนเลย
+    assert needed_lanes(["half"], LU, LN) == set(LN)
+
+
+def test_role_fit_zero_when_the_lane_is_already_taken():
+    """หัวใจของการแก้ — เขามีเมจแล้ว การแบนเมจอีกตัวไม่ได้ตัดอะไร"""
+    from rov.draft.recommend import needed_lanes, role_fit
+
+    need = needed_lanes(["b_mid", "b_sup", "b_adl"], LU, LN)   # เหลือ ds กับ jungle
+    assert role_fit("b_mid", need, LU, LN) == 0.0
+    assert role_fit("b_sup", need, LU, LN) == 0.0
+    assert role_fit("b_ds", need, LU, LN) == 1.0
+    assert role_fit("b_jgl", need, LU, LN) == 1.0
+
+
+def test_role_fit_is_neutral_when_we_know_nothing():
+    from rov.draft.recommend import role_fit
+
+    # ไม่มีข้อมูลเลนของฮีโร่ตัวนี้
+    assert role_fit("unknown", {"ds"}, LU, LN) == 1.0
+    # ต้นดราฟต์ ยังต้องการทุกเลน
+    assert role_fit("b_mid", set(LN), LU, LN) == 1.0
+    assert role_fit("b_mid", set(), LU, LN) == 1.0
+
+
+def test_role_fit_is_partial_for_flex_heroes():
+    from rov.draft.recommend import role_fit
+
+    # flex ลง ds 60 jungle 40 ถ้าเหลือแต่ jungle ก็ได้ 0.4
+    assert role_fit("flex", {"jungle"}, LU, LN) == pytest.approx(0.4)

@@ -40,6 +40,57 @@ DEFAULT_WEIGHTS = {
 # จำนวนเกมขั้นต่ำของคู่ ก่อนจะนำ matchup มาคิด
 MIN_PAIR_GAMES = 8
 
+# ฮีโร่ที่ตำแหน่งเต็มแล้วยังได้คะแนนเท่านี้ของเดิม
+# ไม่ตัดเป็นศูนย์ เพราะข้อมูลเลนอาจไม่ครบ และตัวเฟลกอาจไปลงเลนอื่นได้
+ROLE_FLOOR = 0.35
+
+# ฮีโร่จะ "ปิด" เลนได้ต่อเมื่อลงเลนนั้น **มากกว่าครึ่ง** ของครั้งที่ถูกเลือก
+# ใช้มากกว่าไม่ใช่มากกว่าเท่ากับ เพราะตัวที่เล่นสองเลน 50/50 เราไม่รู้ว่ามันจะลงเลนไหน
+# ถือว่ายังไม่ปิดทั้งคู่ปลอดภัยกว่า จะได้ยังพิจารณาแบนและเลือกทั้งสองเลนต่อ
+LANE_OWN_SHARE = 0.5
+
+
+def _main_lane(usage: dict[str, int] | None) -> tuple[str, float] | None:
+    if not usage:
+        return None
+    total = sum(usage.values())
+    if not total:
+        return None
+    lane = max(usage, key=lambda k: usage[k])
+    return lane, usage[lane] / total
+
+
+def needed_lanes(
+    picks: list[str], lane_usage: dict[str, dict[str, int]], lanes: list[str]
+) -> set[str]:
+    """เลนที่ทีมนั้นยังไม่มีตัวหลักลง"""
+    filled = set()
+    for hid in picks:
+        m = _main_lane(lane_usage.get(hid))
+        if m and m[1] > LANE_OWN_SHARE:
+            filled.add(m[0])
+    return {ln for ln in lanes if ln not in filled}
+
+
+def role_fit(
+    hero: str, need: set[str], lane_usage: dict[str, dict[str, int]], lanes: list[str]
+) -> float:
+    """สัดส่วนการเล่นของฮีโร่ที่ตกอยู่ในเลนที่ฝ่ายนั้นยังต้องการ
+
+    แก้ปัญหา "แบนเมจทั้งที่เขามีเมจแล้ว" — ถ้าอีกฝั่งเปิดเมจ โรม แครี่ ไปครบ
+    เหลือแต่ป่ากับออฟ การแบนเมจอีกตัวคือแบนทิ้งเปล่า เขาไม่มีช่องจะใส่แล้ว
+    เรื่องเดียวกันตอนเลือก — ไม่ควรหยิบเมจตัวที่สองมาทับตำแหน่งเดิม
+
+    คืน 1.0 เมื่อไม่มีข้อมูลเลน หรือยังต้องการทุกเลน (ต้นดราฟต์)
+    """
+    usage = lane_usage.get(hero)
+    if not usage or not need or len(need) == len(lanes):
+        return 1.0
+    total = sum(usage.values())
+    if not total:
+        return 1.0
+    return sum(usage.get(ln, 0) for ln in need) / total
+
 
 def weights_for(n_enemy: int, n_ally: int) -> dict[str, float]:
     """น้ำหนักที่ขยับตามว่ารู้บริบทของเกมนี้มากแค่ไหน
@@ -88,6 +139,8 @@ class Suggestion:
     components: dict[str, Component] = field(default_factory=dict)
     games: int = 0
     reasons: list[str] = field(default_factory=list)
+    # 1.0 = ตรงกับตำแหน่งที่ฝ่ายนั้นยังต้องการเต็ม ๆ · 0.0 = ตำแหน่งเต็มแล้ว
+    role_fit: float = 1.0
 
     @property
     def reliable(self) -> bool:
@@ -106,8 +159,14 @@ def recommend(
     weights: dict[str, float] | None = None,
     limit: int = 8,
     min_games: int = 5,
+    lane_usage: dict[str, dict[str, int]] | None = None,
+    lanes: list[str] | None = None,
 ) -> list[Suggestion]:
-    """จัดอันดับฮีโร่ที่ควรเลือกหรือแบนในตาปัจจุบัน"""
+    """จัดอันดับฮีโร่ที่ควรเลือกหรือแบนในตาปัจจุบัน
+
+    ส่ง lane_usage เข้ามาด้วยเพื่อให้คิดเรื่องตำแหน่งที่ยังว่างได้
+    (ได้จาก rov.draft.lanes.lane_usage) ถ้าไม่ส่งมาจะข้ามการคิดส่วนนี้ไป
+    """
     turn = state.current
     if turn is None:
         return []
@@ -121,6 +180,13 @@ def recommend(
     subject = team.opponent if is_ban else team
     ours = state.picks(subject)
     theirs = state.picks(subject.opponent)
+
+    lu = lane_usage or {}
+    ln_all = lanes or sorted({
+        lane for u in lu.values() for lane in u
+    })
+    # ตอนแบนมองจากมุมศัตรู ตำแหน่งที่ต้องดูจึงเป็นตำแหน่งที่ "เขา" ยังไม่เปิด
+    need = needed_lanes(ours, lu, ln_all) if lu and ln_all else set()
 
     # น้ำหนักขึ้นกับว่าเปิดตัวกันไปแล้วกี่ตัว
     # ถ้าผู้เรียกส่ง weights มาเอง ให้ทับลงบนค่าที่คำนวณได้
@@ -166,7 +232,10 @@ def recommend(
             "synergy", "Synergy", y_raw, _scale(y_raw, -3.0, 3.0), y_detail
         )
 
-        s.total = sum(w[k] * c.scaled for k, c in s.components.items())
+        base = sum(w[k] * c.scaled for k, c in s.components.items())
+        fit = role_fit(hid, need, lu, ln_all) if need else 1.0
+        s.role_fit = fit
+        s.total = base * (ROLE_FLOOR + (1.0 - ROLE_FLOOR) * fit)
         s.reasons = _reasons(s, stats, hid, is_ban)
         out.append(s)
 
