@@ -454,6 +454,55 @@ table.rec tbody tr.sel { background: color-mix(in srgb, var(--amber) 10%, transp
 .usage i { height: 3px; border-radius: 1px; display: block; }
 .ctr-hero .lanes { font-family: var(--fx-mono); font-size: 9.5px; color: var(--text-faint); }
 
+/* ── กระดานวางหมาก ── */
+.wb { display: grid; gap: 14px; grid-template-columns: minmax(340px, 1.15fr) 1fr; padding: 12px; }
+@media (max-width: 980px) { .wb { grid-template-columns: 1fr; } }
+.wbstage { position: relative; aspect-ratio: 1; border: 1px solid var(--line);
+  border-radius: 3px; overflow: hidden; background: #0d1520; touch-action: none;
+  user-select: none; }
+.wbstage img { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.wbstage svg { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+.wzone { fill-opacity: .26; stroke-width: .003; stroke-opacity: .9; }
+.wlab { font-family: var(--fx-mono); font-size: .0165px; fill: #fff; text-anchor: middle;
+  paint-order: stroke; stroke: #000; stroke-width: .0055; stroke-linejoin: round; }
+.wmark { font-size: .022px; text-anchor: middle; dominant-baseline: central;
+  paint-order: stroke; stroke: #000; stroke-width: .006; }
+
+.tok { position: absolute; width: 8.4%; aspect-ratio: 1; margin: -4.2% 0 0 -4.2%;
+  border-radius: 50%; border: 2px solid var(--blue); background-size: cover;
+  background-position: center; background-color: var(--panel-2);
+  cursor: grab; box-shadow: 0 2px 7px rgba(0,0,0,.55); z-index: 3; }
+.tok.red { border-color: var(--red); }
+.tok.drag { cursor: grabbing; transform: scale(1.14); z-index: 5; }
+/* หมากที่อยู่ครึ่งล่างของกระดาน ป้ายต้องขึ้นไปข้างบน ไม่งั้นโดนขอบตัด */
+.tok.low .rl { bottom: auto; top: -15px; }
+.tok .rl { position: absolute; left: 50%; bottom: -15px; transform: translateX(-50%);
+  z-index: 1;
+  font-family: var(--fx-mono); font-size: 9px; white-space: nowrap; color: #fff;
+  text-shadow: 0 0 4px #000, 0 0 3px #000; pointer-events: none; }
+
+.wbtools { display: flex; flex-wrap: wrap; gap: 7px 13px; align-items: center;
+  margin-bottom: 9px; font-size: 12.5px; }
+.wbtools label { display: flex; align-items: center; gap: 5px; color: var(--text-dim); }
+.tray { display: flex; flex-wrap: wrap; gap: 5px; margin: 9px 0; }
+.tray .t { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px 3px 3px;
+  border: 1px solid var(--blue); border-radius: 3px; font-size: 11.5px; cursor: grab;
+  background: var(--panel-2); }
+.tray .t.red { border-color: var(--red); }
+.tray .t.on { opacity: .38; }
+.tray .t .pic { width: 20px; height: 20px; border-radius: 50%; }
+.tray h4 { font-family: var(--fx-display); font-size: 10.5px; letter-spacing: .09em;
+  text-transform: uppercase; margin: 0 0 5px; color: var(--text-faint); }
+.wbread { display: grid; grid-template-columns: max-content max-content 1fr;
+  gap: 3px 10px; font-size: 12px; align-items: baseline; }
+.wbread .rn { font-family: var(--fx-mono); font-size: 10.5px; color: var(--text-faint); }
+.wbread .zn { font-family: var(--fx-mono); font-size: 11px; color: var(--amber); }
+.planpick { width: 100%; padding: 6px 8px; font-size: 12.5px; background: var(--panel-2);
+  color: var(--text); border: 1px solid var(--line); border-radius: 3px; }
+.planbox { border: 1px solid var(--line); border-radius: 3px; padding: 10px;
+  margin-top: 9px; font-size: 12.5px; line-height: 1.7; }
+.planbox .src { font-size: 11px; color: var(--text-faint); margin-top: 6px; }
+
 /* ── แมพ ── */
 .map-wrap { padding: 12px; display: grid; gap: 16px; grid-template-columns: minmax(320px, 1fr) 1fr; }
 @media (max-width: 900px) { .map-wrap { grid-template-columns: 1fr; } }
@@ -815,14 +864,17 @@ input.search:focus { outline: none; border-color: var(--amber); }
       </div>
       <div class="map-wrap">
         <div>
-          <div class="map-tools">
-            <label><input type="checkbox" id="zoneOn"> ทับผังโซนที่ระบบใช้</label>
+          <div class="wbtools">
+            <label><input type="checkbox" id="zoneOn" checked> ผังโซน</label>
             <label><input type="checkbox" id="zoneLab" checked> ชื่อโซน</label>
-            <span style="font-size:11.5px;color:var(--text-faint)">เอาเมาส์ชี้โซนเพื่อดูชื่อเต็ม</span>
+            <label><input type="checkbox" id="markOn" checked> หมุดในเกม</label>
+            <button id="wbClear" style="font-size:11.5px;padding:4px 9px">เก็บหมากทั้งหมด</button>
+            <button id="wbAuto" style="font-size:11.5px;padding:4px 9px">วางตามตำแหน่งเริ่มเกม</button>
           </div>
-          <div class="map-stage" id="mapStage">
-            <img id="gameMap" alt="แผนที่ RoV มุมบนลงล่าง">
-            <svg id="zoneSvg" viewBox="0 0 1 1" preserveAspectRatio="none" hidden></svg>
+          <div class="wbstage" id="wbStage">
+            <img id="gameMap" alt="minimap ของ RoV">
+            <svg id="zoneSvg" viewBox="0 0 1 1" preserveAspectRatio="none"></svg>
+            <svg id="markSvg" viewBox="0 0 1 1" preserveAspectRatio="none"></svg>
           </div>
           <p style="font-size:11.5px;color:var(--text-faint);margin:10px 0 0;line-height:1.65"
              id="mapNote"></p>
@@ -830,7 +882,28 @@ input.search:focus { outline: none; border-color: var(--amber); }
 
         <div>
           <h3 style="font-family:var(--fx-display);font-size:12px;letter-spacing:.1em;
-                     text-transform:uppercase;margin:0 0 6px;color:var(--text-dim)">
+                     text-transform:uppercase;margin:0 0 6px;color:var(--amber)">
+            วางหมาก</h3>
+          <p style="font-size:11.5px;color:var(--text-faint);margin:0 0 8px;line-height:1.6">
+            ลากหมากลงกระดานได้เลย · ลากออกนอกกระดานเพื่อเก็บกลับถาด ·
+            หมากมาจากตัวที่ดราฟต์ในแท็บ Draft Room
+          </p>
+          <div id="trayBlue"></div>
+          <div id="trayRed"></div>
+
+          <h4 style="font-family:var(--fx-display);font-size:10.5px;letter-spacing:.09em;
+                     text-transform:uppercase;margin:12px 0 5px;color:var(--text-faint)">
+            วางตามแผนจากคลังมาโคร</h4>
+          <select class="planpick" id="planPick"></select>
+          <div class="planbox" id="planBox" hidden></div>
+
+          <h4 style="font-family:var(--fx-display);font-size:10.5px;letter-spacing:.09em;
+                     text-transform:uppercase;margin:14px 0 5px;color:var(--text-faint)">
+            หมากอยู่โซนไหน</h4>
+          <div class="wbread" id="wbRead"></div>
+
+          <h3 style="font-family:var(--fx-display);font-size:12px;letter-spacing:.1em;
+                     text-transform:uppercase;margin:18px 0 6px;color:var(--text-dim)">
             Objective — ยืนยันจากในเกม</h3>
           <div id="objList"></div>
 
@@ -975,6 +1048,11 @@ const S = {
   ctrMin: MINPAIR,
   ctrLane: "all",     // all = context=TEAM · ที่เหลือคือเลนเดียวกัน
   macPhase: "all",
+  // กระดานวางหมาก — ตำแหน่งเป็น normalized 0..1 เก็บตาม key ของหมาก
+  wbPos: {},
+  wbZones: true,
+  wbLabels: true,
+  wbMarks: true,
 };
 
 // ── ซีรีส์ ────────────────────────────────────────────────────────────
@@ -1118,8 +1196,9 @@ function render() {
   renderPool();
   renderSeries();
   renderHistory();
-  // แผนมาโครขึ้นกับตัวที่ดราฟต์ ต้องอัปเดตตามแม้จะไม่ได้เปิดแท็บอยู่
+  // แผนมาโครกับถาดหมากขึ้นกับตัวที่ดราฟต์ ต้องอัปเดตตาม
   if (S.view === "macro") renderMacro();
+  if (S.view === "map" && D.minimap) renderBoard();
 }
 
 function renderTurn() {
@@ -1609,6 +1688,270 @@ const ZONE_COLOR = {
   base: "#8a6a3a", approach: "#4f7f9a", objective: "#c98a2a",
 };
 
+// ── กระดานวางหมาก ─────────────────────────────────────────────────────
+// ภาพพื้นคือ minimap จริงจากไคลเอนต์เกม โซนสร้างจากภาพเดียวกัน
+// พิกัดทุกอย่างเป็น normalized 0..1 บนกระดาน ตำแหน่งจึงตรงกันโดยอัตโนมัติ
+const ZONES = D.zones || [];
+const MARKS = D.minimap_marks || {};
+const ZCOL = {
+  lane: "#7fa06a", jungle: "#2f5a2a", river: "#3f7fb0",
+  base: "#8a6a3a", approach: "#4f7f9a", objective: "#c98a2a",
+};
+const ZONE_TH = {
+  BASE_BLUE: "ฐานน้ำเงิน", BASE_RED: "ฐานแดง",
+  SLAYER_PIT: "หลุม Dark Slayer", DRAGON_PIT: "หลุม Abyssal Dragon",
+  SLAYER_PIT_APPROACH: "ทางเข้าหลุม DS", DRAGON_PIT_APPROACH: "ทางเข้าหลุมมังกร",
+  RIVER_SLAYER: "แม่น้ำฝั่ง DS", RIVER_DRAGON: "แม่น้ำฝั่งมังกร",
+  MID: "เลนกลาง", DS_LANE: "เลน Dark Slayer", DRAGON_LANE: "เลน Abyssal Dragon",
+  GOLEM_BLUE_SLAYER: "แคมป์ใหญ่ น้ำเงิน/DS", GOLEM_BLUE_DRAGON: "แคมป์ใหญ่ น้ำเงิน/มังกร",
+  GOLEM_RED_SLAYER: "แคมป์ใหญ่ แดง/DS", GOLEM_RED_DRAGON: "แคมป์ใหญ่ แดง/มังกร",
+  JUNGLE_BLUE_SLAYER: "ป่าน้ำเงิน ฝั่ง DS", JUNGLE_BLUE_DRAGON: "ป่าน้ำเงิน ฝั่งมังกร",
+  JUNGLE_RED_SLAYER: "ป่าแดง ฝั่ง DS", JUNGLE_RED_DRAGON: "ป่าแดง ฝั่งมังกร",
+};
+
+// point-in-polygon แบบ ray casting
+// polygon มาจาก raster ที่ไม่ทับกัน จึงคืนโซนแรกที่เจอได้เลย
+function inPoly(x, y, poly) {
+  let hit = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i], [xj, yj] = poly[j];
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) hit = !hit;
+  }
+  return hit;
+}
+function zoneAt(x, y) {
+  for (const z of ZONES)
+    for (const poly of z.polys || [])
+      if (inPoly(x, y, poly)) return z;
+  return null;
+}
+const zoneName = z => (z ? (ZONE_TH[z.id] || z.id) : "นอกโซน");
+
+function zoneCentre(id) {
+  const z = ZONES.find(q => q.id === id);
+  if (!z) return null;
+  const all = (z.polys || []).flat();
+  if (!all.length) return null;
+  return [all.reduce((a, p) => a + p[0], 0) / all.length,
+          all.reduce((a, p) => a + p[1], 0) / all.length];
+}
+
+function drawZones() {
+  el("zoneSvg").innerHTML = !S.wbZones ? "" :
+    ZONES.map(z => {
+      const c = ZCOL[z.kind] || "#888";
+      return (z.polys || []).map(poly =>
+        `<polygon class="wzone" fill="${c}" stroke="${c}"
+          points="${poly.map(p => p[0] + "," + p[1]).join(" ")}"></polygon>`).join("");
+    }).join("") +
+    // ป้ายเฉพาะโซนใหญ่ โซนเล็กอย่างหลุมกับแคมป์มีไอคอนในเกมบอกอยู่แล้ว
+    (!S.wbLabels ? "" : ZONES.filter(z => ["lane","jungle","river","base"].includes(z.kind)).map(z => {
+      const c = zoneCentre(z.id);
+      return c ? `<text class="wlab" x="${c[0].toFixed(4)}" y="${c[1].toFixed(4)}">${
+        escape(ZONE_TH[z.id] || z.id)}</text>` : "";
+    }).join(""));
+}
+
+function drawMarks() {
+  if (!S.wbMarks) { el("markSvg").innerHTML = ""; return; }
+  const put = (list, glyph, fill) => (list || []).map(m =>
+    `<text class="wmark" x="${m.x}" y="${m.y}" fill="${fill}">${glyph}</text>`).join("");
+  el("markSvg").innerHTML =
+    put(MARKS.slayer_pit, "♠", "#c07de0") +
+    put(MARKS.dragon_pit, "♦", "#e0b060") +
+    put(MARKS.big_camps, "◆", "#d8a23c") +
+    put(MARKS.camps, "●", "#c8862c") +
+    put(MARKS.heal_spots, "✚", "#5fd06a");
+}
+
+// ── หมาก ──
+function draftedTokens() {
+  const out = [];
+  for (const team of ["blue", "red"])
+    of(team, "PICK").forEach((id, i) => {
+      const ml = mainLaneOf(id);
+      out.push({key: team + ":" + id, team, id, slot: i,
+                lane: ml ? ml.lane : null});
+    });
+  return out;
+}
+
+function drawTokens() {
+  const stage = el("wbStage");
+  for (const n of [...stage.querySelectorAll(".tok")]) n.remove();
+  for (const t of draftedTokens()) {
+    const pos = S.wbPos[t.key];
+    if (!pos) continue;
+    const h = HERO.get(t.id);
+    const d = document.createElement("div");
+    d.className = "tok " + t.team + (pos[1] > 0.82 ? " low" : "");
+    d.dataset.k = t.key;
+    d.style.left = (pos[0] * 100).toFixed(2) + "%";
+    d.style.top = (pos[1] * 100).toFixed(2) + "%";
+    if (PICS[t.id]) d.style.backgroundImage = `url('${PICS[t.id]}')`;
+    d.title = (h ? h.name : t.id) + " · " + zoneName(zoneAt(pos[0], pos[1]));
+    d.innerHTML = `<span class="rl">${escape(
+      t.lane ? (LANE_TH[t.lane] || t.lane) : (h ? h.name : t.id))}</span>`;
+    stage.appendChild(d);
+  }
+}
+
+function renderTray() {
+  const toks = draftedTokens();
+  for (const team of ["blue", "red"]) {
+    const mine = toks.filter(t => t.team === team);
+    const box = el(team === "blue" ? "trayBlue" : "trayRed");
+    box.innerHTML = !mine.length
+      ? `<h4>${escape(teamName(team))}</h4>
+         <p style="font-size:11.5px;color:var(--text-faint);margin:0">ยังไม่ได้ดราฟต์</p>`
+      : `<h4>${escape(teamName(team))}</h4><div class="tray">` + mine.map(t => {
+          const h = HERO.get(t.id);
+          return `<span class="t ${team} ${S.wbPos[t.key] ? "on" : ""}" data-k="${t.key}">
+            <span class="pic" ${picStyle(t.id)}></span>${escape(h ? h.name : t.id)}</span>`;
+        }).join("") + `</div>`;
+  }
+}
+
+function renderRead() {
+  const toks = draftedTokens().filter(t => S.wbPos[t.key]);
+  if (!toks.length) {
+    el("wbRead").innerHTML =
+      `<span style="grid-column:1/-1;color:var(--text-faint);font-size:11.5px">ยังไม่มีหมากบนกระดาน</span>`;
+    return;
+  }
+  el("wbRead").innerHTML = toks.map(t => {
+    const p = S.wbPos[t.key], h = HERO.get(t.id);
+    const z = zoneAt(p[0], p[1]);
+    const col = t.team === "blue" ? "var(--blue)" : "var(--red)";
+    return `<span style="color:${col}">${escape(h ? h.name : t.id)}</span>
+      <span class="rn">${escape(t.lane ? (LANE_TH[t.lane] || t.lane) : "—")}</span>
+      <span class="zn">${escape(zoneName(z))}</span>`;
+  }).join("");
+}
+
+// ── วางตามแผนจากคลังมาโคร ──
+// rule มี assignments เป็นคู่ (role, goto) — ถ้า goto ตรงกับ id ของโซน
+// ก็วางหมากของตำแหน่งนั้นลงกลางโซนได้เลย ถ้าไม่ตรงก็บอกเป็นข้อความไว้
+function planRules() {
+  return RULES.filter(r => (r.assign || []).some(a => zoneCentre(a.goto)));
+}
+
+function applyPlan(id) {
+  const r = RULES.find(x => x.id === id);
+  const box = el("planBox");
+  if (!r) { box.hidden = true; return; }
+  box.hidden = false;
+  const toks = draftedTokens().filter(t => t.team === "blue");
+  const placed = [], missed = [];
+  for (const a of r.assign || []) {
+    const c = zoneCentre(a.goto);
+    const t = toks.find(x => x.lane === a.role);
+    if (!c || !t) { missed.push(a); continue; }
+    // กระจายเล็กน้อยกันหมากทับกันสนิท
+    const k = placed.length;
+    S.wbPos[t.key] = [
+      Math.min(0.97, Math.max(0.03, c[0] + (k % 2 ? 0.022 : -0.022))),
+      Math.min(0.97, Math.max(0.03, c[1] + (k < 2 ? -0.018 : 0.018))),
+    ];
+    placed.push({a, t});
+  }
+  box.innerHTML =
+    `<b>${escape(r.name)}</b><br>${escape(r.summary || "")}` +
+    (placed.length ? `<br><br><b>วางให้แล้ว ${placed.length} ตัว</b> — ` +
+      placed.map(x => `${escape(HERO.get(x.t.id) ? HERO.get(x.t.id).name : x.t.id)}
+        ไป ${escape(ZONE_TH[x.a.goto] || x.a.goto)}`).join(" · ") : "") +
+    (missed.length ? `<br><span style="color:var(--amber)">วางไม่ได้ ${missed.length} ข้อ</span> — ` +
+      missed.map(a => `${escape(LANE_TH[a.role] || a.role)} → ${escape(a.goto)}`).join(" · ") +
+      ` (ปลายทางไม่ใช่ชื่อโซน หรือยังไม่ได้ดราฟต์ตำแหน่งนั้น)` : "") +
+    `<div class="src">ที่มา ${escape(r.src_label)} · ${escape(r.src_ref)}</div>`;
+  renderBoard();
+}
+
+function renderBoard() {
+  drawZones(); drawMarks(); drawTokens(); renderTray(); renderRead();
+}
+
+// ── ลากหมาก ──
+function initBoardDrag() {
+  const stage = el("wbStage");
+  let cur = null;
+  const at = e => {
+    const r = stage.getBoundingClientRect();
+    return [(e.clientX - r.left) / r.width, (e.clientY - r.top) / r.height];
+  };
+  stage.addEventListener("pointerdown", e => {
+    const t = e.target.closest(".tok"); if (!t) return;
+    cur = t.dataset.k; t.classList.add("drag");
+    stage.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+  stage.addEventListener("pointermove", e => {
+    if (!cur) return;
+    const [x, y] = at(e);
+    S.wbPos[cur] = [Math.min(1.4, Math.max(-0.4, x)), Math.min(1.4, Math.max(-0.4, y))];
+    const n = stage.querySelector(`.tok[data-k="${cur}"]`);
+    if (n) { n.style.left = (x * 100).toFixed(2) + "%"; n.style.top = (y * 100).toFixed(2) + "%"; }
+  });
+  const drop = () => {
+    if (!cur) return;
+    const p = S.wbPos[cur];
+    // ลากออกนอกกระดาน = เก็บหมากกลับถาด
+    if (p && (p[0] < 0 || p[0] > 1 || p[1] < 0 || p[1] > 1)) delete S.wbPos[cur];
+    cur = null;
+    renderBoard();
+  };
+  stage.addEventListener("pointerup", drop);
+  stage.addEventListener("pointercancel", drop);
+
+  // กดในถาดเพื่อวางลงกลางโซนของเลนตัวเอง หรือเก็บกลับ
+  for (const id of ["trayBlue", "trayRed"]) {
+    el(id).addEventListener("click", e => {
+      const b = e.target.closest(".t"); if (!b) return;
+      const k = b.dataset.k;
+      if (S.wbPos[k]) { delete S.wbPos[k]; renderBoard(); return; }
+      const t = draftedTokens().find(x => x.key === k);
+      const spec = t && t.lane ? START_POS[t.lane] : null;
+      const c = spec ? spec[t.team] : [0.5, 0.5];
+      S.wbPos[k] = [clamp01(c[0]), clamp01(c[1])];
+      renderBoard();
+    });
+  }
+}
+
+// ตำแหน่งยืนตอนเปิดเกมของแต่ละเลน — พิกัดบนกระดานโดยตรง
+//
+// ไม่ได้ใช้จุดกึ่งกลางของโซนแล้วดึงเข้าหาฐาน เพราะเลนข้างเป็นรูปตัว L
+// จุดกึ่งกลางของมันตกอยู่กลางแมพ พอเฉลี่ยกับฐานแล้วหมากหลุดออกนอกเลนไปอยู่ในป่า
+//
+// เลนข้างสองเลนเป็นตัว L ที่มีมุมอยู่ที่ (0.055, 0.055) กับ (0.945, 0.945)
+// สองทีมเดินเข้าหามุมนั้นคนละด้าน จึงยืนคนละฝั่งของมุม
+// เป็นตำแหน่งตามธรรมเนียม ไม่ได้วัดจากคลิปแข่ง
+const START_POS = {
+  ds:      {blue: [0.055, 0.300], red: [0.300, 0.055]},
+  jungle:  {blue: [0.279, 0.469], red: [0.721, 0.517]},   // แคมป์ใหญ่ฝั่งตัวเอง
+  mid:     {blue: [0.405, 0.595], red: [0.595, 0.405]},
+  dragon:  {blue: [0.700, 0.945], red: [0.945, 0.700]},
+  support: {blue: [0.610, 0.930], red: [0.930, 0.610]},   // เยื้องจากแครี่เล็กน้อย
+};
+
+const clamp01 = v => Math.min(0.955, Math.max(0.045, v));
+
+function autoPlace() {
+  // ดราฟต์จริงอาจได้ตัวเลนซ้ำกัน เช่นซัพพอร์ตสองตัว ถ้าวางจุดเดียวกันจะซ้อนหายไป
+  // เลยกระจายเป็นวงรอบจุดนั้นตามจำนวนที่ซ้ำ
+  const seen = {};
+  for (const t of draftedTokens()) {
+    const spec = t.lane ? START_POS[t.lane] : null;
+    if (!spec) continue;
+    const c = spec[t.team];
+    const k = t.team + ":" + t.lane;
+    const n = (seen[k] = (seen[k] || 0) + 1) - 1;
+    const ang = n * 2.2, r = n ? 0.052 : 0;
+    S.wbPos[t.key] = [clamp01(c[0] + Math.cos(ang) * r),
+                      clamp01(c[1] + Math.sin(ang) * r)];
+  }
+  renderBoard();
+}
+
 function renderMap() {
   const icons = D.map_icons || {};
   el("objList").innerHTML = OBJECTIVES.map(o => `
@@ -1627,39 +1970,24 @@ function renderMap() {
   el("towers").innerHTML = TOWERS.map(([t, d]) =>
     `<b style="font-size:11px">${escape(t)}</b><span>${escape(d)}</span>`).join("");
 
-  const zones = D.zones || [];
-  const svg = el("zoneSvg");
-  // ป้ายชื่อเฉพาะโซนใหญ่ ไม่งั้นชื่อทับกันจนอ่านไม่ออก
-  // โซนเล็ก (หลุม ทางเข้าหลุม) ใช้ tooltip ตอนเอาเมาส์ชี้แทน
-  const BIG = new Set(["lane", "base", "river", "jungle"]);
-  svg.innerHTML = zones.map(z => {
-    const c = ZONE_COLOR[z.kind] || "#888";
-    return (z.polys || []).map(poly =>
-      `<polygon class="zpoly" fill="${c}" stroke="${c}"
-        points="${poly.map(pt => pt[0] + "," + pt[1]).join(" ")}"><title>${z.id} · ${z.kind}</title></polygon>`
-    ).join("");
-  }).join("") + zones.filter(z => BIG.has(z.kind)).map(z => {
-    const all = (z.polys || []).flat();
-    if (!all.length) return "";
-    const cx = all.reduce((a, p) => a + p[0], 0) / all.length;
-    const cy = all.reduce((a, p) => a + p[1], 0) / all.length;
-    return `<text class="zlab zname" x="${cx.toFixed(4)}" y="${cy.toFixed(4)}">${z.id}</text>`;
-  }).join("");
+  const opts = planRules();
+  el("planPick").innerHTML = `<option value="">— เลือกแผนแล้วระบบจะวางหมากให้ —</option>` +
+    opts.map(r => `<option value="${r.id}">${escape(r.name)}</option>`).join("");
+  if (!opts.length) el("planPick").disabled = true;
 
-  const kinds = [...new Set(zones.map(z => z.kind))];
+  const kinds = [...new Set(ZONES.map(z => z.kind))];
   el("mapNote").innerHTML =
-    `ภาพนี้คือแผนที่จากหน้า <b>ข้อมูลสมรภูมิ</b> ในเกม แปลงจากมุม isometric ` +
-    `เป็นมุมบนลงล่างด้วย <code>scripts/rectify_map.py</code> — ` +
-    `เป็นภาพจากตัวเกมจริง ไม่ใช่ผังที่ระบบวาดเอง<br>` +
-    `หมุดบนภาพเป็นของเกมเอง: ` +
-    kinds.map(k => `<span class="legend-sw" style="background:${ZONE_COLOR[k] || "#888"}"></span>${k}`).join(" · ") +
-    ` คือสีของผังโซนที่ทับได้<br>` +
-    `<b>⚠️ ความแม่นยำ</b> ต้นทางเป็นงานศิลป์ 3 มิติ การ warp เป็นระนาบคลาดเคลื่อนราว ` +
-    `±0.03-0.05 และหมุดลอยเหนือพื้น จึงใช้ <b>ยืนยันโครงสร้าง</b>ได้ ` +
-    `แต่ <b>ใช้เป็นพิกัดสอบเทียบไม่ได้</b> — ต้องรอ minimap จากคลิปแข่งจริง`;
-
-  el("mapSrc").textContent = D.zones_verified
-    ? "ผังโซนยืนยันแล้ว" : "ผังโซนยังไม่ได้สอบเทียบ";
+    `ภาพพื้นคือ <b>minimap จริงจากไคลเอนต์เกม</b> ไม่ใช่ผังที่ระบบวาดเอง ` +
+    `ผังโซนสร้างจากภาพเดียวกันด้วย <code>scripts/build_minimap.py</code> ` +
+    `แล้ว <code>scripts/gen_zone_map.py</code><br>` +
+    kinds.map(k => `<span class="legend-sw" style="background:${ZCOL[k] || "#888"}"></span>${k}`).join(" · ") +
+    `<br>ศูนย์กลางสนามหาจากความสมมาตร 180 องศาของป้อมสองฝั่ง ` +
+    `ตรวจแล้วหลุม Dark Slayer กับ Abyssal Dragon เป็นเงาสะท้อนกันคลาดเคลื่อนแค่ 0.005 ` +
+    `รูปร่างแม่น้ำมาจากหน้ากากสีของภาพจริง ไม่ได้วาดทับเอาเอง<br>` +
+    `<b>⚠️</b> เทียบกับ minimap ใน<b>ไคลเอนต์เกม</b>แล้ว แต่ยังไม่ได้เทียบกับ ` +
+    `minimap ฝั่ง broadcast ซึ่งอาจเรนเดอร์ต่างออกไป`;
+  el("mapSrc").textContent = D.zones_verified ? "ผังโซนตรงกับ minimap ในเกม" : "ผังโซนยังไม่ได้สอบเทียบ";
+  renderBoard();
 }
 
 // ── มาโคร ─────────────────────────────────────────────────────────────
@@ -1840,6 +2168,7 @@ function setView(v) {
   el("tabMac").setAttribute("aria-selected", String(v === "macro"));
   if (v === "counter") renderCtr();
   if (v === "macro") renderMacro();
+  if (v === "map" && D.minimap) renderBoard();
 }
 
 const escape = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -1906,10 +2235,13 @@ el("phaseBar").addEventListener("click", e => {
   const b = e.target.closest(".ph"); if (!b) return;
   S.macPhase = b.dataset.p; renderMacro();
 });
-el("zoneOn").addEventListener("change", e => { el("zoneSvg").hidden = !e.target.checked; });
-el("zoneLab").addEventListener("change", e => {
-  for (const t of el("zoneSvg").querySelectorAll(".zname")) t.style.display = e.target.checked ? "" : "none";
-});
+el("zoneOn").addEventListener("change", e => { S.wbZones = e.target.checked; drawZones(); });
+el("zoneLab").addEventListener("change", e => { S.wbLabels = e.target.checked; drawZones(); });
+el("markOn").addEventListener("change", e => { S.wbMarks = e.target.checked; drawMarks(); });
+el("wbClear").onclick = () => { S.wbPos = {}; renderBoard(); };
+el("wbAuto").onclick = autoPlace;
+el("planPick").addEventListener("change", e => applyPlan(e.target.value));
+initBoardDrag();
 el("ctrList").addEventListener("click", e => {
   const b = e.target.closest(".ctr-hero"); if (!b) return;
   S.ctrHero = b.dataset.h; renderCtr();
@@ -1976,8 +2308,9 @@ if (EV.teams) {
 if (!LANES.length) el("laneBar").hidden = true;
 if (!RULES.length) { el("tabMac").disabled = true; el("tabMac").title = "ยังไม่มี rule ใน knowledge/macro/"; }
 
-if (D.game_map) { el("gameMap").src = D.game_map; renderMap(); }
-else { el("tabMap").disabled = true; el("tabMap").title = "ยังไม่มีภาพแผนที่ — รัน scripts/rectify_map.py"; }
+const BOARD_IMG = D.minimap || D.game_map;
+if (BOARD_IMG) { el("gameMap").src = BOARD_IMG; renderMap(); }
+else { el("tabMap").disabled = true; el("tabMap").title = "ยังไม่มีภาพแผนที่ — รัน scripts/build_minimap.py"; }
 
 el("ctrGames").value = S.ctrMin;
 el("ctrGamesVal").textContent = S.ctrMin;

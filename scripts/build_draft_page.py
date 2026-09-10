@@ -22,6 +22,7 @@ OUT = Path("data/exports/draft_board.html")
 ASSETS = Path("data/assets/heroes")
 ZONE_MAP = Path("data/exports/zone_map.png")
 GAME_MAP = Path("data/assets/map/topdown.png")
+MINIMAP = Path("data/assets/map/minimap.png")
 MAP_ICONS = Path("data/assets/map/icons")
 ZONES_YAML = Path("configs/zones/rov_map_v1.yaml")
 
@@ -73,6 +74,18 @@ def local_assets() -> dict:
             extra["pics_missing"] = sorted(set(hero_ids) - set(pics))
     if ZONE_MAP.exists():
         extra["zone_map"] = ZONE_MAP.name
+
+    # minimap จริงจากไคลเอนต์เกม — เป็นมุมบนลงล่างอยู่แล้ว ใช้เป็นกระดานวางหมาก
+    if MINIMAP.exists():
+        extra["minimap"] = "assets/map/minimap.png"
+        mm = MINIMAP.with_name("minimap_meta.json")
+        if mm.exists():
+            d = json.loads(mm.read_text(encoding="utf-8"))
+            extra["minimap_marks"] = {
+                k: d.get(k, [])
+                for k in ("slayer_pit", "dragon_pit", "big_camps", "camps",
+                          "heal_spots", "structures_blue", "structures_red")
+            }
 
     # แผนที่จริงจากในเกม แปลงเป็นมุมบนลงล่างแล้ว (scripts/rectify_map.py)
     if GAME_MAP.exists():
@@ -150,7 +163,9 @@ def main() -> int:
     print(f"  {d['total_games']} เกม · {len(d['heroes'])} ฮีโร่ · {len(d['matchups'])} matchup")
     miss = d.get("pics_missing", [])
     print(f"  รูปฮีโร่ {len(d.get('pics', {}))} · zone map {'มี' if d.get('zone_map') else 'ไม่มี'}")
-    print(f"  แผนที่จริง {'มี' if d.get('game_map') else 'ไม่มี'}"
+    print(f"  minimap {'มี' if d.get('minimap') else 'ไม่มี'}"
+          f" · หมุด {sum(len(v) for v in (d.get('minimap_marks') or {}).values())}")
+    print(f"  แผนที่ isometric {'มี' if d.get('game_map') else 'ไม่มี'}"
           f" · ไอคอน {len(d.get('map_icons', {}))}"
           f" · zone {len(d.get('zones', []))} รูป")
     if miss:
@@ -171,6 +186,8 @@ def main() -> int:
         mdest = OUT.parent / "assets" / "map"
         (mdest / "icons").mkdir(parents=True, exist_ok=True)
         shutil.copy2(GAME_MAP, mdest / GAME_MAP.name)
+        if MINIMAP.exists():
+            shutil.copy2(MINIMAP, mdest / MINIMAP.name)
         for f in MAP_ICONS.glob("*.png"):
             shutil.copy2(f, mdest / "icons" / f.name)
         print(f"  คัดลอกแผนที่จริงไป {mdest}")

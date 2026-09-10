@@ -110,9 +110,30 @@ def test_objective_pits_are_on_opposite_river_halves():
     """หลุมสองหลุมต้องอยู่คนละครึ่งแม่น้ำ (docs/16-map-guide.md)"""
     zm = ZoneMap.load(ZONE_FILE)
     assert zm.region_of("DRAGON_PIT") != zm.region_of("SLAYER_PIT")
-    # golem อยู่ฝั่งเดียวกับหลุมที่ใกล้ที่สุด
-    assert zm.region_of("MIGHT_GOLEM") == zm.region_of("SLAYER_PIT")
-    assert zm.region_of("SAGE_GOLEM") == zm.region_of("DRAGON_PIT")
+    # แต่ละหลุมต้องมีแอ่งแม่น้ำและวงรอบหลุมอยู่ฝั่งเดียวกับตัวเอง
+    for pit in ("SLAYER", "DRAGON"):
+        assert zm.region_of(f"{pit}_PIT") == zm.region_of(f"{pit}_PIT_APPROACH")
+        assert zm.region_of(f"{pit}_PIT") == zm.region_of(f"RIVER_{pit}")
+
+
+def test_the_two_diagonals_divide_different_things():
+    """y = x แบ่งฝั่งทีม · x + y = 1 แบ่งฝั่งเลน — เคยสลับกันมาแล้ว
+
+    ฐานทั้งสองอยู่บนเส้น x + y = 1 พอดีเพราะเลนกลางเชื่อมมัน
+    ถ้าใช้ x + y แบ่งฝั่งทีม ฐานจะตกอยู่ตรงเส้นแบ่งและจัดฝั่งไม่ได้
+    """
+    zm = ZoneMap.load(ZONE_FILE)
+    # ป่าฝั่งน้ำเงินต้องอยู่ครึ่ง y > x ทั้งคู่
+    for zid in ("JUNGLE_BLUE_SLAYER", "JUNGLE_BLUE_DRAGON"):
+        z = zm.get(zid)
+        assert z is not None, zid
+        pts = [p for poly in z.parts for p in poly]
+        inside = sum(1 for x, y in pts if y > x)
+        assert inside > len(pts) * 0.7, f"{zid} ควรอยู่ครึ่ง y > x เป็นหลัก"
+    # หลุม Dark Slayer ต้องอยู่ครึ่ง x + y < 1 ตามชื่อเลนของมัน
+    ds = zm.get("SLAYER_PIT")
+    pts = [p for poly in ds.parts for p in poly]
+    assert sum(1 for x, y in pts if x + y < 1) > len(pts) * 0.9
 
 
 def test_zone_out_of_bounds_is_none():

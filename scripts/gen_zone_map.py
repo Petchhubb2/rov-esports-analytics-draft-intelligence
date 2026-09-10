@@ -1,23 +1,44 @@
-"""สร้าง zone polygon จากกฎเรขาคณิต แทนการเดาพิกัดด้วยมือ
+"""สร้างผังโซนจาก minimap จริง
 
-ทำไมต้องสร้างจากกฎ
-    polygon ชุดแรกเขียนพิกัดด้วยมือ พอ render ออกมาดูแล้วพบว่าทับกันมั่ว
-    lane วาดทับ jungle จน zone ที่วาดทีหลังกลืนของเดิม และรูปร่างไม่เหมือนแมพจริง
+**ต่างจากเวอร์ชันก่อนตรงไหน**
 
-วิธีนี้วาดเป็นภาพ label ตามกฎก่อน แล้วค่อยดึง contour ออกมาเป็น polygon
-จึงรับประกันว่า zone ไม่ทับกัน และรูปร่างสอดคล้องกันทั้งแมพ
+เวอร์ชันก่อนสร้างรูปทรงจากกฎล้วน ๆ โดยเดาว่าแมพหน้าตาแบบไหน
+เวอร์ชันนี้ยึดจากค่าที่ **วัดได้จริง** บน minimap ในเกม
+(scripts/build_minimap.py -> data/assets/map/minimap_meta.json)
 
-โครงสร้างที่ยืนยันแล้ว (docs/16-map-guide.md — จากหน้าแนะนำแผนที่ในเกม)
-    3 เลน · แม่น้ำผ่ากลาง · ป่า 4 ส่วนต่อฝั่ง
-    Dark Slayer กับ Abyssal Dragon อยู่คนละครึ่งแม่น้ำ
-    God Slayer สุ่มไปแทนที่หลุมใดหลุมหนึ่ง ไม่มีหลุมของตัวเอง
+    ศูนย์กลางสนาม   หาจากความสมมาตร 180 องศาของป้อมสองฝั่ง
+    ฐานทั้งสอง      จากตำแหน่งแกนกลางที่ตรวจเจอ
+    หลุมทั้งสอง     Dark Slayer (0.334, 0.286)  Abyssal Dragon (0.661, 0.715)
+                    ยืนยันกันเองด้วยความสมมาตร ต่างกันแค่ 0.005
+    แม่น้ำ          ใช้ **หน้ากากจากภาพจริง** ไม่ใช่รูปทรงที่สมมติขึ้น
+    เส้นเลน         ลากผ่านตำแหน่งป้อมที่ตรวจเจอ
 
-⚠️ ทิศทางของแมพ (ฐานน้ำเงินมุมไหน เลนไหนอยู่บน) ยังต้องยืนยันกับ minimap จริง
-   ถ้าผิด ให้แก้ค่าคงที่ด้านล่างแล้วรันใหม่ ไม่ต้องแก้ polygon ทีละจุด
+**เรขาคณิตของแมพที่วัดได้**
+
+    ฐานน้ำเงินมุมซ้ายล่าง (0.093, 0.916)   ฐานแดงมุมขวาบน (0.907, 0.102)
+    เลนกลางวางตัวตามแนวทแยง x + y = 1  (เชื่อมสองฐาน)
+    แม่น้ำวางตัวตามแนวทแยง y = x  (ตั้งฉากกับเลนกลาง) แบ่งเป็นสองแอ่ง
+    เลนข้างเป็นรูปตัว L เลียบขอบแมพ ไม่ใช่เส้นทแยง
+
+**สองแนวทแยงนี้แบ่งคนละเรื่องกัน — เคยสับสนตรงนี้มาแล้ว**
+
+    y = x       แบ่ง "ฝั่งทีม"  ทีมน้ำเงิน y > x   ทีมแดง y < x
+    x + y = 1   แบ่ง "ฝั่งเลน"  ฝั่ง Dark Slayer x+y < 1   ฝั่ง Dragon x+y > 1
+
+ฐานทั้งสองอยู่บนเส้น x + y = 1 พอดี เพราะเลนกลางเชื่อมมันโดยตรง
+จะใช้ x + y เป็นตัวแบ่งฝั่งทีมไม่ได้เด็ดขาด ต้องใช้ y - x
+ยืนยันจากหลุม — Dark Slayer อยู่ที่ x+y = 0.62 (ฝั่ง DS lane)
+Abyssal Dragon อยู่ที่ x+y = 1.38 (ฝั่ง Dragon lane) ตรงกับชื่อเลนพอดี
+
+วิธีทำ: วาด label ลง raster ตามลำดับความสำคัญ แล้วดึง contour ออกมาเป็น polygon
+ทำให้ polygon ของแม่น้ำมีรูปร่างตามของจริง ไม่ใช่สี่เหลี่ยมที่สมมติเอา
+
+รัน:  python scripts/gen_zone_map.py
 """
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -25,207 +46,211 @@ import cv2
 import numpy as np
 import yaml
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "packages" / "core"))
+META = Path("data/assets/map/minimap_meta.json")
+RIVER_MASK = Path("data/exports/mapwork/board_river.png")
+OUT = Path("configs/zones/rov_map_v1.yaml")
+N = 900  # ความละเอียดที่ใช้วาด
 
-from rov.cli.console import setup_console  # noqa: E402
+# ── ค่าที่ปรับได้ ทั้งหมดเป็นสัดส่วนของด้านแมพ ──
+MID_HALF_WIDTH = 0.085      # ครึ่งความกว้างของเลนกลาง วัดจากแนวทแยง
+LANE_INSET = 0.055          # เส้นกลางเลนข้างห่างจากขอบแมพเท่าไร
+LANE_HALF_WIDTH = 0.070     # ครึ่งความกว้างของเลนข้าง
+BASE_RADIUS = 0.185         # รัศมีเขตฐาน
+PIT_RADIUS = 0.062          # รัศมีหลุม objective
+APPROACH_RADIUS = 0.125     # รัศมีวงรอบหลุม ใช้จับการเซ็ตอัพ
 
-N = 1024  # ความละเอียดตอนวาด ยิ่งสูง contour ยิ่งเรียบ
-
-# ── ค่าที่กำหนดรูปร่างแมพ (หน่วย normalized) ────────────────────────────
-LANE_W = 0.085      # ครึ่งความกว้างของเลน
-RIVER_W = 0.075     # ครึ่งความกว้างของแม่น้ำ
-BASE_R = 0.155      # รัศมีฐาน
-PIT_R = 0.058       # รัศมีหลุม objective
-APPROACH_R = 0.115  # รัศมีพื้นที่รอบหลุม
-EDGE = 0.075        # ระยะจากขอบแมพถึงกึ่งกลางเลนริม
-
-# ฐานน้ำเงินมุมซ้ายล่าง ฐานแดงมุมขวาบน
-BLUE_BASE = (0.06, 0.94)
-RED_BASE = (0.94, 0.06)
-
-# หลุม objective อยู่ในแม่น้ำ คนละครึ่งกัน
-#
-# ยืนยันจากหน้าแนะนำแผนที่ในเกม (docs/16-map-guide.md)
-#   Dark Slayer     เกิดนาทีที่ 2 คูลดาวน์ 3 นาที
-#   Abyssal Dragon  เกิดนาทีที่ 2 คูลดาวน์ 3 นาที
-#   God Slayer      เกิดนาทีที่ 15 แล้ว "สุ่มไปแทนที่" หลุมใดหลุมหนึ่งในสองหลุมนี้
-#                   จึงไม่มีหลุมของตัวเอง
-#
-# ไม่มี Spirit Sentinel ในเกมปัจจุบัน — เอกสารเดิมอ้างจากเว็บภายนอกที่เก่ากว่า
-# มอนสเตอร์ป่าใหญ่สองตัวคือ Might Golem (DMG) กับ Sage Golem (Recovery)
-SLAYER_PIT = (0.30, 0.30)     # ครึ่งบนซ้ายของแม่น้ำ ฝั่งเดียวกับ DS lane
-DRAGON_PIT = (0.70, 0.70)     # ครึ่งล่างขวา ฝั่งเดียวกับ Dragon lane
-MIGHT_GOLEM = (0.40, 0.20)    # มอนสเตอร์ป่าใหญ่ ฝั่งเดียวกับ Slayer
-SAGE_GOLEM = (0.60, 0.80)     # ฝั่งเดียวกับ Dragon
-
-ZONES = [
-    # (id, kind, region) — ลำดับสำคัญ วาดทีหลังทับของเดิม
-    ("JUNGLE_BLUE_TOP", "jungle", "TOP_SIDE"),
-    ("JUNGLE_BLUE_BOT", "jungle", "BOT_SIDE"),
-    ("JUNGLE_RED_TOP", "jungle", "TOP_SIDE"),
-    ("JUNGLE_RED_BOT", "jungle", "BOT_SIDE"),
-    ("DS_LANE", "lane", "TOP_SIDE"),
-    ("MID", "lane", "MID"),
-    ("DRAGON_LANE", "lane", "BOT_SIDE"),
-    ("RIVER_TOP", "river", "TOP_SIDE"),
-    ("RIVER_BOTTOM", "river", "BOT_SIDE"),
+ZONES: list[tuple[str, str, str]] = [
+    # id, kind, region
     ("BASE_BLUE", "base", "BASE_BLUE"),
     ("BASE_RED", "base", "BASE_RED"),
-    ("SLAYER_PIT_APPROACH", "approach", "TOP_SIDE"),
-    ("DRAGON_PIT_APPROACH", "approach", "BOT_SIDE"),
-    ("MIGHT_GOLEM", "objective", "TOP_SIDE"),
-    ("SAGE_GOLEM", "objective", "BOT_SIDE"),
-    ("SLAYER_PIT", "objective", "TOP_SIDE"),
-    ("DRAGON_PIT", "objective", "BOT_SIDE"),
+    ("SLAYER_PIT", "objective", "SLAYER_SIDE"),
+    ("DRAGON_PIT", "objective", "DRAGON_SIDE"),
+    ("SLAYER_PIT_APPROACH", "approach", "SLAYER_SIDE"),
+    ("DRAGON_PIT_APPROACH", "approach", "DRAGON_SIDE"),
+    ("RIVER_SLAYER", "river", "SLAYER_SIDE"),
+    ("RIVER_DRAGON", "river", "DRAGON_SIDE"),
+    ("MID", "lane", "MID"),
+    ("DS_LANE", "lane", "SLAYER_SIDE"),
+    ("DRAGON_LANE", "lane", "DRAGON_SIDE"),
+    ("GOLEM_BLUE_SLAYER", "objective", "SLAYER_SIDE"),
+    ("GOLEM_BLUE_DRAGON", "objective", "DRAGON_SIDE"),
+    ("GOLEM_RED_SLAYER", "objective", "SLAYER_SIDE"),
+    ("GOLEM_RED_DRAGON", "objective", "DRAGON_SIDE"),
+    ("JUNGLE_BLUE_SLAYER", "jungle", "SLAYER_SIDE"),
+    ("JUNGLE_BLUE_DRAGON", "jungle", "DRAGON_SIDE"),
+    ("JUNGLE_RED_SLAYER", "jungle", "SLAYER_SIDE"),
+    ("JUNGLE_RED_DRAGON", "jungle", "DRAGON_SIDE"),
 ]
-IDX = {z[0]: i + 1 for i, z in enumerate(ZONES)}
+
+GOLEM_RADIUS = 0.055
 
 
-def build_labels() -> np.ndarray:
-    """วาดภาพ label ตามกฎ — ค่าที่ทับทีหลังชนะ"""
-    yy, xx = np.mgrid[0:N, 0:N].astype(np.float32) / (N - 1)
+def _grid() -> tuple[np.ndarray, np.ndarray]:
+    a = (np.arange(N) + 0.5) / N
+    return np.meshgrid(a, a)  # xs, ys
+
+
+def build_labels(meta: dict) -> np.ndarray:
+    xs, ys = _grid()
+    idx = {z[0]: i + 1 for i, z in enumerate(ZONES)}
     lab = np.zeros((N, N), np.uint16)
 
-    # เส้นแบ่งสองอย่าง
-    #   mid      แนวทแยงจากซ้ายล่างไปขวาบน   x + y = 1
-    #   river    แนวทแยงตรงข้าม              y - x = 0
-    d_mid = np.abs(xx + yy - 1.0) / np.sqrt(2)
-    d_river = np.abs(yy - xx) / np.sqrt(2)
-    blue_half = (xx + yy) < 1.0          # ครึ่งของทีมน้ำเงิน
-    top_half = yy < xx                   # ครึ่งบน (ฝั่ง DS lane)
+    def put(name: str, mask: np.ndarray) -> None:
+        lab[(lab == 0) & mask] = idx[name]
 
-    # ป่าสี่ส่วน แบ่งด้วยเส้นทแยงทั้งสอง
-    lab[blue_half & top_half] = IDX["JUNGLE_BLUE_TOP"]
-    lab[blue_half & ~top_half] = IDX["JUNGLE_BLUE_BOT"]
-    lab[~blue_half & top_half] = IDX["JUNGLE_RED_TOP"]
-    lab[~blue_half & ~top_half] = IDX["JUNGLE_RED_BOT"]
+    def anchor(key: str, fallback: tuple[float, float]) -> tuple[float, float]:
+        items = meta.get(key) or []
+        if not items:
+            return fallback
+        big = max(items, key=lambda d: d["area"])
+        return big["x"], big["y"]
 
-    # เลนริมสองเส้น เป็นรูปตัว L ตามขอบแมพ
-    ds = np.minimum(np.abs(xx - EDGE), np.abs(yy - EDGE))
-    dragon = np.minimum(np.abs(xx - (1 - EDGE)), np.abs(yy - (1 - EDGE)))
-    lab[ds < LANE_W] = IDX["DS_LANE"]
-    lab[dragon < LANE_W] = IDX["DRAGON_LANE"]
-    lab[d_mid < LANE_W] = IDX["MID"]
+    slayer = anchor("slayer_pit", (0.334, 0.286))
+    dragon = anchor("dragon_pit", (0.661, 0.715))
 
-    # แม่น้ำวาดทับเลน แล้วแบ่งครึ่งด้วยเส้น mid
-    river = d_river < RIVER_W
-    lab[river & top_half] = IDX["RIVER_TOP"]
-    lab[river & ~top_half] = IDX["RIVER_BOTTOM"]
+    # ฐาน — เอาแกนกลาง (ก้อนใหญ่สุด) ของแต่ละฝั่ง
+    def base_of(key: str, fallback: tuple[float, float]) -> tuple[float, float]:
+        items = meta.get(key) or []
+        if not items:
+            return fallback
+        big = max(items, key=lambda d: d["area"])
+        return big["x"], big["y"]
 
-    # ฐานสองมุม
-    for (cx, cy), key in ((BLUE_BASE, "BASE_BLUE"), (RED_BASE, "BASE_RED")):
-        lab[((xx - cx) ** 2 + (yy - cy) ** 2) < BASE_R**2] = IDX[key]
+    bb = base_of("structures_blue", (0.093, 0.916))
+    br = base_of("structures_red", (0.907, 0.102))
 
-    # พื้นที่รอบหลุม แล้วค่อยวาดหลุมทับ
-    for (cx, cy), key in (
-        (SLAYER_PIT, "SLAYER_PIT_APPROACH"),
-        (DRAGON_PIT, "DRAGON_PIT_APPROACH"),
-    ):
-        lab[((xx - cx) ** 2 + (yy - cy) ** 2) < APPROACH_R**2] = IDX[key]
-    for (cx, cy), key in (
-        (MIGHT_GOLEM, "MIGHT_GOLEM"),
-        (SAGE_GOLEM, "SAGE_GOLEM"),
-        (SLAYER_PIT, "SLAYER_PIT"),
-        (DRAGON_PIT, "DRAGON_PIT"),
-    ):
-        lab[((xx - cx) ** 2 + (yy - cy) ** 2) < PIT_R**2] = IDX[key]
+    def disc(cx: float, cy: float, r: float) -> np.ndarray:
+        return (xs - cx) ** 2 + (ys - cy) ** 2 <= r * r
 
+    # ระยะเชิงเส้นถึงแนวทแยงสองเส้น (หารด้วย sqrt(2) ให้เป็นระยะจริง)
+    d_mid = np.abs(xs + ys - 1.0) / np.sqrt(2.0)   # 0 = อยู่บนเลนกลาง
+    d_river = np.abs(ys - xs) / np.sqrt(2.0)       # 0 = อยู่บนแนวแม่น้ำ
+
+    # ตัวแบ่งสองแบบที่ห้ามสลับกัน (ดู docstring ด้านบน)
+    blue_half = ys > xs          # ฝั่งทีมน้ำเงิน แบ่งด้วยแม่น้ำ
+    slayer_half = xs + ys < 1.0  # ฝั่ง Dark Slayer แบ่งด้วยเลนกลาง
+
+    # ── ลำดับสำคัญ: ฐาน > หลุม > แม่น้ำจริง > รอบหลุม > เลน > ป่า ──
+    put("BASE_BLUE", disc(*bb, BASE_RADIUS))
+    put("BASE_RED", disc(*br, BASE_RADIUS))
+    put("SLAYER_PIT", disc(*slayer, PIT_RADIUS))
+    put("DRAGON_PIT", disc(*dragon, PIT_RADIUS))
+
+    # แม่น้ำจากภาพจริง แบ่งสองแอ่งด้วยแนวเลนกลาง
+    if RIVER_MASK.exists():
+        rm = cv2.imread(str(RIVER_MASK), cv2.IMREAD_GRAYSCALE)
+        rm = cv2.resize(rm, (N, N), interpolation=cv2.INTER_NEAREST) > 127
+        print(f"ใช้หน้ากากแม่น้ำจากภาพจริง ({100*rm.mean():.1f}% ของแมพ)")
+    else:
+        # สำรอง ถ้ายังไม่ได้รัน build_minimap.py
+        rm = d_river <= 0.085
+        print("ไม่พบหน้ากากแม่น้ำ ใช้แถบตามแนวทแยงแทน")
+    put("RIVER_SLAYER", rm & slayer_half)
+    put("RIVER_DRAGON", rm & ~slayer_half)
+
+    put("SLAYER_PIT_APPROACH", disc(*slayer, APPROACH_RADIUS))
+    put("DRAGON_PIT_APPROACH", disc(*dragon, APPROACH_RADIUS))
+
+    # แคมป์ใหญ่วาดก่อนเลน เพราะบางจุดอยู่ชิดเลนกลาง ถ้าวาดทีหลังจะโดนกลืน
+    for c in meta.get("big_camps") or []:
+        cxx, cyy = c["x"], c["y"]
+        side = "BLUE" if cyy > cxx else "RED"
+        half = "SLAYER" if cxx + cyy < 1.0 else "DRAGON"
+        put(f"GOLEM_{side}_{half}", disc(cxx, cyy, GOLEM_RADIUS))
+
+    # เลนกลาง — แถบตามแนวทแยงที่เชื่อมสองฐาน
+    put("MID", d_mid <= MID_HALF_WIDTH)
+
+    # เลนข้างเป็นรูปตัว L เลียบขอบ ไม่ใช่เส้นทแยง
+    near_left = np.abs(xs - LANE_INSET) <= LANE_HALF_WIDTH
+    near_top = np.abs(ys - LANE_INSET) <= LANE_HALF_WIDTH
+    near_bot = np.abs(ys - (1 - LANE_INSET)) <= LANE_HALF_WIDTH
+    near_right = np.abs(xs - (1 - LANE_INSET)) <= LANE_HALF_WIDTH
+    put("DS_LANE", near_left | near_top)
+    put("DRAGON_LANE", near_bot | near_right)
+
+    # ป่าสี่ส่วน แบ่งด้วยสองแนวทแยง
+    put("JUNGLE_BLUE_SLAYER", blue_half & slayer_half)
+    put("JUNGLE_BLUE_DRAGON", blue_half & ~slayer_half)
+    put("JUNGLE_RED_SLAYER", ~blue_half & slayer_half)
+    put("JUNGLE_RED_DRAGON", ~blue_half & ~slayer_half)
     return lab
 
 
-# ชิ้นที่เล็กกว่านี้ถือเป็นเศษจากการ rasterize ไม่ใช่ส่วนหนึ่งของ zone จริง
-MIN_PART_FRACTION = 0.0008
-
-
-def to_polygons(lab: np.ndarray) -> dict[str, list[list[list[float]]]]:
-    """ดึง contour **ทุกชิ้น** ของแต่ละ zone แล้วลดจำนวนจุดลง
-
-    ต้องเก็บทุกชิ้นเพราะเลนกลางถูกแม่น้ำตัดเป็นสองท่อน
-    ถ้าเก็บแค่ชิ้นใหญ่สุดจะเสียครึ่งเลนไปเงียบ ๆ
-    """
-    out: dict[str, list[list[list[float]]]] = {}
-    min_area = MIN_PART_FRACTION * N * N
-    for zid, idx in IDX.items():
-        mask = (lab == idx).astype(np.uint8)
-        if not mask.any():
+def contours_of(lab: np.ndarray, i: int) -> list[list[list[float]]]:
+    m = (lab == i).astype(np.uint8) * 255
+    if not m.any():
+        return []
+    # ลบเศษเล็ก ๆ ที่เกิดจากขอบชนกัน
+    k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
+    m = cv2.morphologyEx(m, cv2.MORPH_OPEN, k)
+    cnts, _ = cv2.findContours(m, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    polys = []
+    for c in cnts:
+        if cv2.contourArea(c) < N * N * 0.0008:  # เล็กกว่านี้ไม่มีความหมาย
             continue
-        cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        parts = []
-        for c in sorted(cnts, key=cv2.contourArea, reverse=True):
-            if cv2.contourArea(c) < min_area:
-                continue
-            eps = 0.004 * cv2.arcLength(c, True)
-            poly = cv2.approxPolyDP(c, eps, True).reshape(-1, 2)
-            if len(poly) < 3:
-                continue
-            parts.append([
-                [round(float(x) / (N - 1), 4), round(float(y) / (N - 1), 4)]
-                for x, y in poly
-            ])
-        if parts:
-            out[zid] = parts
-    return out
+        eps = 0.004 * cv2.arcLength(c, True)
+        ap = cv2.approxPolyDP(c, eps, True).reshape(-1, 2)
+        if len(ap) < 3:
+            continue
+        polys.append([[round(float(p[0]) / N, 4), round(float(p[1]) / N, 4)] for p in ap])
+    return polys
 
 
 def main() -> int:
-    setup_console()
-    lab = build_labels()
-    polys = to_polygons(lab)
+    sys.stdout.reconfigure(encoding="utf-8")
+    if not META.exists():
+        print(f"ไม่พบ {META} — รัน scripts/build_minimap.py ก่อน")
+        return 1
+    meta = json.loads(META.read_text(encoding="utf-8"))
+
+    lab = build_labels(meta)
+    cov = float((lab > 0).mean())
+    print(f"ครอบคลุมแมพ {cov:.1%}")
+
+    zones = []
+    for i, (zid, kind, region) in enumerate(ZONES, start=1):
+        polys = contours_of(lab, i)
+        if not polys:
+            print(f"  ⚠️ {zid} ไม่มีพื้นที่เหลือ")
+            continue
+        area = float((lab == i).mean())
+        print(f"  {zid:22s} {kind:9s} {len(polys)} ชิ้น  {area:6.2%}")
+        zones.append({"id": zid, "kind": kind, "region": region, "polygons": polys})
 
     doc = {
-        "version": 2,
-        "verified": False,
+        "version": 3,
+        "verified": True,
+        "verified_from": (
+            "minimap จากในเกม (data/assets/map/source/IMG_0419.PNG) "
+            "ผ่าน scripts/build_minimap.py"
+        ),
         "generated_by": "scripts/gen_zone_map.py",
-        "zones": [
-            {
-                "id": zid,
-                "kind": kind,
-                "region": region,
-                "polygons": polys[zid],
-            }
-            for zid, kind, region in ZONES
-            if zid in polys
-        ],
+        "zones": zones,
     }
-    for z in doc["zones"]:
-        if z["id"].endswith("_PIT"):
-            z["parent"] = None
-    for z in doc["zones"]:
-        if z["id"] == "SLAYER_PIT_APPROACH":
-            z["parent"] = "SLAYER_PIT"
-        if z["id"] == "DRAGON_PIT_APPROACH":
-            z["parent"] = "DRAGON_PIT"
-    for z in doc["zones"]:
-        if z.get("parent") is None:
-            z.pop("parent", None)
-
-    out = Path("configs/zones/rov_map_v1.yaml")
     header = (
         "# Zone map ของ Antaris Battlefield (RoV 5v5)\n"
         "#\n"
         "# สร้างอัตโนมัติด้วย scripts/gen_zone_map.py — อย่าแก้ทีละจุดด้วยมือ\n"
-        "# ถ้ารูปร่างไม่ตรงกับ minimap จริง ให้แก้ค่าคงที่ในสคริปต์แล้วรันใหม่\n"
+        "# ถ้ารูปร่างไม่ตรง ให้แก้ค่าคงที่ในสคริปต์แล้วรันใหม่\n"
         "#\n"
-        "# ⚠️ verified: false — ยังไม่ได้เทียบกับ minimap จริงจากคลิปแข่ง\n"
-        "#    ทิศทางที่สมมติไว้: ฐานน้ำเงินมุมซ้ายล่าง ฐานแดงมุมขวาบน\n"
-        "#    แม่น้ำจากซ้ายบนไปขวาล่าง เลนกลางตัดขวางที่จุดกึ่งกลาง\n"
+        "# ยึดจากค่าที่วัดได้บน minimap จริงในเกม ไม่ใช่รูปทรงที่เดาขึ้น\n"
+        "#   ฐานน้ำเงินมุมซ้ายล่าง ฐานแดงมุมขวาบน\n"
+        "#   เลนกลางตามแนวทแยง x + y = 1 เชื่อมสองฐาน\n"
+        "#   แม่น้ำตามแนวทแยง y = x แบ่งเป็นสองแอ่ง รูปร่างมาจากหน้ากากภาพจริง\n"
+        "#   เลนข้างเป็นรูปตัว L เลียบขอบแมพ\n"
+        "#\n"
+        "# ⚠️ verified: true หมายถึงตรงกับ minimap ในไคลเอนต์เกม\n"
+        "#    ยังไม่ได้เทียบกับ minimap ฝั่ง broadcast ซึ่งอาจเรนเดอร์ต่างกัน\n"
         "#\n"
         "# พิกัด normalized 0..1  (0,0) = ซ้ายบน  (1,1) = ขวาล่าง\n\n"
     )
-    out.write_text(
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(
         header + yaml.safe_dump(doc, allow_unicode=True, sort_keys=False, width=100),
         encoding="utf-8",
     )
-
-    counts = {zid: int((lab == idx).sum()) for zid, idx in IDX.items()}
-    total = N * N
-    print(f"เขียน {out}")
-    print(f"zone {len(doc['zones'])} · ครอบคลุม {sum(counts.values())/total:.1%}")
-    print()
-    for zid, _kind, _r in ZONES:
-        parts = polys.get(zid, [])
-        pts = sum(len(p) for p in parts)
-        print(f"  {zid:<22} {counts.get(zid, 0)/total:>6.2%}  {len(parts)} ชิ้น {pts} จุด")
+    print(f"เขียน {OUT} · {len(zones)} zone")
     return 0
 
 

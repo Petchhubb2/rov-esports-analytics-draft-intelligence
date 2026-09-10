@@ -87,15 +87,21 @@ def test_out_of_range_point_is_rejected():
         ZoneDef(id="X", kind="lane", polygons=[[(0.0, 0.0), (5.0, 0.0), (5.0, 5.0)]])
 
 
-def test_both_halves_of_a_split_lane_are_rasterised():
-    """เลนกลางถูกแม่น้ำตัดเป็นสองท่อน ทั้งสองท่อนต้องอยู่ใน raster
+def test_every_piece_of_a_multi_part_zone_is_rasterised():
+    """โซนที่มีหลายชิ้นต้องเข้า raster ครบทุกชิ้น ไม่ใช่เก็บแต่ชิ้นใหญ่สุด
 
-    ถ้าเก็บแค่ชิ้นใหญ่สุดจะเสียครึ่งเลนไปเงียบ ๆ
+    แม่น้ำจริงบน minimap เป็นแอ่งขาด ๆ ไม่ต่อกันเป็นเส้นเดียว
+    ถ้าเก็บแค่ชิ้นใหญ่สุดจะเสียพื้นที่ไปเงียบ ๆ
+
+    หมายเหตุ: เดิมเทสต์นี้ยืนยันว่า "เลนกลางถูกแม่น้ำตัดเป็นสองท่อน"
+    ซึ่งมาจากผังที่เดารูปทรงเอง พอเทียบกับ minimap จริงแล้วไม่จริง —
+    แม่น้ำเป็นสองแอ่งอยู่คนละข้างของเลนกลาง ไม่ได้พาดตัดผ่าน เลนกลางจึงต่อเนื่อง
     """
     zm = ZoneMap.load(ZONE_FILE)
-    mid = zm.get("MID")
-    assert mid is not None
-    assert len(mid.parts) >= 2, "MID ควรมีอย่างน้อยสองชิ้น"
+    multi = [z for z in zm.zones if len(z.parts) >= 2]
+    assert multi, "ควรมีโซนที่แตกเป็นหลายชิ้นอย่างน้อยหนึ่งโซน"
+    mid = zm.get("RIVER_SLAYER") or multi[0]
+    assert len(mid.parts) >= 2
 
     import numpy as np
 
@@ -108,17 +114,45 @@ def test_both_halves_of_a_split_lane_are_rasterised():
 
 
 def test_generated_map_matches_confirmed_game_facts():
-    """หลุม Dark Slayer กับ Abyssal Dragon อยู่คนละครึ่งแม่น้ำ
+    """โครงสร้างต้องตรงกับ minimap จริง
 
-    ยืนยันจากหน้าแนะนำแผนที่ในเกม (docs/16-map-guide.md)
-    ไม่มี Spirit Sentinel ในเกมปัจจุบัน — มอนสเตอร์ป่าใหญ่คือ
-    Might Golem (DMG) กับ Sage Golem (Recovery)
+    ไม่มี Spirit Sentinel ในเกมปัจจุบัน (docs/16-map-guide.md)
+    แคมป์ใหญ่มีสี่จุดสมมาตรกัน — ยังบอกไม่ได้ว่าจุดไหนคือ Might Golem
+    จุดไหนคือ Sage Golem เพราะไอคอนบน minimap เหมือนกัน จึงตั้งชื่อตามตำแหน่ง
     """
     zm = ZoneMap.load(ZONE_FILE)
     assert zm.region_of("DRAGON_PIT") != zm.region_of("SLAYER_PIT")
     assert zm.get("SPIRIT_SENTINEL") is None, "Spirit Sentinel ไม่มีในเกมปัจจุบัน"
-    assert zm.get("MIGHT_GOLEM") is not None
-    assert zm.get("SAGE_GOLEM") is not None
+    golems = [z for z in zm.zones if z.id.startswith("GOLEM_")]
+    assert len(golems) == 4, f"แคมป์ใหญ่ควรมีสี่จุด เจอ {len(golems)}"
+    # สองจุดต่อฝั่งทีม และกระจายอยู่ทั้งสองฝั่งเลน
+    assert len([z for z in golems if "BLUE" in z.id]) == 2
+    assert len([z for z in golems if "SLAYER" in z.id]) == 2
+
+
+def test_map_is_symmetric_under_180_rotation():
+    """แมพ MOBA ต้องสมมาตรเมื่อหมุน 180 องศา ไม่งั้นฝั่งหนึ่งได้เปรียบฟรี
+
+    เป็นตัวจับว่าเราวัดศูนย์กลางเพี้ยนหรือวาดโซนเอียง
+    """
+    import numpy as np
+
+    zm = ZoneMap.load(ZONE_FILE)
+    pairs = [
+        ("BASE_BLUE", "BASE_RED"),
+        ("SLAYER_PIT", "DRAGON_PIT"),
+        ("JUNGLE_BLUE_SLAYER", "JUNGLE_RED_DRAGON"),
+    ]
+    for a_id, b_id in pairs:
+        za, zb = zm.get(a_id), zm.get(b_id)
+        assert za and zb, f"ขาดโซน {a_id} หรือ {b_id}"
+        ca = np.array([p for poly in za.parts for p in poly]).mean(0)
+        cb = np.array([p for poly in zb.parts for p in poly]).mean(0)
+        # จุดกึ่งกลางของคู่ต้องอยู่ใกล้ศูนย์กลางแมพ
+        mid = (ca + cb) / 2
+        assert abs(mid[0] - 0.5) < 0.06 and abs(mid[1] - 0.5) < 0.06, (
+            f"{a_id}/{b_id} ไม่สมมาตร กึ่งกลางคู่อยู่ที่ {mid}"
+        )
 
 
 def test_generated_map_covers_almost_everything():
@@ -126,9 +160,15 @@ def test_generated_map_covers_almost_everything():
     assert zm.coverage_fraction() > 0.98, "แมพที่สร้างจากกฎควรครอบคลุมเกือบทั้งหมด"
 
 
-def test_map_is_marked_unverified():
-    """ยังไม่ได้เทียบกับ minimap จริง ต้องไม่อ้างว่ายืนยันแล้ว"""
+def test_map_records_what_it_was_verified_against():
+    """ตอนนี้เทียบกับ minimap ในไคลเอนต์แล้ว แต่ยังไม่ใช่ฝั่ง broadcast
+
+    อ้างว่ายืนยันแล้วได้ แต่ต้องบอกให้ชัดว่ายืนยันกับอะไร
+    ไม่งั้นคนอ่านจะเข้าใจว่าเทียบกับคลิปแข่งแล้ว
+    """
     import yaml
 
     doc = yaml.safe_load(open(ZONE_FILE, encoding="utf-8"))
-    assert doc.get("verified") is False
+    assert doc.get("verified") is True
+    src = doc.get("verified_from") or ""
+    assert "minimap" in src, "ต้องบอกว่ายืนยันจากอะไร"
