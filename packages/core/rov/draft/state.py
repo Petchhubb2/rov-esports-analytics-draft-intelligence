@@ -27,12 +27,33 @@ class TurnSpec(BaseModel):
 
 
 class GlobalBanPick(BaseModel):
-    """กติกา soft fearless — ยืนยันแล้วจากข้อมูลจริง"""
+    """กติกา soft fearless
+
+    ยืนยันสองชั้น — จากข้อมูลจริง 270/272 เกม และจากกติกาที่เขียนไว้ตรง ๆ
+    ในหน้ารายการของ Liquipedia (ดู source ใน configs/draft/format.yaml)
+    """
 
     enabled: bool = False
     scope: Literal["own_team_only", "both_teams"] = "own_team_only"
     applies_to_bans: bool = False
     reset_on_final_game: bool = True
+    # กติกาข้อนี้ยืนยันกับ rulebook แล้วหรือยัง — แยกจาก verified ของลำดับ
+    verified: bool = False
+    source: str | None = None
+
+
+class SideSelection(BaseModel):
+    """สิทธิ์เลือกฝั่ง — มีผลต่อคำแนะนำระดับซีรีส์
+
+    เกมแรกทีมฝั่งซ้ายของตารางเป็นฝ่ายเลือกข้าง เกมถัดไปฝ่ายที่แพ้เกมก่อนเลือก
+    แปลว่าทีมที่แพ้เลือกได้ว่าจะเอา blue หรือ red ในเกมถัดไป
+    """
+
+    enabled: bool = False
+    game1: Literal["home_team", "coin_toss", "unknown"] = "unknown"
+    later_games: Literal["previous_loser", "alternate", "unknown"] = "unknown"
+    verified: bool = False
+    source: str | None = None
 
 
 class DraftFormat(BaseModel):
@@ -42,7 +63,10 @@ class DraftFormat(BaseModel):
     bans_per_team: int = 4
     picks_per_team: int = 5
     global_ban_pick: GlobalBanPick = Field(default_factory=GlobalBanPick)
+    side_selection: SideSelection = Field(default_factory=SideSelection)
     sequence: list[TurnSpec] = Field(default_factory=list)
+    # ที่มาของลำดับสลับแบน/เลือก — ว่างแปลว่ายังเดาอยู่
+    sequence_source: str | None = None
 
     @model_validator(mode="after")
     def _check_counts(self) -> DraftFormat:

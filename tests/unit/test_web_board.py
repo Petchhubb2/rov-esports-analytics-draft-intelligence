@@ -166,3 +166,93 @@ def test_js_role_fit_matches_python(tpl):
     # ต้องเป็น "มากกว่า" ไม่ใช่ "มากกว่าเท่ากับ" ทั้งสองฝั่ง
     assert "m.share > LANE_OWN_SHARE" in tpl
     assert "roleMul = fit => ROLE_FLOOR + (1 - ROLE_FLOOR) * fit" in tpl
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Composition Engine ถูกเขียนซ้ำไว้ใน JS ด้วย (COMP_DIMS ใน template)
+# เพราะหน้าเว็บคิดสดตอนดราฟต์ ซึ่งเรียก Python ไม่ได้
+# เทสต์ชุดนี้จับไม่ให้สองชุดเพี้ยนจากกัน
+# ─────────────────────────────────────────────────────────────────────
+
+
+def test_js_composition_constants_match_python(tpl):
+    """ค่าคงที่ของสูตรรวมคะแนนต้องตรงกันทั้งสองฝั่ง
+
+    ถ้า CC_SCALE ฝั่งไหนขยับ คะแนน Hard CC บนเว็บกับใน CLI จะต่างกัน
+    ทั้งที่เป็นคอมพ์เดียวกัน ซึ่งผู้ใช้จะไม่รู้ว่าอันไหนถูก
+    """
+    from rov.draft import composition as comp
+
+    m = re.search(r"const CC_SCALE = (\d+);", tpl)
+    assert m, "หา CC_SCALE ใน template ไม่เจอ"
+    # ค่าเดียวกันนี้อยู่ในคำเรียก _saturating_sum(cc, 180.0) ของ composition.py
+    py_cc = re.search(
+        r"_saturating_sum\(cc, ([\d.]+)\)",
+        Path(comp.__file__).read_text(encoding="utf-8"),
+    )
+    assert py_cc, "หา _saturating_sum(cc, ...) ใน composition.py ไม่เจอ"
+    assert float(m.group(1)) == float(py_cc.group(1))
+
+    mw = re.search(r"const WC_MIN_W = ([\d.]+);", tpl)
+    assert mw and float(mw.group(1)) == 0.45
+
+    mg = re.search(r"const GAP_AT = (\d+), STRONG_AT = (\d+);", tpl)
+    assert mg, "หา GAP_AT/STRONG_AT ไม่เจอ"
+    assert (int(mg.group(1)), int(mg.group(2))) == (35, 75)
+
+
+def test_js_composition_dimensions_match_python_labels(tpl):
+    """มิติที่เว็บแสดงต้องเป็นชุดย่อยของมิติฝั่ง Python และสะกดตรงกัน"""
+    from rov.draft.composition import analyze
+    from rov.draft.heroes import HeroDB
+
+    block = re.search(r"const COMP_DIMS = \[(.*?)\n\];", tpl, re.S)
+    assert block, "หา COMP_DIMS ใน template ไม่เจอ"
+    js_labels = re.findall(r'label:\s*"([^"]+)"', block.group(1))
+    assert js_labels, "COMP_DIMS ไม่มี label เลย"
+
+    db = HeroDB.load()
+    ready = db.complete_heroes
+    if len(ready) < 5:
+        pytest.skip("ฮีโร่ที่กรอกครบยังไม่ถึง 5 ตัว")
+    py_labels = {d.label for d in analyze(ready[:5]).dimensions.values()}
+    missing = [x for x in js_labels if x not in py_labels]
+    assert not missing, f"มิติบนเว็บที่ฝั่ง Python ไม่มี: {missing}"
+
+
+def test_js_and_python_agree_on_a_real_composition(tpl):
+    """คิดคอมพ์เดียวกันสองฝั่งแล้วต้องได้ตัวเลขเดียวกัน
+
+    เทสต์นี้จำลองสูตรฝั่ง JS ด้วย Python แล้วเทียบกับ analyze() ตัวจริง
+    ถ้ามีใครไปแก้สูตรฝั่งใดฝั่งหนึ่ง ตัวเลขจะแยกกันแล้ว fail ตรงนี้
+    """
+    import math
+
+    from rov.draft.composition import analyze
+    from rov.draft.heroes import HeroDB
+
+    db = HeroDB.load()
+    ready = db.complete_heroes
+    if len(ready) < 5:
+        pytest.skip("ฮีโร่ที่กรอกครบยังไม่ถึง 5 ตัว")
+    team = ready[:5]
+    rep = analyze(team)
+
+    def top_w(vals, w=(0.7, 0.3)):
+        s = sorted(vals, reverse=True)
+        return sum(k * (s[i] if i < len(s) else 0) for i, k in enumerate(w))
+
+    u = lambda k: [h.u(k) for h in team]  # noqa: E731
+    js = {
+        "Frontline": top_w(u("frontline")),
+        "Engage": top_w(u("engage")),
+        "Disengage": top_w(u("disengage")),
+        "Hard CC": 100 * (1 - math.exp(-sum(u("cc_hard")) / 180)),
+        "Peel": top_w(u("peel")),
+        "Objective": top_w(u("objective")),
+        "Waveclear": 0.45 * min(u("waveclear")) + 0.55 * (sum(u("waveclear")) / 5),
+        "Split Push": top_w(u("splitpush"), (0.8, 0.2)),
+    }
+    by_label = {d.label: d.value for d in rep.dimensions.values()}
+    for label, expected in js.items():
+        assert by_label[label] == pytest.approx(expected, abs=0.05), label

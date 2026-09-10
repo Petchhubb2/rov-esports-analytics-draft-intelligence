@@ -1,0 +1,816 @@
+{
+ "billow": {
+  "all_effects": [
+   "Control",
+   "Heal",
+   "Movement"
+  ],
+  "damage_type": "physical",
+  "hard_cc": [],
+  "lanes": [
+   "jungle",
+   "ds"
+  ],
+  "mobility": [],
+  "n_skills": 4,
+  "name": "Billow",
+  "page": "Billow",
+  "roles": [
+   "assassinaov",
+   "warrioraov"
+  ],
+  "shields": [],
+  "soft_cc": [],
+  "sustain": [
+   "Heal"
+  ]
+ },
+ "capheny": {
+  "all_effects": [
+   "Area DMG",
+   "Damage Boost",
+   "Movement",
+   "Movement Speed",
+   "Special"
+  ],
+  "damage_type": "physical",
+  "hard_cc": [],
+  "lanes": [
+   "dragon"
+  ],
+  "mobility": [
+   "Movement Speed"
+  ],
+  "n_skills": 6,
+  "name": "Capheny",
+  "page": "Capheny",
+  "roles": [
+   "marksmanaov"
+  ],
+  "shields": [],
+  "soft_cc": [],
+  "sustain": []
+ },
+ "dolia": {
+  "all_effects": [
+   "CD reset",
+   "Pool"
+  ],
+  "damage_type": "magical",
+  "hard_cc": [],
+  "lanes": [
+   "support"
+  ],
+  "mobility": [],
+  "n_skills": 4,
+  "name": "Dolia",
+  "page": "Dolia",
+  "roles": [
+   "support",
+   "mage",
+   "supportaov"
+  ],
+  "shields": [],
+  "soft_cc": [],
+  "sustain": []
+ },
+ "elandorr": {
+  "all_effects": [
+   "Knock Back",
+   "Mixed Damage",
+   "Movement"
+  ],
+  "damage_type": "magical",
+  "hard_cc": [
+   "Knock Back"
+  ],
+  "lanes": [
+   "jungle",
+   "dragon"
+  ],
+  "mobility": [],
+  "n_skills": 4,
+  "name": "Eland'orr",
+  "page": "Eland'orr",
+  "roles": [
+   "marksmanaov"
+  ],
+  "shields": [],
+  "soft_cc": [],
+  "sustain": []
+ },
+ "elsu": {
+  "all_effects": [
+   "Damage Boost",
+   "Invisibility",
+   "Movement",
+   "Reveal",
+   "Slow"
+  ],
+  "damage_type": "physical",
+  "hard_cc": [],
+  "lanes": [
+   "dragon"
+  ],
+  "mobility": [],
+  "n_skills": 4,
+  "name": "Elsu",
+  "page": "Elsu",
+  "roles": [
+   "marksmanaov"
+  ],
+  "shields": [],
+  "soft_cc": [
+   "Slow"
+  ],
+  "sustain": []
+ },
+ "enzo": {
+  "all_effects": [
+   "Damage Boost",
+   "Movement"
+  ],
+  "damage_type": "physical",
+  "hard_cc": [],
+  "lanes": [
+   "jungle",
+   "support"
+  ],
+  "mobility": [],
+  "n_skills": 4,
+  "name": "Enzo",
+  "page": "Enzo",
+  "roles": [
+   "assassinaov"
+  ],
+  "shields": [],
+  "soft_cc": [],
+  "sustain": []
+ },
+ "florentino": {
+  "all_effects": [
+   "Iron Body",
+   "Movement",
+   "Slow",
+   "Stun"
+  ],
+  "damage_type": "physical",
+  "hard_cc": [
+   "Stun"
+  ],
+  "lanes": [
+   "ds"
+  ],
+  "mobility": [],
+  "n_skills": 4,
+  "name": "Florentino",
+  "page": "Florentino",
+  "roles": [
+   "warrioraov"
+  ],
+  "shields": [],
+  "soft_cc": [
+   "Slow"
+  ],
+  "sustain": []
+ },
+ "hayate": {
+  "all_effects": [
+   "Area DMG",
+   "Movement",
+   "Movement Speed"
+  ],
+  "damage_type": "physical",
+  "hard_cc": [],
+  "lanes": [
+   "dragon"
+  ],
+  "mobility": [
+   "Movement Speed"
+  ],
+  "n_skills": 4,
+  "name": "Hayate",
+  "page": "Hayate",
+  "roles": [
+   "marksmanaov"
+  ],
+  "shields": [],
+  "soft_cc": [],
+  "sustain": []
+ },
+ "iggy": {
+  "all_effects": [
+   "Area DMG",
+   "Knock Back",
+   "Movement Speed",
+   "Reveal",
+   "Special"
+  ],
+  "damage_type": "magical",
+  "hard_cc": [
+   "Knock Back"
+  ],
+  "lanes": [
+   "mid"
+  ],
+  "mobility": [
+   "Movement Speed"
+  ],
+  "n_skills": 4,
+  "name": "Iggy",
+  "page": "Iggy",
+  "roles": [
+   "mageaov"
+  ],
+  "shields": [],
+  "soft_cc": [],
+  "sustain": []
+ },
+ "keera": {
+  "all_effects": [
+   "Damage Boost",
+   "Movement",
+   "Movement Speed",
+   "Special",
+   "Untargetable"
+  ],
+  "damage_type": "magical",
+  "hard_cc": [],
+  "lanes": [
+   "jungle"
+  ],
+  "mobility": [
+   "Movement Speed"
+  ],
+  "n_skills": 4,
+  "name": "Keera",
+  "page": "Keera",
+  "roles": [
+   "assassinaov"
+  ],
+  "shields": [],
+  "soft_cc": [],
+  "sustain": []
+ },
+ "liliana": {
+  "all_effects": [
+   "Area DMG",
+   "Movement",
+   "Special",
+   "Stun",
+   "Transform"
+  ],
+  "damage_type": "magical",
+  "hard_cc": [
+   "Stun"
+  ],
+  "lanes": [
+   "mid"
+  ],
+  "mobility": [],
+  "n_skills": 8,
+  "name": "Liliana",
+  "page": "Liliana",
+  "roles": [
+   "mageaov",
+   "assassinaov"
+  ],
+  "shields": [],
+  "soft_cc": [],
+  "sustain": []
+ },
+ "lorion": {
+  "all_effects": [
+   "Area DMG",
+   "Control",
+   "Heal",
+   "Movement",
+   "Recovery",
+   "Slow",
+   "Speed Up"
+  ],
+  "damage_type": "magical",
+  "hard_cc": [],
+  "lanes": [
+   "mid"
+  ],
+  "mobility": [
+   "Speed Up"
+  ],
+  "n_skills": 8,
+  "name": "Lorion",
+  "page": "Lorion",
+  "roles": [
+   "mageaov"
+  ],
+  "shields": [],
+  "soft_cc": [
+   "Slow"
+  ],
+  "sustain": [
+   "Heal"
+  ]
+ },
+ "marja": {
+  "all_effects": [
+   "Damage",
+   "Heal",
+   "Movement",
+   "Untargetable"
+  ],
+  "damage_type": "magical",
+  "hard_cc": [],
+  "lanes": [
+   "ds",
+   "jungle"
+  ],
+  "mobility": [],
+  "n_skills": 4,
+  "name": "Marja",
+  "page": "Marja",
+  "roles": [
+   "mageaov"
+  ],
+  "shields": [],
+  "soft_cc": [],
+  "sustain": [
+   "Heal"
+  ]
+ },
+ "mganga": {
+  "all_effects": [
+   "Damage Boost",
+   "Heal",
+   "Shield",
+   "Slow"
+  ],
+  "damage_type": "magical",
+  "hard_cc": [],
+  "lanes": [
+   "mid",
+   "ds"
+  ],
+  "mobility": [],
+  "n_skills": 4,
+  "name": "Mganga",
+  "page": "Mganga",
+  "roles": [
+   "mageaov"
+  ],
+  "shields": [
+   "Shield"
+  ],
+  "soft_cc": [
+   "Slow"
+  ],
+  "sustain": [
+   "Heal",
+   "Shield"
+  ]
+ },
+ "murad": {
+  "all_effects": [
+   "Damage Boost",
+   "Movement",
+   "Special",
+   "Untargetable"
+  ],
+  "damage_type": "physical",
+  "hard_cc": [],
+  "lanes": [
+   "jungle",
+   "ds"
+  ],
+  "mobility": [],
+  "n_skills": 4,
+  "name": "Murad",
+  "page": "Murad",
+  "roles": [
+   "assassinaov"
+  ],
+  "shields": [],
+  "soft_cc": [],
+  "sustain": []
+ },
+ "omen": {
+  "all_effects": [
+   "Attack Speed Buff",
+   "Control",
+   "Limitation",
+   "Movement Speed",
+   "Self Damage Reduction"
+  ],
+  "damage_type": "physical",
+  "hard_cc": [],
+  "lanes": [
+   "ds"
+  ],
+  "mobility": [
+   "Movement Speed"
+  ],
+  "n_skills": 4,
+  "name": "Omen",
+  "page": "Omen",
+  "roles": [
+   "warrioraov"
+  ],
+  "shields": [
+   "Self Damage Reduction"
+  ],
+  "soft_cc": [],
+  "sustain": []
+ },
+ "qi": {
+  "all_effects": [
+   "Damage Boost",
+   "Knock Back",
+   "Knockup",
+   "Self Damage Reduction"
+  ],
+  "damage_type": "physical",
+  "hard_cc": [
+   "Knock Back",
+   "Knockup"
+  ],
+  "lanes": [
+   "ds",
+   "jungle"
+  ],
+  "mobility": [],
+  "n_skills": 4,
+  "name": "Qi",
+  "page": "Qi",
+  "roles": [
+   "warrioraov",
+   "assassinaov"
+  ],
+  "shields": [
+   "Self Damage Reduction"
+  ],
+  "soft_cc": [],
+  "sustain": []
+ },
+ "rouie": {
+  "all_effects": [
+   "Heal",
+   "Knock Back",
+   "Movement Speed",
+   "Silence",
+   "Teleport"
+  ],
+  "damage_type": "magical",
+  "hard_cc": [
+   "Knock Back"
+  ],
+  "lanes": [
+   "support"
+  ],
+  "mobility": [
+   "Movement Speed",
+   "Teleport"
+  ],
+  "n_skills": 5,
+  "name": "Rouie",
+  "page": "Rouie",
+  "roles": [
+   "supportaov"
+  ],
+  "shields": [],
+  "soft_cc": [
+   "Silence"
+  ],
+  "sustain": [
+   "Heal"
+  ]
+ },
+ "ryoma": {
+  "all_effects": [
+   "Heal",
+   "Movement",
+   "Slow",
+   "Stun"
+  ],
+  "damage_type": "physical",
+  "hard_cc": [
+   "Stun"
+  ],
+  "lanes": [
+   "ds",
+   "jungle"
+  ],
+  "mobility": [],
+  "n_skills": 4,
+  "name": "Ryoma",
+  "page": "Ryoma",
+  "roles": [
+   "warrioraov",
+   "assassinaov"
+  ],
+  "shields": [],
+  "soft_cc": [
+   "Slow"
+  ],
+  "sustain": [
+   "Heal"
+  ]
+ },
+ "sinestrea": {
+  "all_effects": [
+   "Area DMG",
+   "Buff",
+   "Control",
+   "Movement"
+  ],
+  "damage_type": "physical",
+  "hard_cc": [],
+  "lanes": [
+   "jungle"
+  ],
+  "mobility": [],
+  "n_skills": 6,
+  "name": "Sinestrea",
+  "page": "Sinestrea",
+  "roles": [
+   "assassinaov"
+  ],
+  "shields": [],
+  "soft_cc": [],
+  "sustain": []
+ },
+ "skud": {
+  "all_effects": [
+   "Knock Back",
+   "Movement",
+   "Movement Speed"
+  ],
+  "damage_type": "hybrid",
+  "hard_cc": [
+   "Knock Back"
+  ],
+  "lanes": [
+   "ds",
+   "jungle"
+  ],
+  "mobility": [
+   "Movement Speed"
+  ],
+  "n_skills": 4,
+  "name": "Skud",
+  "page": "Skud",
+  "roles": [
+   "warrioraov",
+   "tankaov"
+  ],
+  "shields": [],
+  "soft_cc": [],
+  "sustain": []
+ },
+ "stuart": {
+  "all_effects": [
+   "Damage Boost",
+   "Movement Speed",
+   "Special",
+   "Stun"
+  ],
+  "damage_type": "physical",
+  "hard_cc": [
+   "Stun"
+  ],
+  "lanes": [
+   "dragon"
+  ],
+  "mobility": [
+   "Movement Speed"
+  ],
+  "n_skills": 4,
+  "name": "Stuart",
+  "page": "Stuart",
+  "roles": [
+   "marksmanaov"
+  ],
+  "shields": [],
+  "soft_cc": [],
+  "sustain": []
+ },
+ "tachi": {
+  "all_effects": [
+   "Area DMG",
+   "Heal",
+   "Movement",
+   "Slow",
+   "Special"
+  ],
+  "damage_type": "physical",
+  "hard_cc": [],
+  "lanes": [
+   "ds",
+   "jungle"
+  ],
+  "mobility": [],
+  "n_skills": 5,
+  "name": "Tachi",
+  "page": "Tachi",
+  "roles": [
+   "warrioraov"
+  ],
+  "shields": [],
+  "soft_cc": [
+   "Slow"
+  ],
+  "sustain": [
+   "Heal"
+  ]
+ },
+ "teemee": {
+  "all_effects": [
+   "Movement",
+   "Resurrect",
+   "Special",
+   "Stun"
+  ],
+  "damage_type": "magical",
+  "hard_cc": [
+   "Stun"
+  ],
+  "lanes": [
+   "support"
+  ],
+  "mobility": [],
+  "n_skills": 4,
+  "name": "TeeMee",
+  "page": "TeeMee",
+  "roles": [
+   "supportaov",
+   "tankaov"
+  ],
+  "shields": [],
+  "soft_cc": [],
+  "sustain": []
+ },
+ "toro": {
+  "all_effects": [
+   "Iron Body",
+   "Knockup",
+   "Self Damage Reduction",
+   "Slow"
+  ],
+  "damage_type": "physical",
+  "hard_cc": [
+   "Knockup"
+  ],
+  "lanes": [
+   "support",
+   "ds"
+  ],
+  "mobility": [],
+  "n_skills": 4,
+  "name": "Toro",
+  "page": "Toro",
+  "roles": [
+   "tankaov",
+   "supportaov"
+  ],
+  "shields": [
+   "Self Damage Reduction"
+  ],
+  "soft_cc": [
+   "Slow"
+  ],
+  "sustain": []
+ },
+ "valhein": {
+  "all_effects": [
+   "Area DMG",
+   "Movement Speed",
+   "Special",
+   "Stun"
+  ],
+  "damage_type": "physical",
+  "hard_cc": [
+   "Stun"
+  ],
+  "lanes": [
+   "dragon"
+  ],
+  "mobility": [
+   "Movement Speed"
+  ],
+  "n_skills": 4,
+  "name": "Valhein",
+  "page": "Valhein",
+  "roles": [
+   "marksmanaov"
+  ],
+  "shields": [],
+  "soft_cc": [],
+  "sustain": []
+ },
+ "wisp": {
+  "all_effects": [
+   "Area DMG",
+   "Daze",
+   "Mixed Damage",
+   "Movement"
+  ],
+  "damage_type": "physical",
+  "hard_cc": [],
+  "lanes": [
+   "dragon"
+  ],
+  "mobility": [],
+  "n_skills": 4,
+  "name": "Wisp",
+  "page": "Wisp",
+  "roles": [
+   "marksmanaov"
+  ],
+  "shields": [],
+  "soft_cc": [],
+  "sustain": []
+ },
+ "ybneth": {
+  "all_effects": [
+   "Heal",
+   "Knock Back",
+   "Slow",
+   "Stun"
+  ],
+  "damage_type": "hybrid",
+  "hard_cc": [
+   "Knock Back",
+   "Stun"
+  ],
+  "lanes": [
+   "support",
+   "ds"
+  ],
+  "mobility": [],
+  "n_skills": 5,
+  "name": "Y'bneth",
+  "page": "Y'bneth",
+  "roles": [
+   "tankaov"
+  ],
+  "shields": [],
+  "soft_cc": [
+   "Slow"
+  ],
+  "sustain": [
+   "Heal"
+  ]
+ },
+ "zata": {
+  "all_effects": [
+   "Movement",
+   "Slow"
+  ],
+  "damage_type": "magical",
+  "hard_cc": [],
+  "lanes": [
+   "mid"
+  ],
+  "mobility": [],
+  "n_skills": 4,
+  "name": "Zata",
+  "page": "Zata",
+  "roles": [
+   "assassinaov",
+   "mageaov"
+  ],
+  "shields": [],
+  "soft_cc": [
+   "Slow"
+  ],
+  "sustain": []
+ },
+ "zephys": {
+  "all_effects": [
+   "Heal",
+   "Knockup",
+   "Movement",
+   "Self Damage Reduction"
+  ],
+  "damage_type": "physical",
+  "hard_cc": [
+   "Knockup"
+  ],
+  "lanes": [
+   "jungle"
+  ],
+  "mobility": [],
+  "n_skills": 4,
+  "name": "Zephys",
+  "page": "Zephys",
+  "roles": [
+   "warrioraov",
+   "assassinaov"
+  ],
+  "shields": [
+   "Self Damage Reduction"
+  ],
+  "soft_cc": [],
+  "sustain": [
+   "Heal"
+  ]
+ }
+}

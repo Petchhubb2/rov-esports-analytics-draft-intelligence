@@ -47,6 +47,8 @@ class CompositionReport:
     power_curve: dict[str, float] = field(default_factory=dict)
     gaps: list[str] = field(default_factory=list)
     strengths: list[str] = field(default_factory=list)
+    # ตัวที่ค่ามาจากผู้ช่วย AI ไม่ใช่คนที่รู้เกม — ต้องขึ้นคำเตือนทุกครั้ง
+    assistant_filled: list[str] = field(default_factory=list)
 
     def value(self, key: str) -> float:
         return self.dimensions[key].value
@@ -66,7 +68,24 @@ class CompositionReport:
             lines += ["", "  จุดแข็ง: " + ", ".join(self.strengths)]
         if self.gaps:
             lines.append("  จุดอ่อน: " + ", ".join(self.gaps))
+        lines += self.provenance_lines()
         return "\n".join(lines)
+
+    def provenance_lines(self) -> list[str]:
+        """บอกว่าคะแนนที่เห็นยืนอยู่บนอะไร
+
+        ต่างจากมิติอื่นในระบบ ตรงนี้ไม่มี n ให้ดู เพราะไม่ได้มาจากการนับ
+        สิ่งเดียวที่บอกความน่าเชื่อถือได้คือ "ใครเป็นคนให้ค่า" จึงต้องแสดงเสมอ
+        """
+        if not self.assistant_filled:
+            return []
+        return [
+            "",
+            f"  ⚠ ค่า attribute ของ {', '.join(self.assistant_filled)} "
+            "ประเมินโดยผู้ช่วย AI ไม่ใช่โค้ชหรือผู้เล่น",
+            "    คะแนนข้างบนจึงเป็นจุดตั้งต้น ไม่ใช่ข้อสรุป "
+            "ดูเหตุผลที่ configs/draft/hero_assessment.yaml",
+        ]
 
 
 # --------------------------------------------------------------- ฟังก์ชันรวม
@@ -114,7 +133,10 @@ def analyze(heroes: list[Hero]) -> CompositionReport:
             "ระบบไม่เดาค่าให้ ใช้ rov draft todo เพื่อดูว่าต้องกรอกอะไรบ้าง"
         )
 
-    rep = CompositionReport(heroes=[h.id for h in heroes])
+    rep = CompositionReport(
+        heroes=[h.id for h in heroes],
+        assistant_filled=[h.id for h in heroes if h.filled_kind == "assistant"],
+    )
     d = rep.dimensions
 
     # 1 Role balance — เลนครบไหม

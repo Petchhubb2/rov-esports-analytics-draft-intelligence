@@ -389,6 +389,19 @@ table.rec tbody tr.sel { background: color-mix(in srgb, var(--amber) 10%, transp
 .ptag.good { border-color: var(--good); }
 .ptag.bad { border-color: var(--red); }
 .ptag em { font-family: var(--fx-mono); font-size: 9.5px; font-style: normal; color: var(--text-faint); }
+/* composition — แถบมิติของคอมพ์ */
+.cdims { display: grid; grid-template-columns: 74px 1fr 30px; gap: 2px 7px;
+  align-items: center; margin: 7px 0 0; }
+.cdims b { font-family: var(--fx-display); font-size: 9px; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--text-faint); font-weight: 500; }
+.cdims .cb { height: 5px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.cdims .cb i { display: block; height: 100%; border-radius: 3px; }
+.cdims .cv { font-family: var(--fx-mono); font-size: 9.5px; color: var(--text-dim);
+  text-align: right; }
+.cdims .lo i { background: var(--red); }
+.cdims .hi i { background: var(--good); }
+.cnote { font-size: 10.5px; color: var(--text-faint); margin: 7px 0 0; line-height: 1.6; }
+.cnote.warn { color: var(--amber); }
 .psteps { padding: 10px 12px; border-top: 1px solid var(--line); }
 .psteps h3 { font-family: var(--fx-display); font-size: 11.5px; letter-spacing: .09em;
   text-transform: uppercase; margin: 0 0 7px; color: var(--text-dim); }
@@ -868,6 +881,21 @@ input.search:focus { outline: none; border-color: var(--amber); }
       <div class="used red" id="usedRed">—</div>
     </div>
   </div>
+
+  <section class="pool" id="scoutCard" style="margin-bottom:12px">
+    <div class="pool-head">
+      <h2>สแกนคู่แข่ง</h2>
+      <select id="scoutTeam" style="font:inherit;font-size:12px;padding:2px 6px;
+        background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:3px">
+      </select>
+      <label style="font-size:11.5px;color:var(--text-faint);display:flex;
+        align-items:center;gap:4px">
+        <input type="checkbox" id="scoutRecent" checked> เฉพาะช่วงล่าสุด
+      </label>
+      <span class="count" id="scoutCount"></span>
+    </div>
+    <div id="scoutBody" style="padding:10px 12px"></div>
+  </section>
 
   <section class="pool" id="histCard" hidden style="margin-bottom:12px">
     <div class="pool-head">
@@ -1374,6 +1402,98 @@ function reasons(h, c, isBan, fit, need) {
   return r;
 }
 
+// ── สแกนคู่แข่ง ────────────────────────────────────────────────────────
+//
+// ตอบคนละคำถามกับตาราง "ควรแบน" ด้านบน
+//   ตารางบน  ลีกนี้ให้ค่าตัวไหน     — ค่าเฉลี่ยข้ามทุกทีม
+//   ตรงนี้   ทีมนี้เล่นอะไร        — ซึ่งเป็นสิ่งที่โค้ชใช้จริงตอนแบน
+//
+// ตัวเลขทั้งหมดคำนวณฝั่ง Python แล้ว (rov/draft/scouting.py) หน้านี้แค่แสดง
+// จึงไม่มีสูตรซ้ำให้เพี้ยน ต่างจาก composition ที่ต้องคิดสดตอนดราฟต์
+function scoutSource() {
+  const recent = el("scoutRecent")?.checked;
+  const t = recent ? (D.teams_recent || {}) : (D.teams || {});
+  return Object.keys(t).length ? t : (D.teams || {});
+}
+
+function renderScoutOptions() {
+  const sel = el("scoutTeam");
+  if (!sel) return;
+  const teams = scoutSource();
+  const keep = sel.value;
+  const names = Object.keys(teams).sort((a, b) => teams[b].games - teams[a].games);
+  sel.innerHTML = `<option value="">— เลือกทีมคู่แข่ง —</option>` +
+    names.map(n => `<option value="${escape(n)}">${escape(n)} · ${
+      teams[n].games} เกม</option>`).join("");
+  if (names.includes(keep)) sel.value = keep;
+}
+
+function renderScout() {
+  const card = el("scoutCard"), body = el("scoutBody");
+  if (!card || !body) return;
+  const teams = scoutSource();
+  if (!Object.keys(teams).length) { card.hidden = true; return; }
+  card.hidden = false;
+
+  const span = D.span || {};
+  const recent = el("scoutRecent")?.checked;
+  el("scoutCount").textContent = recent && span.recent_from
+    ? `${span.recent_from} ถึง ${span.to}`
+    : (span.from ? `${span.from} ถึง ${span.to}` : "");
+
+  const name = el("scoutTeam").value;
+  if (!name || !teams[name]) {
+    body.innerHTML = `<p style="font-size:12px;color:var(--text-faint);margin:0">
+      เลือกทีมเพื่อดู hero pool แต่ละเลนและตัวที่ควรแบนใส่ทีมนั้น ·
+      ข้อมูลเป็นระดับทีม ไม่ใช่ระดับผู้เล่น — เปลี่ยนตัวผู้เล่นแล้วตัวเลขจะเพี้ยน</p>`;
+    return;
+  }
+
+  const t = teams[name];
+  const wr = t.games ? (t.wins / t.games * 100).toFixed(0) + "%" : "—";
+  const bwr = t.blue_games ? (t.blue_wins / t.blue_games * 100).toFixed(0) + "%" : "—";
+
+  // ตัวที่ถูกแบนหรือเลือกไปแล้วในเกมนี้ ไม่ต้องแนะนำซ้ำ
+  const taken = new Set(S.moves.map(m => m.hero));
+
+  const laneRows = ["ds", "jungle", "mid", "dragon", "support"].map(ln => {
+    const pool = t.lanes[ln]; if (!pool) return "";
+    const entries = Object.entries(pool).sort((a, b) => b[1] - a[1]);
+    const total = entries.reduce((a, b) => a + b[1], 0);
+    const top3 = entries.slice(0, 3).reduce((a, b) => a + b[1], 0);
+    const narrow = total >= 6 && top3 / total >= 0.75;
+    return `<div class="prow"><b>${LANE_TH[ln] || ln}</b><span>${
+      entries.slice(0, 5).map(([h, n]) =>
+        `<span class="ptag${taken.has(h) ? "" : ""}"><span class="pic" ${picStyle(h)}></span>${
+          escape(HERO.get(h)?.name || h)}<em>${n}</em></span>`).join("")}${
+      narrow ? `<em style="font-family:var(--fx-mono);font-size:9.5px;color:var(--amber)">
+        ← แคบ 3 ตัวแรกกิน ${(top3 / total * 100).toFixed(0)}%</em>` : ""}</span></div>`;
+  }).join("");
+
+  const bans = (t.bans_vs || []).filter(b => !taken.has(b.h)).slice(0, 6);
+  const banRows = bans.length
+    ? bans.map((b, i) => `<div class="pstep">
+        <b>${i + 1}</b><span><span class="ptag"><span class="pic" ${picStyle(b.h)}></span>${
+        escape(HERO.get(b.h)?.name || b.h)}<em>${b.lane ? (LANE_TH[b.lane] || b.lane) : "—"}</em>
+        </span> <span class="from">${escape(b.why)}</span></span></div>`).join("")
+    : `<p style="font-size:12px;color:var(--text-faint);margin:0">
+        ตัวที่ควรแบนถูกจัดการไปหมดแล้วในเกมนี้</p>`;
+
+  const theyBan = Object.entries(t.bans || {}).slice(0, 6)
+    .map(([h, n]) => `<span class="ptag"><span class="pic" ${picStyle(h)}></span>${
+      escape(HERO.get(h)?.name || h)}<em>${n}</em></span>`).join("");
+
+  body.innerHTML = `
+    <p style="font-size:12.5px;margin:0 0 8px">
+      <b>${escape(name)}</b> · ${t.games} เกม ชนะ ${wr} · ฝั่งน้ำเงิน ${
+      t.blue_games} เกม ชนะ ${bwr}${t.first ? ` · ${t.first} ถึง ${t.last}` : ""}</p>
+    ${laneRows}
+    <div class="prow"><b>เขาแบน</b><span>${theyBan || "—"}</span></div>
+    <div class="psteps" style="padding:10px 0 0"><h3>ควรแบนอะไรใส่ทีมนี้</h3>${banRows}</div>
+    <p class="cnote">คะแนนรวมสามอย่าง — เขาหยิบบ่อยแค่ไหน · บ่อยกว่าลีกกี่เท่า ·
+      ตัวนั้นกินพื้นที่เลนเขาเท่าไร · ข้อมูลระดับทีม ไม่ใช่ระดับผู้เล่น</p>`;
+}
+
 // ── render ───────────────────────────────────────────────────────────
 const el = id => document.getElementById(id);
 
@@ -1385,6 +1505,7 @@ function render() {
   renderSeries();
   renderHistory();
   renderPlan();
+  renderScout();
   // แผนมาโครกับถาดหมากขึ้นกับตัวที่ดราฟต์ ต้องอัปเดตตาม
   if (S.view === "macro") renderMacro();
   if (S.view === "map" && D.minimap) renderBoard();
@@ -1721,6 +1842,91 @@ function winCondition(tempo, team) {
          `ให้ดูจังหวะของอีกฝั่งแล้วเล่นสวนทางกับเขา`;
 }
 
+// ── Composition Engine ฝั่งเบราว์เซอร์ ───────────────────────────────────
+//
+// ⚠️ นี่คือ **สำเนาที่สอง** ของกติกาใน packages/core/rov/draft/composition.py
+// จำเป็นเพราะหน้านี้คิดสดตอนดราฟต์ ซึ่งเรียก Python ไม่ได้
+// tests/unit/test_web_board.py คอยจับว่าสองชุดยังตรงกัน — แก้ Python ก่อนเสมอ
+//
+// หลักที่ห้ามลืม: ห้ามใช้ค่าเฉลี่ยกับทุกมิติ
+//   มีหนึ่งคนก็พอ  engage, frontline   -> ค่าสูงสุดถ่วงน้ำหนัก
+//   สะสมกันได้     cc                  -> ผลรวมที่อิ่มตัว
+//   จุดอ่อนกำหนด   waveclear           -> ค่าต่ำสุดถ่วงกับค่าเฉลี่ย
+const CC_SCALE = 180;          // composition.py _saturating_sum(cc, 180.0)
+const WC_MIN_W = 0.45;         // composition.py waveclear 0.45*min + 0.55*mean
+const GAP_AT = 35, STRONG_AT = 75;
+
+const topW = (v, w) => {
+  const s = [...v].sort((a, b) => b - a);
+  return (w || [0.7, 0.3]).reduce((acc, k, i) => acc + k * (s[i] ?? 0), 0);
+};
+const satSum = (v, scale) =>
+  100 * (1 - Math.exp(-v.reduce((a, b) => a + b, 0) / scale));
+const mean = v => (v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0);
+const clamp100 = x => Math.max(0, Math.min(100, x));
+
+// ลำดับและวิธีรวมของแต่ละมิติ ต้องตรงกับ composition.py analyze()
+const COMP_DIMS = [
+  {key: "frontline",  label: "Frontline",  agg: hs => topW(hs.map(h => h.u.frontline))},
+  {key: "engage",     label: "Engage",     agg: hs => topW(hs.map(h => h.u.engage))},
+  {key: "disengage",  label: "Disengage",  agg: hs => topW(hs.map(h => h.u.disengage))},
+  {key: "cc",         label: "Hard CC",    agg: hs => satSum(hs.map(h => h.u.cc_hard), CC_SCALE)},
+  {key: "peel",       label: "Peel",       agg: hs => topW(hs.map(h => h.u.peel))},
+  {key: "objective",  label: "Objective",  agg: hs => topW(hs.map(h => h.u.objective))},
+  {key: "waveclear",  label: "Waveclear",
+   agg: hs => {const v = hs.map(h => h.u.waveclear);
+               return WC_MIN_W * Math.min(...v) + (1 - WC_MIN_W) * mean(v);}},
+  {key: "splitpush",  label: "Split Push",
+   agg: hs => topW(hs.map(h => h.u.splitpush), [0.8, 0.2])},
+];
+
+// คืน null เมื่อยังกรอก attribute ไม่ครบ — ไม่เดาค่าให้ เหมือนฝั่ง Python
+function compDims(team) {
+  const picks = of(team, "PICK");
+  if (picks.length !== PICKS) return null;
+  const attrs = D.hero_attrs || {};
+  const miss = picks.filter(id => !attrs[id]);
+  if (miss.length) return {missing: miss};
+  const hs = picks.map(id => attrs[id]);
+  return {
+    dims: COMP_DIMS.map(d => ({label: d.label, v: clamp100(d.agg(hs))})),
+    curve: {
+      early: mean(hs.map(h => h.scaling.early)),
+      mid: mean(hs.map(h => h.scaling.mid)),
+      late: mean(hs.map(h => h.scaling.late)),
+    },
+    assisted: picks.filter(id => attrs[id].kind === "assistant"),
+  };
+}
+
+function renderComp(team) {
+  const c = compDims(team);
+  if (!c) return "";
+  if (c.missing) {
+    const names = c.missing.map(id => escape(HERO.get(id)?.name || id)).join(", ");
+    return `<p class="cnote">ยังให้คะแนน composition ไม่ได้ — ${names} ` +
+           `ยังไม่ได้กรอก attribute (ระบบไม่เดาค่าให้)</p>`;
+  }
+  const col = team === "blue" ? "var(--blue)" : "var(--red)";
+  const rows = c.dims.map(d => {
+    const cls = d.v < GAP_AT ? "lo" : d.v >= STRONG_AT ? "hi" : "";
+    const fill = cls ? "" : `background:${col}`;
+    return `<b>${d.label}</b><div class="cb ${cls}"><i style="width:${
+      d.v.toFixed(0)}%;${fill}"></i></div><span class="cv">${d.v.toFixed(0)}</span>`;
+  }).join("");
+  const gaps = c.dims.filter(d => d.v < GAP_AT).map(d => d.label);
+  const strong = c.dims.filter(d => d.v >= STRONG_AT).map(d => d.label);
+  let note = "";
+  if (strong.length) note += `จุดแข็ง ${strong.join(", ")}`;
+  if (gaps.length) note += (note ? " · " : "") + `จุดอ่อน ${gaps.join(", ")}`;
+  const warn = c.assisted.length
+    ? `<p class="cnote warn">⚠ ค่า attribute ของ ${c.assisted.length} ตัวในคอมพ์นี้` +
+      ` ประเมินโดยผู้ช่วย AI ไม่ใช่โค้ช — ใช้เป็นจุดตั้งต้น ไม่ใช่ข้อสรุป</p>`
+    : "";
+  return `<div class="cdims">${rows}</div>` +
+         (note ? `<p class="cnote">${note}</p>` : "") + warn;
+}
+
 function renderPlanTeam(team) {
   const box = el(team === "blue" ? "planBlue" : "planRed");
   const tempo = compTempo(team);
@@ -1759,7 +1965,8 @@ function renderPlanTeam(team) {
         `<span class="ptag bad"><span class="pic" ${picStyle(t.enemy)}></span>${
           escape(HERO.get(t.enemy).name)}<em>กด ${escape(HERO.get(t.victim).name)} +${
           t.sc.toFixed(1)} n=${t.g}</em></span>`).join("")
-        : '<span style="color:var(--text-faint)">ยังไม่มีคู่ที่ข้อมูลถึงเกณฑ์</span>'}</span></div>`;
+        : '<span style="color:var(--text-faint)">ยังไม่มีคู่ที่ข้อมูลถึงเกณฑ์</span>'}</span></div>
+    ${renderComp(team)}`;
 }
 
 const PLAN_PHASES = ["OPENING", "EARLY", "MID", "LATE", "BATTLE"];
@@ -2760,6 +2967,19 @@ else { el("tabMap").disabled = true; el("tabMap").title = "ยังไม่ม
 
 el("ctrGames").value = S.ctrMin;
 el("ctrGamesVal").textContent = S.ctrMin;
+
+// สแกนคู่แข่ง — ซ่อนทั้งการ์ดถ้า export ยังไม่มีข้อมูลทีม (ไฟล์เก่า)
+if (D.teams && Object.keys(D.teams).length) {
+  renderScoutOptions();
+  el("scoutTeam").addEventListener("change", renderScout);
+  el("scoutRecent").addEventListener("change", () => {
+    renderScoutOptions();
+    renderScout();
+  });
+} else {
+  el("scoutCard").hidden = true;
+}
+
 render();
 renderCtr();
 })();

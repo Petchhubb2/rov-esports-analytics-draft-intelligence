@@ -6,6 +6,7 @@ CLI คือหน้าตาหลักของระบบตลอด Pha
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import typer
@@ -485,12 +486,22 @@ def draft_heroes_init(
     out: str = typer.Option("configs/draft/heroes.yaml"),
     live: bool = typer.Option(False, "--live", help="ยิง request จริงเพื่อดึง class"),
     patch: str = typer.Option("1.63"),
+    every: bool = typer.Option(
+        True,
+        "--all/--one",
+        help="ใช้ทุกรายการที่อยู่ใน cache (ค่าเริ่มต้น) หรือรายการเดียวตาม argument",
+    ),
 ) -> None:
     """สร้างหรืออัปเดตไฟล์ฮีโร่จากข้อมูลจริง
 
     เติมเฉพาะ id, name_en, hero_class ซึ่งตรวจสอบได้
     ค่าเชิงคุณภาพต้องให้คนกรอก ระบบไม่เดาให้
     รันซ้ำได้โดยไม่ทับค่าที่กรอกไว้แล้ว
+
+    ค่าเริ่มต้นใช้ **ทุกรายการที่ดึงมาแล้ว** ไม่ใช่รายการเดียว
+    เพราะการ seed จากรายการเดียวทำให้ฮีโร่ที่เล่นเฉพาะในลีกอื่น
+    หายไปจากไฟล์แบบเงียบ ๆ (เคยเกิดจริง: หายไป 26 ตัว รวม tamyn
+    ที่ presence 15% และถูกแบน 110 ครั้ง) ใส่ --one ถ้าอยากได้รายการเดียว
     """
     from pathlib import Path as _P
 
@@ -499,8 +510,20 @@ def draft_heroes_init(
     from rov.draft.seed import seed_hero_db
     from rov.draft.stats import compute_stats
 
-    c, res = _load_series(tournament, live=live)
-    stats = compute_stats(res.series)
+    if every:
+        regions = _regions()
+        if not regions:
+            typer.secho("ยังไม่มีข้อมูลใน cache — รัน rov draft import ก่อน", fg=typer.colors.RED)
+            raise typer.Exit(1)
+        series = [s for r in regions for s in r.series]
+        typer.echo(f"ใช้ {len(regions)} รายการ · {len(series)} ซีรีส์")
+        from rov.draft.importer.liquipedia import LiquipediaClient
+
+        c = LiquipediaClient()
+        stats = compute_stats(series)
+    else:
+        c, res = _load_series(tournament, live=live)
+        stats = compute_stats(res.series)
 
     try:
         if live:
@@ -621,6 +644,23 @@ KNOWN_TOURNAMENTS: list[tuple[str, str, str]] = [
 ]
 
 
+def _hero_classes() -> dict[str, list[str]]:
+    """class ของฮีโร่จาก heroes.yaml — ข้อเท็จจริงที่ seed มาจาก Liquipedia
+
+    ใช้ตรวจหลักฐานของการอนุมานเลนจากช่อง (rov.draft.lanes.slot_evidence)
+    คืน dict ว่างได้ถ้ายังไม่มีไฟล์ ผู้เรียกต้องจัดการเอง
+    """
+    from pathlib import Path as _Path
+
+    from rov.draft.heroes import HeroDB
+
+    hero_file = _Path("configs/draft/heroes.yaml")
+    if not hero_file.exists():
+        return {}
+    db = HeroDB.load(hero_file)
+    return {h.id: [c.value for c in h.hero_class] for h in db.heroes if h.hero_class}
+
+
 def _regions(only: str | None = None):
     """โหลดทุกรายการที่อยู่ใน cache แล้วจัดเป็น Region"""
     from rov.draft.importer.crawl import crawl_tournament
@@ -697,6 +737,87 @@ def draft_counters(
     typer.echo(counter_report(pooled, hid, min_games=min_games))
 
 
+@draft_app.command("scout")
+def draft_scout(
+    team: str = typer.Argument(None, help="ชื่อทีม ไม่ใส่ = แสดงรายชื่อทีมทั้งหมด"),
+    region: str = typer.Option(None, help="ใช้ข้อมูลเฉพาะ TH หรือ TW"),
+    since: str = typer.Option(
+        None, help="เอาเฉพาะแมตช์ตั้งแต่วันนี้ เช่น 2026-05-01 (แนะนำอย่างยิ่ง)"
+    ),
+    top: int = typer.Option(8, help="จำนวนตัวที่แนะนำให้แบน"),
+) -> None:
+    """สแกนทีมคู่แข่ง — hero pool แต่ละเลน และควรแบนอะไรใส่ทีมนี้
+
+    ต่างจาก rov draft pool ตรงที่ pool ตอบว่า "ลีกนี้ให้ค่าตัวไหน"
+    ส่วนคำสั่งนี้ตอบว่า "ทีมนี้เล่นอะไร" ซึ่งเป็นสิ่งที่ใช้จริงตอนแบน
+
+    ควรใส่ --since เสมอ เพราะข้อมูลทั้งชุดกินเวลาข้ามปีและข้ามการเปลี่ยนตัว
+    ผู้เล่น การรวมทั้งหมดจะทำให้ hero pool ดูกว้างกว่าความจริงมาก
+    """
+    from datetime import date as _date
+
+    from rov.draft.meta import pool
+    from rov.draft.scouting import (
+        MIN_TEAM_GAMES,
+        date_range,
+        filter_since,
+        find_team,
+        report,
+        target_bans,
+        team_profiles,
+    )
+
+    regions = _regions(region)
+    if not regions:
+        typer.secho("ยังไม่มีข้อมูลใน cache — รัน rov draft import ก่อน", fg=typer.colors.RED)
+        raise typer.Exit(1)
+
+    all_series = [s for r in regions for s in r.series]
+    lo, hi = date_range(all_series)
+    if since:
+        try:
+            cutoff = _date.fromisoformat(since)
+        except ValueError:
+            typer.secho(f"อ่านวันที่ไม่ออก: {since} — ใช้รูปแบบ 2026-05-01", fg=typer.colors.RED)
+            raise typer.Exit(1) from None
+        before = len(all_series)
+        all_series = filter_since(all_series, cutoff)
+        typer.echo(f"ตัดเหลือแมตช์ตั้งแต่ {cutoff} — {before} → {len(all_series)} ซีรีส์")
+    elif lo and hi:
+        typer.secho(
+            f"⚠ กำลังรวมข้อมูลตั้งแต่ {lo} ถึง {hi} ซึ่งข้ามแพตช์และข้ามการเปลี่ยนตัวผู้เล่น "
+            "ใส่ --since เพื่อดูเฉพาะช่วงล่าสุด",
+            fg=typer.colors.YELLOW,
+        )
+
+    profiles = team_profiles(all_series)
+    if not profiles:
+        typer.secho("ไม่พบทีมในช่วงที่เลือก", fg=typer.colors.RED)
+        raise typer.Exit(1)
+
+    if not team:
+        typer.echo(f"\nทีมที่มีข้อมูล {len(profiles)} ทีม\n")
+        for p in sorted(profiles.values(), key=lambda x: x.games, reverse=True):
+            mark = " " if p.games >= MIN_TEAM_GAMES else "*"
+            wr = f"{p.win_rate:.0%}" if p.win_rate is not None else "—"
+            typer.echo(f"  {mark} {p.team:<28} {p.games:>3} เกม  ชนะ {wr:>4}")
+        typer.echo(f"\n  * = น้อยกว่า {MIN_TEAM_GAMES} เกม ยังสรุปสไตล์ไม่ได้")
+        return
+
+    prof = find_team(profiles, team)
+    if prof is None:
+        near = sorted(n for n in profiles if team.lower() in n.lower())
+        typer.secho(f"ไม่พบทีม {team}", fg=typer.colors.RED)
+        if near:
+            typer.echo("  กำกวมหรือใกล้เคียง: " + ", ".join(near))
+        raise typer.Exit(1)
+
+    st = pool(regions).stats
+    league_pick_rate = {h: st.pick_rate(h) for h in st.heroes}
+    typer.echo("")
+    typer.echo(report(prof, target_bans(prof, league_pick_rate, limit=top)))
+
+
 @draft_app.command("pool")
 def draft_pool(top: int = typer.Option(25)) -> None:
     """สถิติรวมทุกลีกทุกฤดูกาลที่ดึงมาแล้ว"""
@@ -738,6 +859,7 @@ def draft_sim(
         /quit        ออก
     """
     from rov.draft.importer.parser import normalize_hero_id
+    from rov.draft.lanes import SLOT_LANES, lane_usage, slot_evidence
     from rov.draft.meta import pool
     from rov.draft.recommend import recommend
     from rov.draft.recommend import report as rec_report
@@ -754,18 +876,40 @@ def draft_sim(
         fmt=fo, pool=set(pooled.stats.heroes), blue_name=blue, red_name=red
     )
 
+    # ข้อมูลเลน — ตรวจหลักฐานสดทุกครั้ง เหมือนที่ export_draft_data.py ทำ
+    # ถ้าสัดส่วนคลาสต่อช่องไม่ผ่านเกณฑ์ แปลว่าที่มาของข้อมูลเปลี่ยน ต้องหยุดใช้เลขเลน
+    all_series = [ser for r in regions for ser in r.series]
+    classes = _hero_classes()
+    evidence = slot_evidence(all_series, classes)
+    lu: dict[str, dict[str, int]] = {}
+    ln_all: list[str] = []
+    if evidence["passes"]:
+        lu = {
+            hero: {ln.value: n for ln, n in cnt.most_common()}
+            for hero, cnt in lane_usage(all_series).items()
+        }
+        ln_all = [ln.value for ln in SLOT_LANES]
+
     typer.echo(f"ข้อมูล {pooled.total_games} เกม จาก {len(pooled.sources)} รายการ")
     typer.echo(f"ฮีโร่ที่เลือกได้ {len(state.pool)} ตัว · format {fo.id}")
+    if fo.global_ban_pick.verified:
+        typer.secho(
+            f"✓ Global Ban-Pick ยืนยันแล้ว — {fo.global_ban_pick.source}",
+            fg=typer.colors.GREEN,
+        )
     if not fo.verified:
         typer.secho(
-            "⚠ ลำดับ ban/pick ยังไม่ได้ยืนยันกับ rulebook จริง "
-            "แก้ได้ที่ configs/draft/format.yaml",
+            "⚠ ลำดับการสลับแบน/เลือกยังไม่ได้ยืนยัน (จำนวนแบน/เลือกยืนยันแล้ว) "
+            "ดูคลิปแข่งหนึ่งคลิปแล้วแก้ที่ configs/draft/format.yaml",
             fg=typer.colors.YELLOW,
         )
     typer.echo("พิมพ์ ? เพื่อดูคำแนะนำ · /quit เพื่อออก\n")
 
     def show_recs() -> None:
-        sugs = recommend(state, pooled, limit=top, min_games=min_games)
+        sugs = recommend(
+            state, pooled, limit=top, min_games=min_games,
+            lane_usage=lu or None, lanes=ln_all or None,
+        )
         if not sugs:
             typer.echo("  (ไม่มีตัวเลือกที่มีข้อมูลพอ)")
         else:
@@ -1045,6 +1189,22 @@ def status() -> None:
     cache = Path("data/cache/liquipedia")
     has_draft_data = cache.exists() and any(cache.rglob("*.json.gz"))
 
+    # นับจากไฟล์จริง เพราะเลขที่พิมพ์ค้างไว้จะเก่าทันทีที่เพิ่มเทสต์
+    n_tests = sum(
+        len(re.findall(r"^def test_", f.read_text(encoding="utf-8"), re.M))
+        for f in Path("tests").rglob("test_*.py")
+    )
+
+    # ฮีโร่ที่กรอก attribute ครบ — ตัวชี้วัดว่า Composition Engine ใช้ได้จริงหรือยัง
+    n_filled = 0
+    n_heroes = 0
+    hero_file = Path("configs/draft/heroes.yaml")
+    if hero_file.exists():
+        from rov.draft.heroes import HeroDB
+
+        c = HeroDB.load(hero_file).completeness()
+        n_filled, n_heroes = c["complete"], c["total"]
+
     items = [
         ("01 Video Ingestion", db_ok, "probe/sampler + DB + API + queue" if db_ok
          else "โค้ดพร้อม แต่ต่อฐานข้อมูลไม่ได้"),
@@ -1058,16 +1218,22 @@ def status() -> None:
         ("09 Ground Truth", False, "มีตัวกำเนิด GT แต่ยังไม่มีเครื่องมือ label"),
         ("10 Event Detection", False, "ยังไม่เริ่ม"),
         ("11-14 Macro/Player/Team Analytics", False, "ยังไม่เริ่ม"),
-        ("15-26 Draft Engines", False, "ยังไม่เริ่ม"),
+        ("15-26 Draft Engines", has_draft_data,
+         "recommend + matchup แยกเลน + simulator + กระดานเว็บ"
+         if has_draft_data else "โค้ดพร้อม แต่ยังไม่ได้ดึงข้อมูล"),
+        ("30 Composition Engine", n_filled > 0,
+         f"attribute ครบ {n_filled}/{n_heroes} ตัว"
+         if n_filled else f"โค้ดพร้อม แต่ attribute ยังว่าง 0/{n_heroes} — ใช้งานไม่ได้"),
         ("— Draft Data Import", has_draft_data,
          "ดึงจาก Liquipedia ได้แล้ว" if has_draft_data else "ยังไม่ได้ดึงข้อมูล"),
-        ("27-32 Macro Planner", False, "ออกแบบไว้ใน docs/11 ยังไม่เขียนโค้ด"),
+        ("27-32 Macro Planner", True,
+         "คลังความรู้ + validator ที่มา — ยังไม่ประเมินสถานะเกมสด"),
         ("33 Scouting", False, "ยังไม่เริ่ม"),
         ("34 Prediction / ML", False, "ห้ามเริ่มก่อนมี ground truth"),
         ("39 Processing Queue", db_ok, "jobs table + SKIP LOCKED"),
         ("40-41 API / Database", db_ok, "ครอบคลุมเฉพาะ System 01"),
         ("42-43 Dashboard / Replay", False, "ยังไม่เริ่ม"),
-        ("44 Testing / Evaluation", True, "87 เทสต์"),
+        ("44 Testing / Evaluation", True, f"{n_tests} เทสต์"),
     ]
     for name, done, note in items:
         mark = "✓" if done else "·"

@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 
 from rov.draft.heroes import Hero, HeroDB
 from rov.draft.importer.heroinfo import build_alias_index, resolve
+from rov.draft.importer.parser import HERO_ALIASES
 from rov.draft.stats import DraftStats
 
 
@@ -29,6 +30,10 @@ class SeedResult:
     class_filled: int = 0
     unmapped: list[str] = field(default_factory=list)
     preserved: int = 0
+    # id ที่รู้แล้วว่าเป็นชื่อพ้องของตัวอื่น และยังว่างอยู่ — ลบทิ้งได้
+    dropped_aliases: list[str] = field(default_factory=list)
+    # ชื่อพ้องที่มีคนกรอกค่าไว้แล้ว — ไม่ลบ ต้องให้คนย้ายเอง
+    alias_with_data: list[str] = field(default_factory=list)
 
     def report(self) -> str:
         lines = [
@@ -37,6 +42,17 @@ class SeedResult:
             f"เติม class ได้     {self.class_filled}",
             f"เก็บค่าเดิมไว้      {self.preserved}",
         ]
+        if self.dropped_aliases:
+            lines.append(
+                f"ลบชื่อพ้องที่ว่าง  {len(self.dropped_aliases)}  "
+                + ", ".join(self.dropped_aliases)
+            )
+        if self.alias_with_data:
+            lines.append("")
+            lines.append(
+                "⚠ ชื่อพ้องที่มีค่ากรอกไว้แล้ว ไม่ได้ลบให้ "
+                "ย้ายค่าไปตัวหลักเอง: " + ", ".join(self.alias_with_data)
+            )
         if self.unmapped:
             lines.append("")
             lines.append(
@@ -89,10 +105,25 @@ def seed_hero_db(
         db.heroes.append(hero)
 
     # ฮีโร่ที่เคยมีในไฟล์แต่ไม่ปรากฏในสถิติ ให้คงไว้ ไม่ลบทิ้ง
+    #
+    # ยกเว้นกรณีเดียว: id ที่ตอนนี้รู้แล้วว่าเป็นชื่อพ้องของตัวอื่น
+    # (HERO_ALIASES ใน importer/parser.py) พวกนี้ไม่ใช่ฮีโร่ที่หายไป
+    # แต่เป็นซากของการสะกดเก่า ถ้าเก็บไว้จะกลายเป็นตัวซ้ำที่ไม่มีวันถูกใช้
+    # และไปโผล่ในรายการ "ยังต้องกรอก" ให้คนเสียเวลากรอกของที่ไม่มีอยู่จริง
+    #
+    # ยังกันงานของคนไว้อยู่ — ถ้าเคยกรอกค่าไว้ในตัวที่กลายเป็นชื่อพ้อง
+    # จะไม่ลบ แต่เตือนออกมาให้ย้ายค่าไปตัวหลักด้วยตัวเอง
     seen = {h.id for h in db.heroes}
     for hid, hero in old.items():
-        if hid not in seen:
-            db.heroes.append(hero)
+        if hid in seen:
+            continue
+        target = HERO_ALIASES.get(hid)
+        if target and target != hid:
+            if hero.missing_fields() == Hero(id=hid).missing_fields():
+                result.dropped_aliases.append(f"{hid} -> {target}")
+                continue
+            result.alias_with_data.append(f"{hid} -> {target}")
+        db.heroes.append(hero)
 
     result.total = len(db.heroes)
     return db, result

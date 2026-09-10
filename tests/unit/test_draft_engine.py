@@ -47,7 +47,26 @@ def test_apostrophe_variants_merge():
 
 
 def test_spaces_become_underscore():
-    assert normalize_hero_id("Bolt Baron") == "bolt_baron"
+    assert normalize_hero_id("Ming Shiyin") == "ming_shiyin"
+
+
+def test_alias_table_merges_names_the_rules_cannot():
+    """บั๊กจริงชุดที่สอง: ชื่อย่อและชื่อแสดงผลที่กติกาปกติรวมให้ไม่ได้
+
+    ทั้งสี่คู่นี้เคยถูกนับแยกในข้อมูลจริง 861 เกม
+    flw_mm อย่างเดียวคือ 37 pick ที่หลุดออกไปเป็น id ที่ไม่มีฮีโร่รองรับ
+    """
+    assert normalize_hero_id("Flw MM") == "flowborn"
+    assert normalize_hero_id("Bolt Baron") == normalize_hero_id("Sikong") == "sikong_zhen"
+    assert normalize_hero_id("DiaoChan") == normalize_hero_id("Diao Chan") == "diao_chan"
+    assert normalize_hero_id("LuBu") == normalize_hero_id("Lu Bu") == "lu_bu"
+
+
+def test_alias_table_targets_are_not_themselves_aliases():
+    """ห้ามมีโซ่ชื่อพ้อง — a -> b -> c จะทำให้ผลขึ้นกับลำดับการแทนที่"""
+    from rov.draft.importer.parser import HERO_ALIASES
+
+    assert not (set(HERO_ALIASES.values()) & set(HERO_ALIASES))
 
 
 def test_case_is_normalized():

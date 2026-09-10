@@ -1,31 +1,69 @@
 # รูปแบบ Ban-Pick
 #
-# สิ่งที่ยืนยันแล้วจากข้อมูลจริง 861 เกม (docs/12-cross-league-meta.md)
-#   แบน 4 ตัวต่อทีม  รวม 8 ตัวต่อเกม
-#   เลือก 5 ตัวต่อทีม
-#   ฝั่ง blue/red สลับได้ทุกเกมในซีรีส์
+# ไฟล์นี้แยก "สิ่งที่ยืนยันแล้ว" ออกจาก "สิ่งที่ยังเดา" ทีละข้อ
+# ไม่ใช้ธงเดียวคลุมทั้งไฟล์ เพราะสองส่วนนี้มีความน่าเชื่อถือต่างกันมาก
 #
-# ⚠️ สิ่งที่ยังไม่ยืนยัน: "ลำดับ" การสลับกันแบนและเลือกระหว่างสองทีม
+# ✅ ยืนยันแล้ว — จำนวนแบน/เลือก
+#    แบน 4 ตัวต่อทีม รวม 8 ตัวต่อเกม · เลือก 5 ตัวต่อทีม
+#    จากข้อมูลจริง 861 เกม (docs/12-cross-league-meta.md)
+#
+# ✅ ยืนยันแล้ว — Global Ban-Pick และสิทธิ์เลือกฝั่ง
+#    ยกมาจากหน้ารายการแข่งของ Liquipedia ตรง ๆ ดู source ในแต่ละบล็อก
+#
+# ⚠️ ยังไม่ยืนยัน — "ลำดับ" การสลับกันแบนและเลือก
 #    Liquipedia เก็บเป็นช่องของแต่ละทีม (t1b1..t1b4) ไม่ได้เก็บลำดับรวม
-#    และหา rulebook ทางการไม่พบ
-#
+#    และหน้ารายการแข่งไม่ได้เขียนลำดับไว้ ตรวจแล้วทั้ง RPL และ GCS
 #    ลำดับด้านล่างเป็นรูปแบบมาตรฐานของ MOBA ที่มี 4 ban + 5 pick ต่อทีม
-#    ถ้าดูคลิปแข่งแล้วพบว่าต่างจากนี้ ให้แก้ที่ไฟล์นี้ไฟล์เดียว
-#    ไม่ต้องแก้โค้ด และ verified ให้เปลี่ยนเป็น true
+#    ยืนยันได้ด้วยการดูคลิปแข่งหนึ่งคลิปแล้วจดลำดับจริง
+#    ถ้าต่างจากนี้ ให้แก้ที่ไฟล์นี้ไฟล์เดียว ไม่ต้องแก้โค้ด
 
 id: rpl_2026
 name: RPL / GCS มาตรฐาน
+
+# ธงรวม = จริงก็ต่อเมื่อ "ลำดับ" ถูกยืนยันด้วย ซึ่งยังไม่ถูก
 verified: false
+sequence_source: null
+
 bans_per_team: 4
 picks_per_team: 5
 
 # กติกา Global Ban-Pick (soft fearless)
-# ยืนยันแล้วจากข้อมูล 270 จาก 272 เกมเป็นไปตามกติกานี้
+#
+# ข้อความต้นทางจากหน้า RoV Pro League/2026/Summer บน Liquipedia
+#   "In a Bo3 or Bo5, each team is not allowed to choose the Champions
+#    they used in the previous rounds (If selecting the opponent's champions
+#    in the previous game, it is not affected by this rule)"
+#   "In a Bo7 match, this rule will apply for the first 6 games.
+#    The 7th game will be returned to the Normal Ban-Pick"
+#
+# ตรงกับสามค่าด้านล่างทุกข้อ และตรงกับข้อมูลจริง 270 จาก 272 เกม
 global_ban_pick:
   enabled: true
-  scope: own_team_only        # own_team_only | both_teams
-  applies_to_bans: false      # จำกัดเฉพาะ pick ไม่รวม ban
+  scope: own_team_only        # "the Champions they used" = ของทีมตัวเอง
+  applies_to_bans: false      # "choose/used" = เฉพาะ pick ไม่รวม ban
   reset_on_final_game: true   # Bo7 เกมที่ 7 กลับเป็น Normal Ban-Pick
+  verified: true
+  source: >-
+    Liquipedia honorofkings wiki หน้า "RoV Pro League/2026/Summer"
+    หัวข้อ Format · Global Ban-Pick Rules
+
+# สิทธิ์เลือกฝั่ง — มีผลต่อคำแนะนำระดับซีรีส์
+#
+# ข้อความต้นทางจากหน้าเดียวกัน
+#   "The teams on the left side of the match listing (also known as the
+#    administrative home team) have a privilege to pick the side in the first game."
+#   "In the other games, the loser team of the last game will have a privilege
+#    to pick the side."
+#
+# แปลว่าฝั่ง blue/red ในเกมถัดไปไม่ได้สลับอัตโนมัติ แต่ทีมที่แพ้เป็นคนเลือก
+side_selection:
+  enabled: true
+  game1: home_team
+  later_games: previous_loser
+  verified: true
+  source: >-
+    Liquipedia honorofkings wiki หน้า "RoV Pro League/2026/Summer"
+    หัวข้อ Format · Side Selection Privilege
 
 # ลำดับการกระทำ  blue = ทีมฝั่งน้ำเงิน  red = ฝั่งแดง
 sequence:

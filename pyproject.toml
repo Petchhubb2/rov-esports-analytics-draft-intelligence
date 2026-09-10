@@ -8,12 +8,18 @@ dependencies = [
     "scipy>=1.14",
     "opencv-python-headless>=4.10",
     "av>=13",
+    # pyarrow/polars ยังไม่มีโค้ดไหน import แต่ rov doctor เช็คไว้
+    # เพราะ observations.parquet ใน docs/03 จะใช้ทั้งคู่ตอนมี tracking
     "pyarrow>=17",
     "polars>=1.0",
     "pydantic>=2.8",
     "pyyaml>=6",
     "typer>=0.12",
     "httpx>=0.27",
+    # apps/api กับ rov/store import สองตัวนี้ตรง ๆ ไม่ใช่ optional
+    "fastapi>=0.115",
+    "sqlalchemy>=2.0",
+    "uvicorn>=0.30",
 ]
 
 [project.optional-dependencies]

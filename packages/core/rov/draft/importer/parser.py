@@ -121,6 +121,35 @@ def _team_name(tpl: Template | None) -> str | None:
     return None
 
 
+# ชื่อที่หน้าแมตช์เขียนต่างจากชื่อหลัก จนกติกาข้างบนรวมให้ไม่ได้
+#
+# ทุกบรรทัดมีหลักฐานจากข้อมูลจริง 861 เกม และจากหน้า
+# Portal:Heroes/Arena of Valor ของ Liquipedia ห้ามเติมโดยเดา
+#
+#   flw_mm      37 pick   Portal เขียนว่า "Flowborn/Marksman"
+#                         หน้าแมตช์ย่อเหลือแค่ MM จึงจับคู่กันไม่ติด
+#   sikong       1 pick   คือตัวเดียวกับ bolt_baron (44 pick)
+#                         Portal: link=Sikong Zhen แสดงผลว่า Bolt Baron
+#   diaochan     1 pick   คู่กับ diao_chan (2 pick)
+#   lubu         2 pick   คู่กับ lu_bu (2 pick)
+#
+# เลือก id หลักตามไฟล์รูปใน data/assets/heroes/_manifest.json
+# เพราะกระดานเว็บหารูปจาก id นี้โดยตรง
+#
+# ⚠️ Flowborn มีสองร่าง (Mage / Marksman) ที่ Portal นับเป็นคนละตัว
+#    ข้อมูลที่มีตอนนี้มีแต่ร่าง Marksman จึงรวมเข้า flowborn ได้
+#    ถ้าวันหนึ่งเห็นร่าง Mage โผล่มา มันจะกลายเป็น id ที่ไม่รู้จัก
+#    แล้วโผล่ใน rov draft heroes-init — ตอนนั้นต้องแยก id ใหม่ให้มัน
+HERO_ALIASES: dict[str, str] = {
+    "flw_mm": "flowborn",
+    "flowborn/marksman": "flowborn",
+    "sikong": "sikong_zhen",
+    "bolt_baron": "sikong_zhen",
+    "diaochan": "diao_chan",
+    "lubu": "lu_bu",
+}
+
+
 def normalize_hero_id(raw: str) -> str:
     """ทำชื่อฮีโร่ให้เป็นรูปแบบเดียว
 
@@ -134,11 +163,13 @@ def normalize_hero_id(raw: str) -> str:
     และฮีโร่ที่ถูกแบนบ่อยที่สุดจะดูเหมือนถูกแบนน้อยกว่าความจริง
 
     กติกา: ตัวพิมพ์เล็ก · ตัด ' . - ทิ้ง · ช่องว่างเป็น _
+    จากนั้นส่งผ่านตารางชื่อพ้อง HERO_ALIASES อีกชั้น
     """
     s = raw.strip().lower()
     for ch in ("'", "’", ".", "-"):
         s = s.replace(ch, "")
-    return "_".join(s.split())
+    s = "_".join(s.split())
+    return HERO_ALIASES.get(s, s)
 
 
 def _slots(tpl: Template, prefix: str, count: int) -> list[str]:

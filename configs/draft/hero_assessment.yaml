@@ -1,0 +1,405 @@
+# การประเมินคุณลักษณะฮีโร่ — ค่าเชิงคุณภาพที่ดึงอัตโนมัติไม่ได้
+#
+# ══════════════════════════════════════════════════════════════════════
+# ใครกรอกไฟล์นี้ และเชื่อได้แค่ไหน
+# ══════════════════════════════════════════════════════════════════════
+#
+# ค่าในไฟล์นี้ประเมินโดย **ผู้ช่วย AI (Claude Opus 5)** ไม่ใช่โค้ชหรือผู้เล่น
+# จึงถูกกำกับด้วย filled_kind: assistant และ Composition Engine จะขึ้น
+# คำเตือนทุกครั้งที่ใช้ค่าเหล่านี้คิดคะแนน
+#
+# ทำแบบนี้เพราะ heroes.yaml ว่างทั้ง 119 ตัวมาตลอด ทำให้ Composition Engine
+# ที่เขียนเสร็จแล้วใช้งานไม่ได้เลยแม้แต่ครั้งเดียว การมีค่าที่ประเมินไว้
+# พร้อมป้ายบอกที่มาชัดเจน ใช้งานได้จริงกว่าการไม่มีอะไรเลย
+# **แต่ยังแทนการประเมินของคนที่รู้เกมไม่ได้** เมื่อมีคนมาตรวจแล้ว
+# ให้แก้ตัวเลขและเปลี่ยน filled_kind เป็น human
+#
+# ══════════════════════════════════════════════════════════════════════
+# เกณฑ์ที่ใช้ประเมิน — เขียนไว้เพื่อให้คนตรวจย้อนได้ว่าคิดยังไง
+# ══════════════════════════════════════════════════════════════════════
+#
+# ทุกค่า 0-100 เป็นค่า **เชิงสัมพัทธ์เทียบกับฮีโร่ RoV ทั้งหมด** ไม่ใช่เทียบในคลาส
+# มาร์คแมนที่ frontline 10 ไม่ได้แปลว่าแย่ แปลว่ามันไม่ใช่หน้าที่มัน
+#
+#   0-20    แทบไม่มี
+#   21-40   มีบ้างแต่ไม่ใช่จุดเด่น
+#   41-60   ระดับกลางของเกม
+#   61-80   เป็นจุดเด่นที่ทีมพึ่งได้
+#   81-100  ดีที่สุดในเกมสายนี้
+#
+# หลักฐานที่ใช้ประกอบทุกตัว
+#   1. ป้ายผลสกิลจาก Liquipedia (data/hero_traits.json) — Stun/Heal/Dash ฯลฯ
+#      เป็นข้อเท็จจริง ไม่ใช่ความเห็น ดู rov/draft/importer/herotraits.py
+#   2. เลนจริงจากแมตช์ 861 เกมของเราเอง (rov/draft/lanes.py)
+#   3. tempo signal จากความยาวเกมที่ชนะเทียบที่แพ้ (stats.game_length_tendency)
+#      ค่าบวก = ชนะเกมยาว → เอนไป late · ค่าลบ = ชนะเกมสั้น → เอนไป early
+#
+# ช่อง scaling ยึด tempo เป็นหลักแล้วปรับด้วยลักษณะฮีโร่
+# ช่อง cc_hard/cc_soft/sustain/mobility ยึดป้ายสกิลเป็นหลัก
+# ช่องที่เหลือ (engage, peel, poke, frontline, objective, waveclear, splitpush)
+# เป็นการประเมินล้วน — ตรวจช่องพวกนี้ก่อนเมื่อมีคนมารีวิว
+#
+# ══════════════════════════════════════════════════════════════════════
+#
+# ครอบคลุม 30 ตัวแรกตาม presence จริง = ~72% ของ pick/ban ทั้งหมดในข้อมูล
+# ตัวที่เหลือปล่อยว่างไว้ตามหลักเดิม — ระบบจะปฏิเสธการให้คะแนนเอง
+
+version: 1
+patch: '1.63'
+assessed_by: claude-opus-5
+assessed_on: '2026-09-10'
+evidence: data/hero_traits.json
+
+heroes:
+
+  # ── ซัพพอร์ต / โรม ────────────────────────────────────────────────
+  rouie:
+    lane_roles: [mid, support]
+    range: long
+    damage: {type: magical, profile: sustained, target: aoe}
+    scaling: {early: 55, mid: 75, late: 70}
+    utility: {engage: 25, disengage: 92, peel: 88, cc_hard: 55, cc_soft: 60, mobility: 70, poke: 45, sustain: 80, frontline: 15, objective: 40, waveclear: 45, splitpush: 10}
+    macro_tags: [PEEL, OBJECTIVE]
+    notes: >-
+      Void Portal กับ Sacred Ground คือ teleport ทั้งทีม ซึ่งเป็น disengage
+      และ reposition ที่ไม่มีตัวไหนเทียบได้ในเกม จึงให้ disengage 92
+      ban 565 จาก 861 เกมสะท้อนว่ามืออาชีพกลัวความสามารถนี้จริง
+      hard CC มีแค่ Knock Back จาก Holy Wings จึงไม่ใช่ตัว engage
+
+  toro:
+    lane_roles: [support, ds]
+    range: melee
+    damage: {type: physical, profile: burst, target: aoe}
+    scaling: {early: 70, mid: 65, late: 55}
+    utility: {engage: 78, disengage: 40, peel: 62, cc_hard: 70, cc_soft: 55, mobility: 45, poke: 20, sustain: 35, frontline: 88, objective: 45, waveclear: 40, splitpush: 20}
+    macro_tags: [ENGAGE, EARLY_PRESSURE]
+    notes: >-
+      Knockup + Slow + Iron Body + Self Damage Reduction ตามป้ายสกิล
+      เป็นแท็งก์เปิดหน้าแบบคลาสสิก tempo 0.00 พอดี จึงไล่ scaling ลงตามอายุเกม
+      แบบกลาง ๆ ไม่ชี้ไปทางไหน
+
+  ybneth:
+    lane_roles: [support]
+    range: melee
+    damage: {type: hybrid, profile: burst, target: aoe}
+    scaling: {early: 62, mid: 72, late: 68}
+    utility: {engage: 85, disengage: 45, peel: 70, cc_hard: 88, cc_soft: 60, mobility: 40, poke: 25, sustain: 55, frontline: 90, objective: 45, waveclear: 35, splitpush: 15}
+    macro_tags: [ENGAGE, PEEL]
+    notes: >-
+      มี hard CC สองแบบ (Stun + Knock Back) พร้อม Heal และ Slow
+      ซึ่งเป็นชุดที่ครบที่สุดในกลุ่มแท็งก์ในข้อมูลชุดนี้ จึงให้ cc_hard 88
+      ลงเลนซัพพอร์ต 100% จาก 227 เกม ไม่มีความกำกวมเรื่องตำแหน่ง
+
+  teemee:
+    lane_roles: [support]
+    range: long
+    damage: {type: magical, profile: burst, target: single}
+    scaling: {early: 50, mid: 65, late: 72}
+    utility: {engage: 40, disengage: 68, peel: 80, cc_hard: 62, cc_soft: 35, mobility: 45, poke: 40, sustain: 70, frontline: 20, objective: 35, waveclear: 35, splitpush: 10}
+    macro_tags: [PEEL]
+    notes: >-
+      Resurrect คือความสามารถที่หายากมากในเกม จึงดัน peel กับ sustain ขึ้นสูง
+      แม้จะไม่ใช่ heal ตรง ๆ tempo +0.07 เอนไปทางเกมยาวเล็กน้อย
+
+  dolia:
+    lane_roles: [support]
+    range: long
+    damage: {type: magical, profile: sustained, target: aoe}
+    scaling: {early: 48, mid: 68, late: 78}
+    utility: {engage: 30, disengage: 65, peel: 72, cc_hard: 35, cc_soft: 55, mobility: 35, poke: 55, sustain: 75, frontline: 15, objective: 40, waveclear: 50, splitpush: 10}
+    macro_tags: [PEEL, SCALING]
+    notes: >-
+      ป้ายสกิลมีแค่ CD reset กับ Pool ซึ่งบอกลักษณะไม่ครบ
+      ค่าที่เหลือจึงเป็นการประเมินจากบทบาทซัพพอร์ตที่ลงเลน 98% เป็นหลัก
+      **เป็นตัวที่หลักฐานบางที่สุดใน 30 ตัวนี้ ควรให้คนตรวจก่อน**
+
+  enzo:
+    lane_roles: [support, jungle]
+    range: melee
+    damage: {type: physical, profile: burst, target: single}
+    scaling: {early: 75, mid: 62, late: 42}
+    utility: {engage: 72, disengage: 45, peel: 40, cc_hard: 30, cc_soft: 35, mobility: 78, poke: 25, sustain: 20, frontline: 35, objective: 45, waveclear: 30, splitpush: 35}
+    macro_tags: [EARLY_GANK, DIVE]
+    notes: >-
+      tempo -0.18 คือสัญญาณเกมสั้นที่ชัดเจน ประกอบกับ Damage Boost + Movement
+      จึงเป็นตัวกดดันช่วงต้นที่จางลงเมื่อเกมยาว
+
+  # ── ป่า ──────────────────────────────────────────────────────────
+  sinestrea:
+    lane_roles: [jungle]
+    range: melee
+    damage: {type: physical, profile: burst, target: single}
+    scaling: {early: 82, mid: 78, late: 55}
+    utility: {engage: 70, disengage: 55, peel: 20, cc_hard: 35, cc_soft: 30, mobility: 85, poke: 25, sustain: 30, frontline: 25, objective: 70, waveclear: 65, splitpush: 60}
+    macro_tags: [EARLY_GANK, FAST_CLEAR, DIVE]
+    notes: >-
+      ban 542 จาก 861 เกม สูงเป็นอันดับสองของชุดข้อมูล tempo -0.14
+      ยืนยันว่าเป็นตัวจบเกมเร็ว ลงป่า 100% จาก 162 เกม
+      ป้ายสกิลไม่มี hard CC จึงไม่ใช่ตัวเปิด แต่เป็นตัวตามเก็บ
+
+  billow:
+    lane_roles: [jungle]
+    range: melee
+    damage: {type: physical, profile: sustained, target: single}
+    scaling: {early: 68, mid: 75, late: 72}
+    utility: {engage: 65, disengage: 50, peel: 30, cc_hard: 40, cc_soft: 35, mobility: 72, poke: 20, sustain: 62, frontline: 45, objective: 72, waveclear: 60, splitpush: 55}
+    macro_tags: [FAST_CLEAR, OBJECTIVE, DIVE]
+    notes: >-
+      มี Heal ในป้ายสกิล และ tempo +0.05 คือแทบไม่เอนไปทางไหน
+      จึงเป็นตัวป่าที่ยืนระยะได้ทั้งเกม ไม่ใช่ทั้งสาย early และไม่ใช่ late
+
+  tachi:
+    lane_roles: [jungle]
+    range: melee
+    damage: {type: physical, profile: sustained, target: aoe}
+    scaling: {early: 65, mid: 75, late: 78}
+    utility: {engage: 68, disengage: 45, peel: 35, cc_hard: 30, cc_soft: 62, mobility: 65, poke: 25, sustain: 68, frontline: 55, objective: 70, waveclear: 72, splitpush: 60}
+    macro_tags: [FAST_CLEAR, OBJECTIVE, SCALING]
+    notes: >-
+      Area DMG + Heal + Slow และ tempo +0.06 เอนไปทางเกมยาว
+      เล่นป่า 100% จาก 223 เกม เป็นตัวป่าที่แลกหมัดได้ยาวกว่าตัวลอบสังหาร
+
+  murad:
+    lane_roles: [ds, jungle]
+    range: melee
+    damage: {type: physical, profile: burst, target: single}
+    scaling: {early: 35, mid: 65, late: 92}
+    utility: {engage: 70, disengage: 75, peel: 15, cc_hard: 20, cc_soft: 25, mobility: 95, poke: 20, sustain: 25, frontline: 15, objective: 55, waveclear: 55, splitpush: 85}
+    macro_tags: [SCALING, SPLIT_PUSH, DIVE]
+    notes: >-
+      tempo +0.38 สูงที่สุดใน 30 ตัวนี้ = ชนะเกมยาวชัดเจนมาก
+      ประกอบกับ Untargetable + Movement จึงให้ late 92 และ splitpush 85
+      ตัวเลข tempo มาจาก 98 เกม ซึ่งพอเชื่อได้
+
+  keera:
+    lane_roles: [jungle]
+    range: melee
+    damage: {type: magical, profile: burst, target: single}
+    scaling: {early: 70, mid: 80, late: 68}
+    utility: {engage: 72, disengage: 70, peel: 15, cc_hard: 25, cc_soft: 30, mobility: 90, poke: 30, sustain: 20, frontline: 15, objective: 60, waveclear: 62, splitpush: 70}
+    macro_tags: [EARLY_GANK, DIVE, SPLIT_PUSH]
+    notes: >-
+      Untargetable + Movement Speed + Damage Boost คือชุดตัวลอบสังหารที่เข้าออกได้
+      wr_adj 0.430 ต่ำที่สุดใน 25 อันดับแรก แต่ pick 200 เกม
+      แปลว่ามือโปรยังเลือกทั้งที่ชนะน้อย — น่าจะเป็นตัวที่ต้องอาศัยฝีมือ
+
+  zephys:
+    lane_roles: [jungle]
+    range: melee
+    damage: {type: physical, profile: burst, target: aoe}
+    scaling: {early: 72, mid: 72, late: 60}
+    utility: {engage: 82, disengage: 40, peel: 30, cc_hard: 72, cc_soft: 25, mobility: 70, poke: 20, sustain: 55, frontline: 50, objective: 62, waveclear: 58, splitpush: 45}
+    macro_tags: [ENGAGE, EARLY_GANK, DIVE]
+    notes: >-
+      Knockup คือ hard CC ที่ใช้เปิดได้จริง บวก Heal และ Self Damage Reduction
+      จึงเป็นตัวป่าสายเปิดหน้า ต่างจาก sinestrea/keera ที่เป็นสายตามเก็บ
+
+  # ── มิด ──────────────────────────────────────────────────────────
+  lorion:
+    lane_roles: [mid]
+    range: long
+    damage: {type: magical, profile: sustained, target: aoe}
+    scaling: {early: 58, mid: 75, late: 78}
+    utility: {engage: 30, disengage: 70, peel: 65, cc_hard: 25, cc_soft: 75, mobility: 55, poke: 72, sustain: 68, frontline: 15, objective: 45, waveclear: 82, splitpush: 25}
+    macro_tags: [POKE, PEEL, SCALING]
+    notes: >-
+      ป้ายสกิลครบที่สุดในชุดนี้ — Area DMG, Heal, Recovery, Slow, Speed Up, Control
+      เป็นเมจสายคุมพื้นที่และประคองทีม ไม่ใช่สายระเบิด จึงให้ poke/waveclear สูง
+      แต่ cc_hard ต่ำ
+
+  zata:
+    lane_roles: [mid]
+    range: long
+    damage: {type: magical, profile: burst, target: single}
+    scaling: {early: 78, mid: 78, late: 52}
+    utility: {engage: 55, disengage: 62, peel: 20, cc_hard: 20, cc_soft: 58, mobility: 78, poke: 62, sustain: 15, frontline: 10, objective: 40, waveclear: 68, splitpush: 45}
+    macro_tags: [EARLY_PRESSURE, DIVE]
+    notes: >-
+      tempo -0.26 เป็นสัญญาณเกมสั้นที่แรงเป็นอันดับสองของชุด
+      ป้ายสกิลมีแค่ Movement กับ Slow ซึ่งบางมาก ค่าที่เหลือประเมินจาก
+      บทบาทเมจ/ลอบสังหารที่ลงมิด 99% จาก 145 เกม
+
+  mganga:
+    lane_roles: [mid]
+    range: long
+    damage: {type: magical, profile: sustained, target: aoe}
+    scaling: {early: 62, mid: 75, late: 72}
+    utility: {engage: 25, disengage: 60, peel: 72, cc_hard: 20, cc_soft: 65, mobility: 35, poke: 68, sustain: 82, frontline: 15, objective: 40, waveclear: 75, splitpush: 25}
+    macro_tags: [POKE, PEEL]
+    notes: >-
+      Heal + Shield + Damage Boost + Slow — เมจสายบัฟทีม
+      sustain 82 มาจากการมีทั้ง heal และ shield ซึ่งน้อยตัวมีทั้งคู่
+      wr_adj 0.543 สูงเป็นอันดับต้น ๆ ของชุดข้อมูล
+
+  iggy:
+    lane_roles: [mid]
+    range: long
+    damage: {type: magical, profile: sustained, target: aoe}
+    scaling: {early: 68, mid: 75, late: 65}
+    utility: {engage: 35, disengage: 62, peel: 55, cc_hard: 55, cc_soft: 40, mobility: 55, poke: 78, sustain: 20, frontline: 12, objective: 50, waveclear: 85, splitpush: 45}
+    macro_tags: [POKE, EARLY_PRESSURE]
+    notes: >-
+      Area DMG + Knock Back + Reveal เป็นชุดคุมพื้นที่และเปิดวิสัยทัศน์
+      waveclear 85 มาจากลักษณะสกิลวางพื้นที่ tempo -0.17 เอนไปเกมสั้น
+
+  liliana:
+    lane_roles: [mid]
+    range: long
+    damage: {type: magical, profile: burst, target: aoe}
+    scaling: {early: 60, mid: 78, late: 75}
+    utility: {engage: 55, disengage: 58, peel: 40, cc_hard: 68, cc_soft: 35, mobility: 62, poke: 65, sustain: 20, frontline: 15, objective: 45, waveclear: 72, splitpush: 40}
+    macro_tags: [POKE, ENGAGE]
+    notes: >-
+      Stun + Transform + Area DMG — เมจที่มี hard CC ใช้เปิดได้จริง
+      ต่างจาก lorion/mganga ที่ไม่มี ลงมิด 100%
+
+  # ── DS เลน / ออฟเลน ──────────────────────────────────────────────
+  marja:
+    lane_roles: [ds, jungle]
+    range: long
+    damage: {type: magical, profile: burst, target: aoe}
+    scaling: {early: 72, mid: 80, late: 68}
+    utility: {engage: 55, disengage: 78, peel: 35, cc_hard: 20, cc_soft: 40, mobility: 80, poke: 70, sustain: 55, frontline: 20, objective: 50, waveclear: 78, splitpush: 55}
+    macro_tags: [EARLY_PRESSURE, POKE]
+    notes: >-
+      Untargetable + Heal + Movement ทำให้เอาตัวรอดสูงมาก
+      pick 286 สูงที่สุดในชุดข้อมูล และ wr_adj 0.554 คือทั้งนิยมและชนะ
+      ลง DS 71% แต่ลงป่าได้ 23% จึงเป็นตัว flex ที่ซ่อนแผนได้
+
+  florentino:
+    lane_roles: [ds]
+    range: melee
+    damage: {type: physical, profile: sustained, target: single}
+    scaling: {early: 68, mid: 82, late: 78}
+    utility: {engage: 75, disengage: 62, peel: 35, cc_hard: 68, cc_soft: 58, mobility: 78, poke: 25, sustain: 45, frontline: 55, objective: 60, waveclear: 62, splitpush: 82}
+    macro_tags: [SPLIT_PUSH, DIVE, ENGAGE]
+    notes: >-
+      Stun + Slow + Iron Body + Movement ลง DS 100% จาก 110 เกม
+      ban 389 เทียบ pick 110 = ถูกแบนมากกว่าถูกเลือกสามเท่า
+      ซึ่งเป็นลายเซ็นของตัว splitpush ที่จัดการยาก
+
+  qi:
+    lane_roles: [ds]
+    range: melee
+    damage: {type: physical, profile: burst, target: aoe}
+    scaling: {early: 70, mid: 75, late: 70}
+    utility: {engage: 85, disengage: 42, peel: 45, cc_hard: 85, cc_soft: 25, mobility: 60, poke: 20, sustain: 30, frontline: 72, objective: 55, waveclear: 55, splitpush: 50}
+    macro_tags: [ENGAGE, DIVE]
+    notes: >-
+      Knock Back + Knockup พร้อมกันสองอย่าง คือ hard CC ที่หนักที่สุดในชุดนี้
+      บวก Self Damage Reduction ทำให้เปิดหน้าแล้วรอดกลับ จึงให้ engage 85
+
+  omen:
+    lane_roles: [ds, support]
+    range: melee
+    damage: {type: physical, profile: sustained, target: single}
+    scaling: {early: 62, mid: 72, late: 72}
+    utility: {engage: 62, disengage: 48, peel: 50, cc_hard: 45, cc_soft: 55, mobility: 55, poke: 20, sustain: 40, frontline: 78, objective: 55, waveclear: 50, splitpush: 60}
+    macro_tags: [ENGAGE, SPLIT_PUSH]
+    notes: >-
+      Attack Speed Buff + Limitation + Self Damage Reduction + Control
+      ban 223 เทียบ pick 54 — ถูกแบนมากกว่าถูกเลือกสี่เท่า
+      เป็นตัวที่มืออาชีพเลือกจะไม่ให้เจอมากกว่าจะหยิบเอง
+
+  skud:
+    lane_roles: [ds]
+    range: melee
+    damage: {type: hybrid, profile: burst, target: aoe}
+    scaling: {early: 82, mid: 68, late: 45}
+    utility: {engage: 80, disengage: 45, peel: 40, cc_hard: 70, cc_soft: 30, mobility: 68, poke: 20, sustain: 25, frontline: 72, objective: 50, waveclear: 50, splitpush: 40}
+    macro_tags: [ENGAGE, EARLY_PRESSURE]
+    notes: >-
+      tempo -0.31 แรงที่สุดในทางเกมสั้นของทั้งชุด (จาก 161 เกม)
+      Knock Back + Movement Speed คือชุดพุ่งเข้าเปิด ถ้ายืดเกมออกไปจะจางลงชัดเจน
+
+  ryoma:
+    lane_roles: [ds, jungle]
+    range: melee
+    damage: {type: physical, profile: sustained, target: single}
+    scaling: {early: 58, mid: 72, late: 80}
+    utility: {engage: 78, disengage: 45, peel: 42, cc_hard: 72, cc_soft: 58, mobility: 62, poke: 20, sustain: 65, frontline: 68, objective: 60, waveclear: 55, splitpush: 65}
+    macro_tags: [ENGAGE, SCALING, SPLIT_PUSH]
+    notes: >-
+      Stun + Slow + Heal + Movement และ tempo +0.16 เอนไปเกมยาว
+      ลง DS 84% แต่ลงป่าได้ 15% — เป็นตัว flex อีกตัวที่ซ่อนแผนได้
+
+  # ── เลนมังกร / แครี่ ─────────────────────────────────────────────
+  elandorr:
+    lane_roles: [dragon, jungle]
+    range: long
+    damage: {type: magical, profile: sustained, target: single}
+    scaling: {early: 75, mid: 78, late: 62}
+    utility: {engage: 45, disengage: 55, peel: 40, cc_hard: 55, cc_soft: 30, mobility: 62, poke: 68, sustain: 20, frontline: 15, objective: 65, waveclear: 70, splitpush: 55}
+    macro_tags: [EARLY_PRESSURE, OBJECTIVE]
+    notes: >-
+      ลงป่า 53% เลนมังกร 47% แทบครึ่งต่อครึ่ง เป็นตัว flex ที่แท้จริงที่สุด
+      ในชุดข้อมูลนี้ ทำให้อีกฝั่งเดาแผนไม่ออกจนกว่าจะเข้าเกม
+      ban 398 สะท้อนว่าความกำกวมนี้มีมูลค่าจริง tempo -0.19 เอนไปเกมสั้น
+
+  hayate:
+    lane_roles: [dragon]
+    range: long
+    damage: {type: physical, profile: sustained, target: aoe}
+    scaling: {early: 55, mid: 75, late: 82}
+    utility: {engage: 25, disengage: 62, peel: 25, cc_hard: 15, cc_soft: 30, mobility: 72, poke: 55, sustain: 20, frontline: 10, objective: 70, waveclear: 72, splitpush: 55}
+    macro_tags: [SCALING, OBJECTIVE]
+    notes: >-
+      Area DMG + Movement Speed สองชั้น tempo +0.05 เอนไปเกมยาวเล็กน้อย
+      pick 258 แต่ wr_adj 0.479 — นิยมแต่ไม่ได้ชนะเยอะ
+
+  capheny:
+    lane_roles: [dragon]
+    range: long
+    damage: {type: physical, profile: sustained, target: single}
+    scaling: {early: 65, mid: 80, late: 78}
+    utility: {engage: 20, disengage: 55, peel: 20, cc_hard: 10, cc_soft: 30, mobility: 60, poke: 72, sustain: 15, frontline: 10, objective: 72, waveclear: 68, splitpush: 50}
+    macro_tags: [SCALING, POKE, OBJECTIVE]
+    notes: >-
+      pick 237 ban 60 — ถูกเลือกมากกว่าถูกแบนสี่เท่า ต่างจาก omen/florentino
+      แปลว่าเป็นตัวมาตรฐานที่ทุกทีมหยิบได้ ไม่ใช่ตัวที่ต้องกลัว
+      ไม่มี CC เลยในป้ายสกิล จึงให้ cc_hard 10
+
+  valhein:
+    lane_roles: [dragon]
+    range: long
+    damage: {type: physical, profile: sustained, target: single}
+    scaling: {early: 68, mid: 72, late: 70}
+    utility: {engage: 30, disengage: 55, peel: 45, cc_hard: 58, cc_soft: 25, mobility: 58, poke: 55, sustain: 20, frontline: 12, objective: 62, waveclear: 65, splitpush: 45}
+    macro_tags: [OBJECTIVE]
+    notes: >-
+      มี Stun ซึ่งหายากในกลุ่มมาร์คแมน จึงให้ cc_hard 58 สูงกว่าเพื่อนร่วมเลน
+      tempo -0.08 เอนไปเกมสั้นเล็กน้อย
+
+  stuart:
+    lane_roles: [dragon]
+    range: long
+    damage: {type: physical, profile: burst, target: single}
+    scaling: {early: 62, mid: 78, late: 75}
+    utility: {engage: 35, disengage: 58, peel: 35, cc_hard: 62, cc_soft: 30, mobility: 65, poke: 68, sustain: 15, frontline: 12, objective: 68, waveclear: 60, splitpush: 50}
+    macro_tags: [POKE, OBJECTIVE]
+    notes: >-
+      Stun + Damage Boost + Movement Speed ลงเลนมังกร 100% จาก 213 เกม
+      เป็นมาร์คแมนที่เปิดเองได้ระดับหนึ่ง
+
+  elsu:
+    lane_roles: [dragon]
+    range: long
+    damage: {type: physical, profile: poke, target: single}
+    scaling: {early: 45, mid: 70, late: 88}
+    utility: {engage: 15, disengage: 60, peel: 20, cc_hard: 10, cc_soft: 45, mobility: 45, poke: 92, sustain: 10, frontline: 8, objective: 65, waveclear: 55, splitpush: 45}
+    macro_tags: [POKE, SCALING]
+    notes: >-
+      tempo +0.32 สูงเป็นอันดับสองของชุด = ชนะเกมยาวชัดเจน
+      Invisibility + Reveal + Slow และรูปแบบสไนเปอร์ทำให้ poke 92
+      แต่ frontline 8 คือต่ำที่สุดใน 30 ตัวนี้
+
+  wisp:
+    lane_roles: [dragon]
+    range: long
+    damage: {type: physical, profile: sustained, target: aoe}
+    scaling: {early: 60, mid: 75, late: 78}
+    utility: {engage: 25, disengage: 58, peel: 30, cc_hard: 45, cc_soft: 40, mobility: 62, poke: 60, sustain: 15, frontline: 10, objective: 68, waveclear: 72, splitpush: 50}
+    macro_tags: [SCALING, OBJECTIVE]
+    notes: >-
+      Daze + Area DMG + Mixed Damage · tempo +0.06 เอนไปเกมยาวเล็กน้อย
+      Daze นับเป็น CC กลาง ๆ จึงให้ cc_hard 45 ไม่ถึงระดับ Stun

@@ -100,6 +100,18 @@ class Hero(BaseModel):
     filled_on: str | None = None
     notes: str | None = None
 
+    # ชนิดของที่มา — ต้องอ่านด้วยเครื่องได้ ไม่ใช่ซ่อนอยู่ในข้อความ filled_by
+    #
+    #   human      คนที่รู้เกมประเมินเอง — น่าเชื่อที่สุด
+    #   assistant  ผู้ช่วย AI ประเมินจากหลักฐานที่อ้างอิงได้ (ดู notes)
+    #              ใช้ได้ แต่ต้องขึ้นคำเตือนทุกครั้งที่เอาไปคิดคะแนน
+    #   derived    คำนวณจากข้อมูลแมตช์จริงหรือยกมาจาก Liquipedia ตรง ๆ
+    #
+    # เหตุผลที่ต้องมีช่องนี้: Composition Engine ต้องบอกผู้ใช้ได้ว่าคะแนนที่เห็น
+    # ยืนอยู่บนอะไร ถ้าเก็บที่มาไว้เป็นข้อความอิสระ ระบบจะแยกไม่ออก
+    # แล้วค่าที่ AI ประเมินจะดูเท่ากับค่าที่โค้ชกรอก ซึ่งไม่ควรเท่ากัน
+    filled_kind: Literal["human", "assistant", "derived"] | None = None
+
     @model_validator(mode="after")
     def _check_ratings(self) -> Hero:
         for name, val in [
