@@ -52,12 +52,17 @@ OUT = Path("configs/zones/rov_map_v1.yaml")
 N = 900  # ความละเอียดที่ใช้วาด
 
 # ── ค่าที่ปรับได้ ทั้งหมดเป็นสัดส่วนของด้านแมพ ──
-MID_HALF_WIDTH = 0.085      # ครึ่งความกว้างของเลนกลาง วัดจากแนวทแยง
-LANE_INSET = 0.055          # เส้นกลางเลนข้างห่างจากขอบแมพเท่าไร
-LANE_HALF_WIDTH = 0.070     # ครึ่งความกว้างของเลนข้าง
-BASE_RADIUS = 0.185         # รัศมีเขตฐาน
+#
+# ค่าชุดก่อนตั้งกว้างเกินจริงมาก เลนข้างสองเลนกินไป 33% ของแมพ
+# ป่าเหลือแค่ 5-6% ต่อส่วน ทั้งที่บน minimap จริงป่าเป็นพื้นที่ส่วนใหญ่
+# รอบนี้แคบลงและ LANE_INSET คำนวณจากตำแหน่งป้อมจริงแทนการตั้งเอง
+MID_HALF_WIDTH = 0.058      # ครึ่งความกว้างของเลนกลาง วัดตั้งฉากกับแนวทแยง
+LANE_HALF_WIDTH = 0.046     # ครึ่งความกว้างของเลนข้าง
+LANE_INSET_FALLBACK = 0.045  # ใช้เมื่อหาป้อมริมขอบไม่เจอ
+BASE_RADIUS = 0.140         # รัศมีเขตฐาน ครอบแกนกลางกับป้อมฐานพอดี
 PIT_RADIUS = 0.062          # รัศมีหลุม objective
-APPROACH_RADIUS = 0.125     # รัศมีวงรอบหลุม ใช้จับการเซ็ตอัพ
+APPROACH_RADIUS = 0.115     # รัศมีวงรอบหลุม ใช้จับการเซ็ตอัพ
+EDGE_BAND = 0.13            # ป้อมที่อยู่ในแถบนี้จากขอบ ถือว่าเป็นป้อมริมขอบ
 
 ZONES: list[tuple[str, str, str]] = [
     # id, kind, region
@@ -83,6 +88,24 @@ ZONES: list[tuple[str, str, str]] = [
 ]
 
 GOLEM_RADIUS = 0.055
+
+
+def lane_inset(meta: dict) -> float:
+    """ระยะจากขอบแมพถึงเส้นกลางเลนข้าง วัดจากป้อมที่ตั้งอยู่ริมขอบจริง
+
+    ป้อมตั้งอยู่บนเลนพอดี จึงเป็นตัวชี้เส้นเลนที่แม่นที่สุดที่เรามี
+    ดีกว่าตั้งค่าเองแล้วมาปรับตาทีหลัง
+    """
+    d = []
+    for key in ("structures_blue", "structures_red"):
+        for c in meta.get(key) or []:
+            x, y = c["x"], c["y"]
+            for v in (x, 1 - x, y, 1 - y):
+                if v <= EDGE_BAND:
+                    d.append(v)
+    if not d:
+        return LANE_INSET_FALLBACK
+    return float(np.median(d))
 
 
 def _grid() -> tuple[np.ndarray, np.ndarray]:
@@ -148,24 +171,27 @@ def build_labels(meta: dict) -> np.ndarray:
     put("RIVER_SLAYER", rm & slayer_half)
     put("RIVER_DRAGON", rm & ~slayer_half)
 
-    put("SLAYER_PIT_APPROACH", disc(*slayer, APPROACH_RADIUS))
-    put("DRAGON_PIT_APPROACH", disc(*dragon, APPROACH_RADIUS))
-
-    # แคมป์ใหญ่วาดก่อนเลน เพราะบางจุดอยู่ชิดเลนกลาง ถ้าวาดทีหลังจะโดนกลืน
+    # แคมป์ใหญ่วาดก่อนวงรอบหลุมและก่อนเลน
+    # ถ้าวาดทีหลังจะโดนกลืนหายไปทั้งก้อน เพราะบางจุดอยู่ชิดทั้งสองอย่าง
     for c in meta.get("big_camps") or []:
         cxx, cyy = c["x"], c["y"]
         side = "BLUE" if cyy > cxx else "RED"
         half = "SLAYER" if cxx + cyy < 1.0 else "DRAGON"
         put(f"GOLEM_{side}_{half}", disc(cxx, cyy, GOLEM_RADIUS))
 
+    put("SLAYER_PIT_APPROACH", disc(*slayer, APPROACH_RADIUS))
+    put("DRAGON_PIT_APPROACH", disc(*dragon, APPROACH_RADIUS))
+
     # เลนกลาง — แถบตามแนวทแยงที่เชื่อมสองฐาน
     put("MID", d_mid <= MID_HALF_WIDTH)
 
     # เลนข้างเป็นรูปตัว L เลียบขอบ ไม่ใช่เส้นทแยง
-    near_left = np.abs(xs - LANE_INSET) <= LANE_HALF_WIDTH
-    near_top = np.abs(ys - LANE_INSET) <= LANE_HALF_WIDTH
-    near_bot = np.abs(ys - (1 - LANE_INSET)) <= LANE_HALF_WIDTH
-    near_right = np.abs(xs - (1 - LANE_INSET)) <= LANE_HALF_WIDTH
+    inset = lane_inset(meta)
+    print(f"เส้นกลางเลนข้างห่างจากขอบ {inset:.3f} (วัดจากป้อมริมขอบ)")
+    near_left = np.abs(xs - inset) <= LANE_HALF_WIDTH
+    near_top = np.abs(ys - inset) <= LANE_HALF_WIDTH
+    near_bot = np.abs(ys - (1 - inset)) <= LANE_HALF_WIDTH
+    near_right = np.abs(xs - (1 - inset)) <= LANE_HALF_WIDTH
     put("DS_LANE", near_left | near_top)
     put("DRAGON_LANE", near_bot | near_right)
 

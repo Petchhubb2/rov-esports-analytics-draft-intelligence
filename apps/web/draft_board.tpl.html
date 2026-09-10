@@ -119,7 +119,13 @@ button:focus-visible { outline: 2px solid var(--amber); outline-offset: 1px; }
 .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
 
 /* ── board ── */
-.board { display: grid; grid-template-columns: 1fr 1.25fr 1fr; gap: 12px; align-items: start; }
+.board { display: grid; grid-template-columns: 0.85fr 1.9fr 0.85fr; gap: 12px; align-items: start; }
+@media (max-width: 1100px) { .board { grid-template-columns: 1fr; } }
+/* hero pool ย้ายมาอยู่กลางกระดานแล้ว จะได้ไม่ต้องเลื่อนลงไปหาตอนดราฟต์
+   จำกัดความสูงไว้ ไม่งั้นกระดานยาวจนแผงสองข้างลอยอยู่บนสุด */
+.poolmid { max-height: 76vh; display: flex; flex-direction: column; min-width: 0; }
+.poolmid .grid { overflow-y: auto; }
+.recs { margin-bottom: 12px; }
 @media (max-width: 1080px) { .board { grid-template-columns: 1fr; } }
 
 .side {
@@ -346,6 +352,48 @@ table.rec tbody tr.sel { background: color-mix(in srgb, var(--amber) 10%, transp
 .acand .pic { width: 17px; height: 17px; border-radius: 2px; }
 .acand b { font-family: var(--fx-mono); font-size: 10.5px; color: var(--good); }
 .acand .n { font-family: var(--fx-mono); font-size: 9.5px; color: var(--text-faint); }
+
+/* ── แผนของคอมพ์ ── */
+.plan { background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+  box-shadow: var(--shadow); margin-bottom: 12px; }
+.plan-head { padding: 9px 12px; border-bottom: 1px solid var(--line);
+  display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: baseline; }
+.plan-head h2 { font-family: var(--fx-display); font-size: 13px; font-weight: 600;
+  letter-spacing: .06em; text-transform: uppercase; margin: 0; }
+.plan-head p { margin: 0; font-size: 11.5px; color: var(--text-faint); }
+.plan-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+@media (max-width: 860px) { .plan-grid { grid-template-columns: 1fr; } }
+.pteam { padding: 10px 12px; min-width: 0; }
+.pteam + .pteam { border-left: 1px solid var(--line); }
+@media (max-width: 860px) { .pteam + .pteam { border-left: 0; border-top: 1px solid var(--line); } }
+.pteam h3 { font-family: var(--fx-display); font-size: 12.5px; margin: 0 0 3px; letter-spacing: .03em; }
+.pteam.b h3 { color: var(--blue); } .pteam.r h3 { color: var(--red); }
+.pwin { font-size: 12.5px; line-height: 1.7; margin: 0 0 9px; }
+.pwin b { color: var(--amber); }
+.pbar { position: relative; height: 5px; border-radius: 3px; background: var(--line);
+  margin: 5px 0 9px; overflow: visible; }
+.pbar i { position: absolute; top: 0; height: 100%; border-radius: 3px; }
+.pbar u { position: absolute; top: -3px; bottom: -3px; width: 2px;
+  background: var(--text-faint); left: 50%; }
+.prow { display: grid; grid-template-columns: 62px 1fr; gap: 3px 9px;
+  font-size: 12px; padding: 4px 0; align-items: baseline; }
+.prow + .prow { border-top: 1px solid var(--line-soft); }
+.prow b { font-family: var(--fx-display); font-size: 9.5px; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--text-faint); }
+.ptag { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px 1px 2px;
+  border: 1px solid var(--line); border-radius: 2px; font-size: 11px; margin: 1px 2px 1px 0; }
+.ptag .pic { width: 15px; height: 15px; border-radius: 2px; }
+.ptag.good { border-color: var(--good); }
+.ptag.bad { border-color: var(--red); }
+.ptag em { font-family: var(--fx-mono); font-size: 9.5px; font-style: normal; color: var(--text-faint); }
+.psteps { padding: 10px 12px; border-top: 1px solid var(--line); }
+.psteps h3 { font-family: var(--fx-display); font-size: 11.5px; letter-spacing: .09em;
+  text-transform: uppercase; margin: 0 0 7px; color: var(--text-dim); }
+.pstep { display: grid; grid-template-columns: 66px 1fr; gap: 4px 10px;
+  padding: 5px 0; font-size: 12.5px; line-height: 1.6; }
+.pstep + .pstep { border-top: 1px solid var(--line-soft); }
+.pstep b { font-family: var(--fx-mono); font-size: 11px; color: var(--amber); }
+.pstep .from { font-size: 10.5px; color: var(--text-faint); }
 
 /* ── คู่คอมโบของทีมเรา ── */
 .combo { padding: 9px 11px; border-top: 1px solid var(--line); }
@@ -707,7 +755,46 @@ input.search:focus { outline: none; border-color: var(--amber); }
       </div>
     </section>
 
-    <section class="recs">
+
+
+    <section class="pool poolmid">
+    <div class="pool-head">
+      <h2>Hero Pool</h2>
+      <div class="filters" id="filters"></div>
+      <input class="search" id="search" placeholder="ค้นหาชื่อฮีโร่…" aria-label="ค้นหาฮีโร่">
+      <span class="count" id="poolCount"></span>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+    <section class="side red" id="sideRed">
+      <div class="side-head">
+        <span class="tag">Red</span>
+        <input id="nameRed" value="TEAM RED" aria-label="ชื่อทีมฝั่งแดง">
+      </div>
+      <div class="slot-group">
+        <div class="slot-label">Ban</div>
+        <div class="slots bans" id="banRed"></div>
+      </div>
+      <div class="slot-group">
+        <div class="slot-label">Pick</div>
+        <div class="slots" id="pickRed"></div>
+      </div>
+    </section>
+  </div>
+
+  <section class="plan" id="planCard">
+    <div class="plan-head">
+      <h2>แผนของคอมพ์นี้</h2>
+      <p id="planSub"></p>
+    </div>
+    <div class="plan-grid">
+      <div class="pteam b" id="planBlue"></div>
+      <div class="pteam r" id="planRed"></div>
+    </div>
+    <div class="psteps" id="planSteps"></div>
+  </section>
+
+  <section class="recs">
       <div class="recs-head">
         <h2 id="recTitle">คำแนะนำ</h2>
         <p id="recSub"></p>
@@ -757,22 +844,6 @@ input.search:focus { outline: none; border-color: var(--amber); }
 
       <div class="why" id="why"></div>
     </section>
-
-    <section class="side red" id="sideRed">
-      <div class="side-head">
-        <span class="tag">Red</span>
-        <input id="nameRed" value="TEAM RED" aria-label="ชื่อทีมฝั่งแดง">
-      </div>
-      <div class="slot-group">
-        <div class="slot-label">Ban</div>
-        <div class="slots bans" id="banRed"></div>
-      </div>
-      <div class="slot-group">
-        <div class="slot-label">Pick</div>
-        <div class="slots" id="pickRed"></div>
-      </div>
-    </section>
-  </div>
 
   <div class="series">
     <span class="lab">Series</span>
@@ -826,15 +897,7 @@ input.search:focus { outline: none; border-color: var(--amber); }
     </figure>
   </section>
 
-  <section class="pool">
-    <div class="pool-head">
-      <h2>Hero Pool</h2>
-      <div class="filters" id="filters"></div>
-      <input class="search" id="search" placeholder="ค้นหาชื่อฮีโร่…" aria-label="ค้นหาฮีโร่">
-      <span class="count" id="poolCount"></span>
-    </div>
-    <div class="grid" id="grid"></div>
-  </section>
+
 
   </div><!-- /viewDraft -->
 
@@ -1264,6 +1327,7 @@ function render() {
   renderPool();
   renderSeries();
   renderHistory();
+  renderPlan();
   // แผนมาโครกับถาดหมากขึ้นกับตัวที่ดราฟต์ ต้องอัปเดตตาม
   if (S.view === "macro") renderMacro();
   if (S.view === "map" && D.minimap) renderBoard();
@@ -1520,6 +1584,173 @@ function renderRoles() {
   el("roleNote").innerHTML = msg +
     `<br><span style="opacity:.85">เลนของแต่ละตัวมาจากข้อมูลแข่งจริง ` +
     `ส่วนลำดับที่ควรเปิดมาจากคลิปสอน ดูที่แท็บมาโคร</span>`;
+}
+
+// ── แผนของคอมพ์ที่ดราฟต์มา ────────────────────────────────────────────
+// ตอบคำถาม "ตานี้คอมพ์นี้เล่นยังไง" โดยประกอบจากสิ่งที่วัดได้แล้วทั้งนั้น
+//   จังหวะของทีม     จาก tempo ที่วัดจากความยาวเกมที่แต่ละตัวชนะเทียบกับที่แพ้
+//   เลนที่เปิดไปแล้ว  จาก lane_usage ของแมตช์จริง
+//   คู่ที่ต้องเล่นด้วยกัน  จากตาราง synergy
+//   ตัวที่ต้องระวัง   จากตาราง matchup เทียบกับตัวที่อีกฝั่งเปิดมา
+//   ลำดับสิ่งที่ต้องทำ  จากคลังมาโคร knowledge/macro/
+// ไม่มีข้อไหนที่ระบบแต่งขึ้นเอง ถ้าไม่มีข้อมูลจะบอกว่าไม่มี
+function compTempo(team) {
+  const picks = of(team, "PICK");
+  const vals = picks.map(id => {
+    const h = HERO.get(id);
+    return h && h.tempo != null ? h.tempo : null;
+  }).filter(v => v != null);
+  if (!vals.length) return null;
+  return {avg: vals.reduce((a, b) => a + b, 0) / vals.length,
+          used: vals.length, total: picks.length};
+}
+
+function compPairs(team) {
+  const picks = of(team, "PICK");
+  const out = [];
+  for (let i = 0; i < picks.length; i++)
+    for (let j = i + 1; j < picks.length; j++) {
+      const m = SY.get(syKey(picks[i], picks[j]));
+      if (!m || m.g < MINPAIR) continue;
+      out.push({a: picks[i], b: picks[j], g: m.g, w: m.w, sc: cscore(m.g, m.w)});
+    }
+  out.sort((x, y) => y.sc - x.sc);
+  return out;
+}
+
+// ตัวของอีกฝั่งที่กดคอมพ์เราหนักที่สุด — ดูจากคู่ที่แย่ที่สุดของเราแต่ละคู่
+function compThreats(team) {
+  const mine = of(team, "PICK"), theirs = of(other(team), "PICK");
+  const out = [];
+  for (const e of theirs) {
+    let worst = null;
+    for (const m of mine) {
+      const mu = MU.get(e + "|" + m);      // e ได้เปรียบ m แค่ไหน
+      if (!mu || mu.g < MINPAIR) continue;
+      const sc = cscore(mu.g, mu.w);
+      if (!worst || sc > worst.sc) worst = {victim: m, sc, g: mu.g, w: mu.w};
+    }
+    if (worst && worst.sc > 0.5) out.push({enemy: e, ...worst});
+  }
+  out.sort((a, b) => b.sc - a.sc);
+  return out;
+}
+
+function laneLine(team) {
+  const picks = of(team, "PICK");
+  if (!picks.length) return "ยังไม่ได้เลือกตัว";
+  return picks.map(id => {
+    const h = HERO.get(id), ml = mainLaneOf(id);
+    const flex = ml && ml.share < 0.7;
+    return `<span class="ptag"><span class="pic" ${picStyle(id)}></span>${
+      escape(h ? h.name : id)}<em>${ml ? (LANE_TH[ml.lane] || ml.lane) : "?"}${
+      flex ? " เฟลก" : ""}</em></span>`;
+  }).join("");
+}
+
+function winCondition(tempo, team) {
+  if (!tempo) return "ยังไม่ได้เลือกตัว จึงยังบอกจังหวะของทีมไม่ได้";
+  const a = tempo.avg;
+  if (a <= -0.12)
+    return `<b>คอมพ์สายต้นเกม</b> ต้องเปลี่ยนความได้เปรียบเป็นของให้ทันภายในนาทีที่ 8 ` +
+           `กดดันตั้งแต่ 4:00 ที่ป้องกันป่าหาย ถ้าปล่อยให้ยืดไปถึง Battle จะเสียเปรียบ`;
+  if (a >= 0.12)
+    return `<b>คอมพ์สายท้ายเกม</b> ยอมเสียพื้นที่ได้แต่ห้ามเสียคนฟรี ` +
+           `เป้าหมายคือพาเกมไปถึง 15:00 ที่ God Slayer เกิด แล้วค่อยหาปะทะ`;
+  return `<b>คอมพ์กลาง ๆ</b> ไม่ได้ถูกบังคับให้รีบจบหรือยืดเกม ` +
+         `ให้ดูจังหวะของอีกฝั่งแล้วเล่นสวนทางกับเขา`;
+}
+
+function renderPlanTeam(team) {
+  const box = el(team === "blue" ? "planBlue" : "planRed");
+  const tempo = compTempo(team);
+  const col = team === "blue" ? "var(--blue)" : "var(--red)";
+  const pct = tempo ? 50 + tempo.avg * 50 : 50;
+  const bar = tempo
+    ? `<div class="pbar"><i style="background:${col};${tempo.avg < 0
+        ? `right:50%;width:${(50 - pct).toFixed(1)}%`
+        : `left:50%;width:${(pct - 50).toFixed(1)}%`}"></i><u></u></div>
+       <div style="font-family:var(--fx-mono);font-size:10px;color:var(--text-faint)">
+         ซ้าย = ต้องรีบจบ · ขวา = ยิ่งยืดยิ่งดี · ${tempo.avg > 0 ? "+" : ""}${
+         tempo.avg.toFixed(3)} จาก ${tempo.used}/${tempo.total} ตัวที่มีข้อมูลพอ</div>`
+    : "";
+
+  const pairs = compPairs(team);
+  const good = pairs.filter(x => x.sc > 0.8).slice(0, 3);
+  const bad = pairs.filter(x => x.sc < -0.8).slice(-2).reverse();
+  const pairTag = (x, cls) =>
+    `<span class="ptag ${cls}"><span class="pic" ${picStyle(x.a)}></span>` +
+    `<span class="pic" ${picStyle(x.b)}></span>${escape(HERO.get(x.a).name)}+${
+      escape(HERO.get(x.b).name)}<em>${x.sc > 0 ? "+" : ""}${x.sc.toFixed(1)} n=${x.g}</em></span>`;
+
+  const threats = compThreats(team).slice(0, 3);
+
+  box.innerHTML = `<h3>${escape(teamName(team))}</h3>
+    <p class="pwin">${winCondition(tempo, team)}</p>
+    ${bar}
+    <div class="prow"><b>เลน</b><span>${laneLine(team)}</span></div>
+    <div class="prow"><b>เล่นคู่</b><span>${
+      good.length ? good.map(x => pairTag(x, "good")).join("")
+                  : '<span style="color:var(--text-faint)">ยังไม่มีคู่ที่ข้อมูลถึงเกณฑ์</span>'}${
+      bad.length ? `<br><span style="font-size:10.5px;color:var(--text-faint)">ระวังคู่นี้</span> ` +
+        bad.map(x => pairTag(x, "bad")).join("") : ""}</span></div>
+    <div class="prow"><b>ระวัง</b><span>${
+      threats.length ? threats.map(t =>
+        `<span class="ptag bad"><span class="pic" ${picStyle(t.enemy)}></span>${
+          escape(HERO.get(t.enemy).name)}<em>กด ${escape(HERO.get(t.victim).name)} +${
+          t.sc.toFixed(1)} n=${t.g}</em></span>`).join("")
+        : '<span style="color:var(--text-faint)">ยังไม่มีคู่ที่ข้อมูลถึงเกณฑ์</span>'}</span></div>`;
+}
+
+const PLAN_PHASES = ["OPENING", "EARLY", "MID", "LATE", "BATTLE"];
+
+function renderPlanSteps() {
+  const byTeam = {blue: new Set(of("blue", "PICK")), red: new Set(of("red", "PICK"))};
+  // rule ที่ผูกกับฮีโร่ใช้ได้เฉพาะเมื่อฮีโร่ตัวนั้นถูกดราฟต์มาจริง
+  // และต้องรู้ด้วยว่าเป็นของทีมไหน ไม่งั้นเอาแผนของอีกฝั่งมาบอกเรา
+  const ownerOf = r => {
+    if (!r.heroes.length) return null;
+    for (const t of ["blue", "red"])
+      if (r.heroes.some(h => byTeam[t].has(h))) return t;
+    return undefined;   // ผูกกับฮีโร่ แต่ไม่มีใครดราฟต์มา -> ห้ามใช้
+  };
+  const steps = [];
+  for (const ph of PLAN_PHASES) {
+    const inPhase = RULES.filter(r => r.phase === ph);
+    if (!inPhase.length) continue;
+    const bound = inPhase.filter(r => typeof ownerOf(r) === "string")
+                         .sort((a, b) => b.priority - a.priority);
+    // ถ้าไม่มีข้อที่ผูกกับตัวที่ดราฟต์มา ให้ถอยไปใช้ข้อ "ทั่วไป" ที่ไม่ผูกฮีโร่
+    // ห้ามถอยไปหยิบข้อที่ผูกกับฮีโร่ตัวอื่น ไม่งั้นจะขึ้นแผนของตัวที่ไม่ได้เล่น
+    const general = inPhase.filter(r => !r.heroes.length)
+                           .sort((a, b) => b.priority - a.priority);
+    const pick = bound[0] || general[0];
+    if (!pick) continue;
+    steps.push({ph, r: pick, owner: ownerOf(pick)});
+  }
+  el("planSteps").innerHTML =
+    `<h3>ลำดับสิ่งที่ต้องทำ</h3>` +
+    steps.map(({ph, r, owner}) => `<div class="pstep">
+      <b>${escape((PHASES_TH[ph] || ph).split(" ")[0])}</b>
+      <span>${escape(r.summary || r.name)}
+        <br><span class="from">${owner
+          ? `เฉพาะ ${escape(teamName(owner))} เพราะดราฟต์ ${
+              escape(r.heroes.map(h => (HERO.get(h) || {}).name || h).join(", "))} · `
+          : ""}${escape(r.name)} — ${escape(r.src_label)}</span></span>
+    </div>`).join("") +
+    `<p style="font-size:11px;color:var(--text-faint);margin:9px 0 0;line-height:1.6">
+      ข้อที่ผูกกับตัวที่ดราฟต์มาจะถูกหยิบขึ้นมาก่อน ที่เหลือใช้ข้อที่สำคัญที่สุดของช่วงนั้น
+      ดูทั้งหมดได้ที่แท็บมาโคร</p>`;
+}
+
+function renderPlan() {
+  const nB = of("blue", "PICK").length, nR = of("red", "PICK").length;
+  el("planSub").textContent = nB + nR === 0
+    ? "ยังไม่ได้ดราฟต์ — แผนจะขึ้นเองเมื่อเริ่มเลือกตัว"
+    : `อัปเดตตามตัวที่เลือกไปแล้ว ${nB} ต่อ ${nR} ตัว`;
+  renderPlanTeam("blue");
+  renderPlanTeam("red");
+  renderPlanSteps();
 }
 
 function renderRecs() {
