@@ -4,9 +4,10 @@
 # และเราตรวจสอบกับข้อมูลของตัวเองไม่ได้ เพราะยังไม่มี vision pipeline
 # ที่อ่านตำแหน่งจากคลิปแข่งได้ ให้ถือเป็น "หลักการตั้งต้น" ไม่ใช่ข้อสรุป
 #
-# สิ่งที่ผู้ใช้บอกว่ามีอยู่ (TikTok qsadd, YouTube analystseak, เพจทางการ)
-# ยังไม่ได้เอาเข้ามา เพราะเป็นคลิปวิดีโอที่ระบบอ่านเนื้อหาไม่ได้
-# ถ้าถอดความมาเป็นข้อความได้ ให้เพิ่มเป็น rule ใหม่ที่ source.type: coach_input
+# อัปเดต: ความรู้จากคลิปสอนถูกถอดเป็นข้อความและเข้ามาแล้ว อยู่ในไฟล์
+# knowledge/macro/hero/*.yaml, draft/*.yaml, jungle/*.yaml, wave/lane_phase.yaml
+# ทั้งหมดเป็น source.type: coach_input ซึ่งหนักแน่นกว่า literature ในไฟล์นี้
+# เพราะระบุตัวคนพูดและยกคำพูดต้นทางมาได้
 
 rules:
   - rule_id: WAVE_PUSH_BEFORE_ROTATE
@@ -69,3 +70,45 @@ rules:
       ref: ID2U — RoV hero by role 2026 (มิ.ย. 2026)
       url: https://id2u.co/blog/rov-hero-by-role-guide-2026
       detail: '"Check minimap every 10 seconds" · "ไม่ ping missing — โดน gank ซ้ำๆ"'
+
+  - rule_id: WAVE_SLOW_PUSH
+    name: สโลว์พุช — ฆ่าครีปให้มากกว่าเวฟตัวเองมี
+    phase: MID
+    priority: 64
+    patch: "1.63"
+    confidence: MEDIUM
+    conditions:
+      - cue: อยากสะสมเวฟใหญ่ไว้กดดันก่อนจะขยับไปทำอย่างอื่น
+        fact: want_big_wave
+        op: eq
+        value: true
+    action:
+      summary: >-
+        สโลว์พุชคือฆ่าครีปฝั่งตรงข้ามให้มากกว่าจำนวนที่เวฟเราเสียไป
+        เวฟเราจะค่อย ๆ สะสมใหญ่ขึ้นแล้วไหลไปทางเขาเอง
+        เคล็ดคืออย่าฆ่าครีปตัวใหญ่ระหว่างสะสม ไม่งั้นเวฟจะไม่กอง
+        พอเวฟกองแล้วค่อยขยับ อีกฝั่งจะต้องเลือกว่าจะเสียป้อมหรือมาเคลียร์แบบ 4 ต่อ 5
+    source:
+      type: literature
+      ref: GamingonPhone — How to play the Map in Arena of Valor (13 พ.ย. 2019)
+      url: https://gamingonphone.com/guides/how-to-play-the-map-in-arena-of-valor/
+      detail: >-
+        "Slow Push: kill more minions than your own wave contains" ·
+        "Avoid killing siege minions during slow pushes to allow minion stacking" ·
+        "Leave lanes with waves pushing enemy-ward before rotating to create 4v5"
+    data_check:
+      verdict: mixed
+      n: 861
+      detail: >-
+        เทคนิคสโลว์พุชเป็นกลไกของเวฟ ไม่ขึ้นกับแพตช์ จึงยังใช้ได้
+        แต่ **แหล่งเดียวกันนี้ให้เวลา objective ผิดหมด** — อ้างว่า Abyssal Dragon
+        เกิด 2:00 แล้วกลายเป็น Enraged ที่ 10:00 เกิดใหม่ทุก 5 นาที
+        และ Dark Slayer เกิด 8:00 ทุก 5 นาที
+        ของจริงจากหน้าข้อมูลสมรภูมิในเกมคือทั้งคู่เกิด 2:00 คูลดาวน์ 3:00
+        และไม่มี Enraged Dragon ในเกมปัจจุบันเลย
+        บทความลงปี 2019 เก่ากว่าแพตช์ปัจจุบันหลายปี
+        ให้หยิบเฉพาะกลไกที่ไม่ขึ้นกับแพตช์ ห้ามหยิบตัวเลขเวลาจากแหล่งนี้
+    notes: |
+      ตัวอย่างชัดของสาเหตุที่ต้องกรอง — แหล่งเดียวกันมีทั้งของที่ใช้ได้และของที่ผิด
+      เกณฑ์ที่ใช้: กลไกที่ไม่ขึ้นกับแพตช์ (การจัดการเวฟ การวางตำแหน่ง) อายุยืน
+      ส่วนตัวเลข (เวลาเกิด คูลดาวน์ ดาเมจ) เน่าเร็ว ต้องยืนยันจากตัวเกมเท่านั้น
