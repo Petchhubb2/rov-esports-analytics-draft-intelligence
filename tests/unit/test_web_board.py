@@ -185,16 +185,12 @@ def test_js_composition_constants_match_python(tpl):
 
     m = re.search(r"const CC_SCALE = (\d+);", tpl)
     assert m, "หา CC_SCALE ใน template ไม่เจอ"
-    # ค่าเดียวกันนี้อยู่ในคำเรียก _saturating_sum(cc, 180.0) ของ composition.py
-    py_cc = re.search(
-        r"_saturating_sum\(cc, ([\d.]+)\)",
-        Path(comp.__file__).read_text(encoding="utf-8"),
-    )
-    assert py_cc, "หา _saturating_sum(cc, ...) ใน composition.py ไม่เจอ"
-    assert float(m.group(1)) == float(py_cc.group(1))
+    # อ่านจากตัวแปรจริง ไม่ใช่ regex จับตัวเลขในโค้ด
+    # เพราะ Q3 ย้ายเลขไปเป็นค่าคงที่แล้ว การอ่านค่าตรง ๆ ทนการย้ายได้ดีกว่า
+    assert float(m.group(1)) == comp.CC_SCALE
 
     mw = re.search(r"const WC_MIN_W = ([\d.]+);", tpl)
-    assert mw and float(mw.group(1)) == 0.45
+    assert mw and float(mw.group(1)) == comp.WAVECLEAR_MIN_W
 
     mg = re.search(r"const GAP_AT = (\d+), STRONG_AT = (\d+);", tpl)
     assert mg, "หา GAP_AT/STRONG_AT ไม่เจอ"

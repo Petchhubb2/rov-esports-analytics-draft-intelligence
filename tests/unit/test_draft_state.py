@@ -22,6 +22,22 @@ def new_state(fmt: DraftFormat, **kw) -> DraftState:
     return DraftState(fmt=fmt, pool=set(POOL), **kw)
 
 
+def skip_bans(st: DraftState, keep: str) -> None:
+    """ข้ามเฟสแบนไปให้ถึงเฟส pick โดยไม่แบนตัวที่กำลังทดสอบ
+
+    เดิมใช้ `st.legal_moves().pop()` ซึ่งหยิบสมาชิก**ตามลำดับ hash ของ set**
+    ซึ่งเปลี่ยนทุก process ตาม PYTHONHASHSEED บางรอบมันเผลอแบนตัวที่
+    เทสต์กำลังจะทดสอบพอดี แล้วเทสต์ fail แบบสุ่ม ๆ ประมาณ 1 ใน 6 รอบ
+
+    พบตอน PHASE B — ไม่ได้เกิดจากการแก้ engine แต่มีมาก่อนหน้านั้น
+    เทสต์ที่ผ่านบ้างไม่ผ่าบ้าง แย่กว่าไม่มีเทสต์ เพราะมันสอนให้คนเลิกเชื่อผลเทสต์
+    """
+    while st.current is not None and st.current.action is DraftAction.BAN:
+        choices = sorted(st.legal_moves() - {keep})
+        assert choices, "ไม่เหลือตัวให้แบน"
+        st.apply(choices[0])
+
+
 # ------------------------------------------------------------------ format
 
 
@@ -135,9 +151,7 @@ def test_picks_and_bans_are_separated(fmt):
 def test_own_previous_picks_are_locked(fmt):
     """กติกาที่ยืนยันแล้ว: ห้ามใช้ตัวที่ทีมตัวเองเคยเลือกในซีรีส์"""
     st = new_state(fmt, series_used={Team.BLUE: {"h5"}})
-    # ข้ามเฟสแบนไปให้ถึงตา pick แรกของ blue
-    while st.current.action is DraftAction.BAN:
-        st.apply(f"z{st.turn_index}" if f"z{st.turn_index}" in st.pool else st.legal_moves().pop())
+    skip_bans(st, keep="h5")
     assert st.current.team_enum is Team.BLUE
     assert "h5" not in st.legal_moves()
     with pytest.raises(IllegalMove, match="Global Ban-Pick"):
@@ -147,8 +161,7 @@ def test_own_previous_picks_are_locked(fmt):
 def test_opponent_previous_picks_are_still_allowed(fmt):
     """soft fearless — หยิบตัวที่ฝ่ายตรงข้ามเคยใช้ได้"""
     st = new_state(fmt, series_used={Team.RED: {"h5"}})
-    while st.current.action is DraftAction.BAN:
-        st.apply(st.legal_moves().pop())
+    skip_bans(st, keep="h5")
     assert st.current.team_enum is Team.BLUE
     assert "h5" in st.legal_moves()
 
@@ -164,8 +177,7 @@ def test_bans_are_not_restricted_by_series(fmt):
 def test_final_game_resets_the_rule(fmt):
     """Bo7 เกมที่ 7 กลับเป็น Normal Ban-Pick"""
     st = new_state(fmt, series_used={Team.BLUE: {"h5"}}, is_final_game=True)
-    while st.current.action is DraftAction.BAN:
-        st.apply(st.legal_moves().pop())
+    skip_bans(st, keep="h5")
     assert "h5" in st.legal_moves()
 
 
@@ -173,8 +185,7 @@ def test_both_teams_scope(fmt):
     f2 = fmt.model_copy(deep=True)
     f2.global_ban_pick.scope = "both_teams"
     st = DraftState(fmt=f2, pool=set(POOL), series_used={Team.RED: {"h5"}})
-    while st.current.action is DraftAction.BAN:
-        st.apply(st.legal_moves().pop())
+    skip_bans(st, keep="h5")
     assert "h5" not in st.legal_moves()
 
 

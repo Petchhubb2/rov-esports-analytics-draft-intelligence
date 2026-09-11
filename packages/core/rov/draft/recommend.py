@@ -411,6 +411,8 @@ def _lane_counter_against(
 _FIT_DIMS = (
     "frontline", "engage", "disengage", "peel",
     "objective", "crowd_control", "waveclear", "split_push",
+    # Q3 — สี่มิติที่เพิ่งเข้ามา ทุกตัวเป็น "ยิ่งสูงยิ่งดี" เหมือนกัน
+    "soft_cc", "poke", "sustain", "mobility",
 )
 
 # ส่วนต่างที่ถือว่ามีนัย ต่ำกว่านี้คือความผันผวนปกติ ไม่ต้องรายงาน

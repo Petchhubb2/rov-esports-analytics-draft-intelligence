@@ -24,6 +24,19 @@ from rov.draft.heroes import Hero
 
 TEAM_SIZE = 5
 
+# ─────────────────────────────────────────────────────────────────────
+# ค่าคงที่ของฟังก์ชันรวม — ตั้งชื่อไว้เพื่อให้เทสต์ parity อ้างได้ ไม่ใช่เลขลอย
+#
+# ค่า scale ของ saturating sum ต่างกันตามความแรงต่อหน่วย
+# ยิ่ง scale สูง ยิ่งต้องสะสมมากกว่าจะอิ่มตัว
+CC_SCALE = 180.0        # hard CC — สองตัวที่ 90 ก็ใกล้อิ่มแล้ว
+SOFT_CC_SCALE = 220.0   # soft CC อ่อนกว่าต่อหน่วย ต้องสะสมมากกว่าจึงมีผลเท่ากัน
+POKE_SCALE = 200.0      # poke คนเดียวตอดได้ แต่คอมพ์ตอดต้องการสองสามคน
+
+WAVECLEAR_MIN_W = 0.45  # ตั้งรับ — เลนที่เคลียร์ไม่ทันคือเลนที่แตก
+MOBILITY_MIN_W = 0.35   # โรเทต — ทีมเดินพร้อมกันเร็วเท่าคนช้าที่สุด
+#                         แต่ถ่วงน้อยกว่า waveclear เพราะทิ้งคนช้าไว้ข้างหลังยังพอได้
+
 
 class IncompleteDataError(ValueError):
     """attribute ไม่ครบ — ระบบปฏิเสธการให้คะแนนแทนที่จะเดา"""
@@ -133,6 +146,11 @@ _PARTIAL_DIMS: dict[str, tuple[str, str]] = {
     "crowd_control": ("cc_hard", "sat"),
     "waveclear": ("waveclear", "weak_mean"),
     "split_push": ("splitpush", "top80"),
+    # Q3 — สี่ช่องที่กรอกไว้ครบตั้งแต่ต้นแต่ไม่เคยมีใครอ่าน
+    "soft_cc": ("cc_soft", "sat_soft"),
+    "poke": ("poke", "sat_poke"),
+    "sustain": ("sustain", "sat"),
+    "mobility": ("mobility", "slow_mean"),
 }
 
 
@@ -164,9 +182,15 @@ def partial_dimensions(heroes: list[Hero]) -> dict[str, float] | None:
         elif how == "top80":
             out[name] = _top_weighted(vals, (0.8, 0.2))
         elif how == "sat":
-            out[name] = _saturating_sum(vals, 180.0)
+            out[name] = _saturating_sum(vals, CC_SCALE)
+        elif how == "sat_soft":
+            out[name] = _saturating_sum(vals, SOFT_CC_SCALE)
+        elif how == "sat_poke":
+            out[name] = _saturating_sum(vals, POKE_SCALE)
+        elif how == "slow_mean":
+            out[name] = MOBILITY_MIN_W * _weakest(vals) + (1 - MOBILITY_MIN_W) * _mean(vals)
         else:  # weak_mean
-            out[name] = 0.45 * _weakest(vals) + 0.55 * _mean(vals)
+            out[name] = WAVECLEAR_MIN_W * _weakest(vals) + (1 - WAVECLEAR_MIN_W) * _mean(vals)
 
     out["role_balance"] = _role_balance(heroes).value if heroes else 0.0
     out["damage_mix"] = _damage_mix(heroes).value if heroes else 0.0
@@ -224,7 +248,7 @@ def analyze(heroes: list[Hero]) -> CompositionReport:
     # 6 Crowd control — สะสมกันได้ แต่อิ่มตัว
     cc = [h.u("cc_hard") for h in heroes]
     d["crowd_control"] = Dimension(
-        "crowd_control", "Hard CC", _saturating_sum(cc, 180.0),
+        "crowd_control", "Hard CC", _saturating_sum(cc, CC_SCALE),
         f"รวม {sum(cc)} จาก {sum(1 for c in cc if c >= 50)} ตัวที่มี CC เด่น",
     )
 
@@ -243,7 +267,8 @@ def analyze(heroes: list[Hero]) -> CompositionReport:
     # 9 Waveclear — ตั้งรับได้ไหม จุดอ่อนที่สุดเป็นตัวกำหนด
     wc = [h.u("waveclear") for h in heroes]
     d["waveclear"] = Dimension(
-        "waveclear", "Waveclear", 0.45 * _weakest(wc) + 0.55 * _mean(wc),
+        "waveclear", "Waveclear",
+        WAVECLEAR_MIN_W * _weakest(wc) + (1 - WAVECLEAR_MIN_W) * _mean(wc),
         f"ต่ำสุด {min(wc)} เฉลี่ย {_mean(wc):.0f}",
     )
 
@@ -252,6 +277,40 @@ def analyze(heroes: list[Hero]) -> CompositionReport:
         "split_push", "Split Push",
         _top_weighted([h.u("splitpush") for h in heroes], (0.8, 0.2)),
         _who_leads(heroes, "splitpush"),
+    )
+
+    # ── Q3 · สี่ช่องที่กรอกไว้ครบตั้งแต่ต้นแต่ไม่เคยมีใครอ่าน ──────────
+    # การเลือกฟังก์ชันรวมของแต่ละตัวมีเหตุผลคนละแบบ ไม่ได้ลอกกันมา
+
+    # 11 Soft CC — สะสมได้เหมือน hard CC แต่อ่อนกว่าต่อหน่วย
+    sc = [h.u("cc_soft") for h in heroes]
+    d["soft_cc"] = Dimension(
+        "soft_cc", "Soft CC", _saturating_sum(sc, SOFT_CC_SCALE),
+        f"รวม {sum(sc)} — สโลว์/ไซเลนซ์ ใช้ต่อจาก hard CC ไม่ใช่แทนกัน",
+    )
+
+    # 12 Poke — คอมพ์ตอดต้องมีหลายคน คนเดียวบีบพื้นที่ไม่ได้
+    pk = [h.u("poke") for h in heroes]
+    d["poke"] = Dimension(
+        "poke", "Poke", _saturating_sum(pk, POKE_SCALE),
+        f"รวม {sum(pk)} จาก {sum(1 for v in pk if v >= 60)} ตัวที่ตอดเก่ง",
+    )
+
+    # 13 Sustain — heal/shield สะสมกันได้ แต่ผลตอบแทนลดลงเหมือน CC
+    su = [h.u("sustain") for h in heroes]
+    d["sustain"] = Dimension(
+        "sustain", "Sustain", _saturating_sum(su, CC_SCALE),
+        _who_leads(heroes, "sustain"),
+    )
+
+    # 14 Mobility — ทีมโรเทตพร้อมกันได้เร็วเท่าคนช้าที่สุด
+    #    ใช้ min ถ่วงเหมือน waveclear แต่เบากว่า เพราะทิ้งคนช้าไว้ยังพอได้
+    #    ต่างจาก split_push ที่ถามว่า "คนเร็วที่สุดไปได้ไกลแค่ไหน"
+    mb = [h.u("mobility") for h in heroes]
+    d["mobility"] = Dimension(
+        "mobility", "Mobility",
+        MOBILITY_MIN_W * _weakest(mb) + (1 - MOBILITY_MIN_W) * _mean(mb),
+        f"ช้าสุด {min(mb)} เฉลี่ย {_mean(mb):.0f}",
     )
 
     rep.power_curve = {
