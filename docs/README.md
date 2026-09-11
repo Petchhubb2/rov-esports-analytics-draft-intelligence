@@ -35,9 +35,12 @@
 | 24 | [ban-intelligence-spec.md](24-ban-intelligence-spec.md) | **ban ≠ pick** · `BanPriority ≈ P × Harm` · ประกาศค่าก่อนวัด · กติกา holdout |
 | 25 | [ban-benchmark.md](25-ban-benchmark.md) | **ผลหลังแก้ ban** · ban top-1 0.023 → 0.268 · pick identical · ความไม่แน่นอนที่เหลือ |
 | 26 | [team-comp-page.md](26-team-comp-page.md) | **ทีมเล่นทรงไหน** · ทีมไม่เล่นชุดเดิมซ้ำ · ทรงจาก hero_class 92.9% · ทำไมไม่ใช้ Composition Engine |
+| 27 | [counter-knowledge-audit.md](27-counter-knowledge-audit.md) | **counter ตอนนี้มาจากไหน** · ไม่มี mechanism ไม่มี condition · ข้อมูลเราค้านความรู้ 8/15 |
+| 28 | [counter-knowledge-spec.md](28-counter-knowledge-spec.md) | **แบบของ CounterEvidence** · threat→mechanism→capability · pick ≠ ban · เขียนก่อนลงมือ |
+| 29 | [counter-knowledge-report.md](29-counter-knowledge-report.md) | **ผล M1** · coverage 6.6% ของตาจริง · UNKNOWN 79.8% · ยังไม่เปิดน้ำหนักอะไร |
 
-> ลำดับความน่าเชื่อถือเมื่อเอกสารขัดแย้งกัน: **09/21/22/25/26 > 10 > 17–19, 23 > 08 > 01–07, 20, 24**
-> (09/21/22/25/26 คือผลจากการรันจริง · 17–19/23 คือการตรวจโค้ด · 20/24 คือแผนที่ยังไม่ได้ทำ)
+> ลำดับความน่าเชื่อถือเมื่อเอกสารขัดแย้งกัน: **09/21/22/25/26/29 > 10 > 17–19, 23, 27 > 08 > 01–07, 20, 24, 28**
+> (เลขกลุ่มแรกคือผลจากการรันจริง · กลุ่มสองคือการตรวจโค้ด · กลุ่มสามคือแผนที่ยังไม่ได้ทำ)
 >
 > ⚠️ [docs/22 §4](22-benchmark-foundation.md) ระบุสาเหตุของปัญหาตาแบนไว้ผิด — ใช้ [docs/23](23-ban-intelligence-audit.md) แทน
 > 01–07 เขียนจากแผนแนวคิดแรก · 08 ข้อเท็จจริงจากการค้น · 09 ผลจากการรันจริง

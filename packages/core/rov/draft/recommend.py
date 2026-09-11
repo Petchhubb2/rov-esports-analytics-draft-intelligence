@@ -21,7 +21,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from rov.domain.enums import DraftAction
+from rov.domain.enums import DraftAction, LaneRole
 from rov.draft.meta import PooledStats
 from rov.draft.state import DraftState
 
@@ -58,6 +58,7 @@ EXTRA_WEIGHTS: dict[str, float] = {
     "lane_counter": 0.0,  # Q2 — matchup เฉพาะคู่ที่ประกบกันในเลนเดียวกัน
     "synergy_adj": 0.0,   # Q5 — synergy ที่หัก "ทีมเก่งเล่นคู่นี้บ่อย" ออกแล้ว
     "trait_counter": 0.0, # Q4 — counter เชิงคุณภาพ (ยังไม่มีข้อมูล trait)
+    "counter_evidence": 0.0,  # M1 — counter ที่มีกลไก เงื่อนไข และที่มา
 }
 
 # ฮีโร่ที่ตำแหน่งเต็มแล้วยังได้คะแนนเท่านี้ของเดิม
@@ -216,6 +217,10 @@ class Suggestion:
     # เก็บไว้เพื่อให้ผู้ใช้และเทสต์ตรวจได้ว่าคะแนนที่เห็นมาจากโจทย์ไหน
     objective: str = "pick"
 
+    # M1 — หลักฐาน counter ที่เข้ากับสถานการณ์นี้ (rov.draft.counterknowledge.Match)
+    # เก็บเป็น record ไม่ใช่คะแนน เพื่อให้อธิบายได้ว่า counter เพราะอะไร
+    counter_matches: list = field(default_factory=list)
+
     @property
     def reliable(self) -> bool:
         return self.games >= 15
@@ -238,6 +243,7 @@ def recommend(
     hero_db: object | None = None,
     lane_matchups: dict | None = None,
     extra_weights: dict[str, float] | None = None,
+    counter_book: object | None = None,
 ) -> list[Suggestion]:
     """จัดอันดับฮีโร่ที่ควรเลือกหรือแบนในตาปัจจุบัน
 
@@ -251,6 +257,11 @@ def recommend(
     ส่ง lane_matchups (rov.draft.lanes.compute_lane_matchups) เข้ามาเพื่อเปิด
     component "lane_counter" — counter ที่นับเฉพาะคู่ที่ประกบกันในเลนเดียวกันจริง
     ต้องส่ง lane_usage มาด้วย ไม่งั้นไม่รู้ว่าใครประกบกับใคร
+
+    ส่ง counter_book (rov.draft.counterknowledge.CounterBook) เข้ามาเพื่อเปิด
+    component "counter_evidence" — counter ที่บอกกลไก เงื่อนไข ความเสี่ยง และที่มา
+    ไม่ส่งมา = ไม่มี component นั้น · ส่งมาแต่ไม่มีความรู้เรื่องคู่นี้ก็ไม่มีเหมือนกัน
+    เพราะ "ไม่รู้" ต้องไม่ถูกแปลงเป็นคะแนน 0 (docs/28 §2.3)
 
     extra_weights ทับ EXTRA_WEIGHTS ได้ ใช้ตอนทดสอบว่าเปิดน้ำหนักแล้วอันดับเปลี่ยนจริง
     ห้ามใช้เปลี่ยนน้ำหนักจริงจนกว่า benchmark ใน PHASE I จะบอกว่าควรเท่าไร
@@ -364,6 +375,23 @@ def recommend(
                     _scale(t_raw, -2.0, 2.0), t_detail,
                 )
 
+        # M1 — counter ที่มีกลไกและที่มา
+        #
+        # ไม่ยุบเป็นเลขเดียวตั้งแต่ต้น — Component เก็บ raw ไว้ แต่ตัว match
+        # ทั้งหมดถูกแนบไปกับ Suggestion เพื่อให้ report() อธิบายได้ครบ
+        # ตาม docs/28 §8 (กลไก · เงื่อนไข · ความเสี่ยง · ที่มา · ข้อมูลเรา)
+        if counter_book is not None:
+            ce = _counter_evidence_component(
+                counter_book, hid, theirs, ours, is_ban, state, lu.get(hid)
+            )
+            if ce is not None:
+                ce_raw, ce_detail, matches = ce
+                s.components["counter_evidence"] = Component(
+                    "counter_evidence", "Counter evidence", ce_raw,
+                    _scale(ce_raw, 0.0, 3.0), ce_detail,
+                )
+                s.counter_matches = matches
+
         # Q1 — composition ดีขึ้นแค่ไหนถ้าได้ตัวนี้
         # มีเฉพาะเมื่อส่ง hero_db มา และ attribute ของทุกตัวครบ
         if comp_ctx is not None:
@@ -387,6 +415,78 @@ def recommend(
 
     out.sort(key=lambda x: x.total, reverse=True)
     return out[:limit]
+
+
+# ------------------------------------------------------- M1 · counter evidence
+
+
+# แปลงความมั่นใจเป็นน้ำหนักของหลักฐานหนึ่งชิ้น
+#
+# ⚠️ สามค่านี้ **ไม่ใช่** น้ำหนักที่มีผลต่ออันดับ — component ทั้งก้อนยังคูณ 0 อยู่
+# มันมีไว้เรียงลำดับหลักฐานภายในเท่านั้น การเปิดน้ำหนักจริงไม่ใช่งานของ M1
+_CONF_WEIGHT = {"HIGH": 1.0, "MEDIUM": 0.6, "LOW": 0.3}
+
+
+def _counter_evidence_component(
+    book,
+    hero_id: str,
+    theirs: list[str],
+    ours: list[str],
+    is_ban: bool,
+    state,
+    hero_lanes: dict[str, int] | None = None,
+):
+    """component ที่ตอบได้ว่า counter เพราะอะไร — ไม่ใช่แค่ว่า counter
+
+    คืน None เมื่อ **ไม่รู้** ซึ่งเป็นสถานะปกติของฮีโร่ 95 จาก 119 ตัว
+    ห้ามคืน 0.0 แทน เพราะ 0 แปลว่า "รู้แล้วว่าไม่ได้เปรียบ" ซึ่งคนละเรื่อง
+
+    **pick กับ ban มองคนละฝั่งของกระดาน** (docs/28 §6)
+
+        pick  ศัตรูเปิดอะไรมา แล้วตัวนี้แก้ได้ไหม      -> subject = ตัวที่ศัตรูเปิด
+        ban   ถ้าเขาได้ตัวนี้ เขาจะกดอะไรของเราได้      -> subject = ตัวที่เราเปิด
+
+    ตอนแบนเฟส 1 เรายังไม่ได้เปิดอะไรเลย ฝั่ง ban จึงว่างเปล่าเกือบทั้งหมด
+    ซึ่งเป็นผลลัพธ์ที่ถูกต้อง ไม่ใช่บั๊ก
+    """
+    from rov.draft.counterknowledge import CounterContext, find_matches, summarize
+
+    # เลนที่ฮีโร่นี้ลงบ่อยที่สุดจริงในข้อมูล — ใช้ตรวจเงื่อนไขของ lane counter
+    # ใช้ข้อมูลแข่งจริง ไม่ใช่ lane_roles จากวิกิ ตามที่ docs/08 §6 สรุปไว้
+    lane = None
+    if hero_lanes:
+        try:
+            lane = LaneRole(max(hero_lanes, key=lambda k: hero_lanes[k]))
+        except ValueError:
+            lane = None
+
+    # ban มองจากมุมศัตรู — `theirs`/`ours` ถูกสลับมาแล้วตอนต้น recommend()
+    # ที่นี่จึงถามว่า "ถ้าฝ่ายตรงข้ามของ subject ได้ตัวนี้ จะกดใครได้"
+    ctx = CounterContext(
+        enemies=list(theirs),
+        allies=list(ours),
+        phase=state.current.phase if state.current else 1,
+        objective="ban" if is_ban else "pick",
+        candidate_lane=lane,
+    )
+    matches = [m for m in find_matches(book, hero_id, ctx) if m.counts]
+    if not matches:
+        return None
+
+    summary = summarize(matches)
+    raw = sum(_CONF_WEIGHT[m.confidence.value] for m in matches)
+
+    parts = [f"{summary.direct} ตรงคู่"] if summary.direct else []
+    if summary.mechanism:
+        parts.append(f"{summary.mechanism} ผ่านกลไก")
+    if summary.condition_unchecked:
+        parts.append(f"{summary.condition_unchecked} เงื่อนไขยังตรวจให้ไม่ได้")
+    top = max(matches, key=lambda m: _CONF_WEIGHT[m.confidence.value])
+    detail = (
+        " · ".join(parts)
+        + f" · เด่นสุดเจอ {top.evidence.target} ({top.confidence.value})"
+    )
+    return raw, detail, matches
 
 
 # ---------------------------------------------------------------- Q2 · lane counter
@@ -748,6 +848,16 @@ def report(sugs: list[Suggestion], state: DraftState, top: int = 8) -> str:
             lines.append(f"    · {r}")
         for c in best.components.values():
             lines.append(f"    {c.label:<10} {c.scaled:>5.0f}  {c.detail}")
+        # M1 · STEP 5 — กางหลักฐาน counter ให้ครบทุกช่องที่ spec ขอ
+        # กลไก · เงื่อนไข · ความเสี่ยง · ที่มา · ความมั่นใจ · ข้อมูลเราว่าอย่างไร
+        if best.counter_matches:
+            from rov.draft.counterknowledge import explain
+
+            lines += ["", "  หลักฐาน counter"]
+            for m in best.counter_matches:
+                for row in explain(m, best.objective).splitlines():
+                    lines.append(f"    {row}")
+                lines.append("")
     lines += ["", "  * = เล่นน้อยกว่า 15 เกม ตัวเลขยังไม่นิ่ง",
               "  คำแนะนำนี้มาจากสถิติล้วน ยังไม่ได้คิดเรื่อง composition และผู้เล่น"]
     return "\n".join(lines)

@@ -1,0 +1,647 @@
+# Counter Knowledge — ถอดจาก external_knowledge/rov-claude-kit/knowledge/counter.md
+#
+# ทุก record ต้องมีบรรทัดใน counter.md รองรับ ห้ามเติมจากความรู้ทั่วไป
+# evidence_id อ้างกลับไปที่ CTR-00x ในไฟล์ต้นทางตรง ๆ
+#
+# data_check ทุกข้อคำนวณจากแมตช์จริง 861 เกมของเราเอง ไม่ใช่ความเห็น
+# วิธีคำนวณ: rov.draft.stats.counter_score(games, wins, prior=0.5)
+# ผลรวม: เห็นด้วย 2 · ไม่เห็นด้วย 6 · เห็นด้วยบางส่วน 2 · ข้อมูลไม่พอ 5
+#
+# ⚠️ ข้อที่ข้อมูลเราค้าน ถูกลด confidence เป็น MEDIUM ตาม validator
+# ไม่ได้ลบทิ้ง เพราะความรู้เชิงกลไกกับผลแพ้ชนะทั้งเกมตอบคนละคำถาม
+# (docs/27-counter-knowledge-audit.md §3)
+
+# ─────────────────────────────────────────────────────────────────────
+# ภัยที่ฮีโร่แต่ละตัวสร้าง — counter.md §6 Threat Tag System
+# ─────────────────────────────────────────────────────────────────────
+threats:
+  - hero: rouie
+    threats: [recall_warp]
+    detail: >-
+      วางวงวาร์ปพาเพื่อนกลับบ้านรีเซตเลือด แล้วกลับมาโถมป้อมสองทาง
+      ทีมที่เคลียร์ครีปไม่ทันจะโดนเติมไฟต์ด้วยหลอดเลือดเต็ม
+    source:
+      type: coach_input
+      ref: Rov เบสิคมาโครรูอี้ ฉบับเข้าใจง่ายๆ (เกมบุก-เกมรับ) — C.MiNJuuu
+      detail: counter.md CTR-001 / Composition Counter Case 2 [FACT 102, 104, 111]
+
+  - hero: ybneth
+    threats: [heavy_cc, tank_frontline]
+    detail: >-
+      ยืนค้ำไฟต์หน้าตรง ยึดพื้นที่ปากทางเข้า objective และเปิด CC
+      ให้แครี่ฝั่งตัวเองยิงฟรี
+    source:
+      type: coach_input
+      ref: มาเจาะพี่หมูกับปราสาทสายฟ้า — BAC vs BRU RPL winter 2026 leg 1
+      detail: counter.md CTR-003 / Composition Counter Case 1 [FACT 26, 177, 181]
+
+  - hero: skud
+    threats: [tank_frontline]
+    detail: ยืนค้ำไฟต์รับดาเมจชุดแรก ยึดพื้นที่ objective
+    source:
+      type: coach_input
+      ref: มาเจาะพี่หมูกับปราสาทสายฟ้า — BAC vs BRU RPL winter 2026 leg 1
+      detail: counter.md Composition Counter Case 1 [FACT 26, 177, 181]
+
+  - hero: toro
+    threats: [tank_frontline]
+    detail: ยืนค้ำไฟต์รับดาเมจชุดแรก ยึดพื้นที่ objective
+    source:
+      type: coach_input
+      ref: มาเจาะพี่หมูกับปราสาทสายฟ้า — BAC vs BRU RPL winter 2026 leg 1
+      detail: counter.md Composition Counter Case 1 [FACT 26, 177, 181]
+
+  - hero: iggy
+    threats: [immobile_backline, poke_siege]
+    detail: >-
+      เคลียร์ครีปเร็วและคุมแม่น้ำด้วยการตอดระยะไกล แต่เป็นฮีโร่ขาตาย
+      ไม่มีสกิลหนีตามธรรมชาติ
+    source:
+      type: coach_input
+      ref: 4 สิ่งสำคัญที่เมจมักทำพลาดใน ROV — nutreddog
+      detail: counter.md CTR-005 / Role Counter [FACT 23, 24, 26, 86, 97]
+
+  - hero: yue
+    threats: [immobile_backline, poke_siege]
+    detail: เมจตอดระยะไกลที่ขาตาย counter.md จัดไว้ในกลุ่ม Is_Immobile_Mage
+    source:
+      type: coach_input
+      ref: "Rov : เข้าทำแบบไหนให้ดีในไฟต์ ทุกตำแหน่ง — Cozmos"
+      detail: counter.md §6 Is_Immobile_Mage / Poke Comps [FACT 23, 86, 97]
+
+  - hero: violet
+    threats: [poke_siege, immobile_backline]
+    detail: ตอดเลือดระยะไกลบีบไม่ให้เข้าใกล้ป้อม และเป็นแครี่ขาตายที่โดนล้วงง่าย
+    source:
+      type: coach_input
+      ref: "Rov : เข้าทำแบบไหนให้ดีในไฟต์ ทุกตำแหน่ง — Cozmos"
+      detail: counter.md Role Counter [FACT 23, 26, 83, 86, 93, 97]
+
+  - hero: capheny
+    threats: [immobile_backline]
+    detail: แครี่ขาตายที่เป็นเป้าหมายหลักของตัวล้วง
+    source:
+      type: coach_input
+      ref: "Rov : เข้าทำแบบไหนให้ดีในไฟต์ ทุกตำแหน่ง — Cozmos"
+      detail: counter.md Role Counter — Enemy Assassin [FACT 26, 83, 93]
+
+# ─────────────────────────────────────────────────────────────────────
+# กลไกที่ฮีโร่แต่ละตัวมี — counter.md ระบุไว้ตรง ๆ
+#
+# ⚠️ ห้าม derive จาก hero_class หรือ Liquipedia skill tag
+#    docs/27 §5.3 พิสูจน์แล้วว่าป้ายที่ดึงมาหยาบเกิน (ได้ "Control"
+#    ไม่ใช่ "Knock Back") และครอบคลุมแค่ 30/119 ตัว
+# ─────────────────────────────────────────────────────────────────────
+capabilities:
+  - hero: billow
+    mechanisms: [burst, dive]
+    detail: สกิล Burst ดาเมจมหาศาลสังหารเป้าหมายเดี่ยวทันที และพุ่งข้ามแผงหน้าได้
+    source:
+      type: coach_input
+      ref: Rov เบสิคมาโครรูอี้ ฉบับเข้าใจง่ายๆ — C.MiNJuuu
+      detail: counter.md CTR-001 Burst Mechanism + Role Counter [FACT 24, 104, 105]
+
+  - hero: aoi
+    mechanisms: [burst]
+    detail: สกิล Burst ดาเมจมหาศาลสังหารเป้าหมายเดี่ยวทันที
+    source:
+      type: coach_input
+      ref: Rov เบสิคมาโครรูอี้ ฉบับเข้าใจง่ายๆ — C.MiNJuuu
+      detail: counter.md CTR-001 Burst Mechanism [FACT 104, 105]
+
+  - hero: zata
+    mechanisms: [burst]
+    detail: สกิล Burst ดาเมจมหาศาลสังหารเป้าหมายเดี่ยวทันที
+    source:
+      type: coach_input
+      ref: Rov เบสิคมาโครรูอี้ ฉบับเข้าใจง่ายๆ — C.MiNJuuu
+      detail: counter.md CTR-001 Burst Mechanism [FACT 104, 105]
+
+  - hero: omen
+    mechanisms: [displacement]
+    detail: มีสกิลผลักหรือปัดศัตรูให้ออกจากพื้นที่
+    source:
+      type: coach_input
+      ref: Rov เบสิคมาโครรูอี้ ฉบับเข้าใจง่ายๆ — C.MiNJuuu
+      detail: counter.md CTR-001 Displacement Mechanism [FACT 104]
+
+  - hero: skud
+    mechanisms: [displacement]
+    detail: มีสกิลผลักหรือปัดศัตรูให้ออกจากพื้นที่
+    source:
+      type: coach_input
+      ref: Rov เบสิคมาโครรูอี้ ฉบับเข้าใจง่ายๆ — C.MiNJuuu
+      detail: counter.md CTR-001 Displacement Mechanism [FACT 104]
+
+  - hero: qi
+    mechanisms: [displacement]
+    detail: มีสกิลผลักหรือปัดศัตรูให้ออกจากพื้นที่
+    source:
+      type: coach_input
+      ref: Rov เบสิคมาโครรูอี้ ฉบับเข้าใจง่ายๆ — C.MiNJuuu
+      detail: counter.md CTR-001 Displacement Mechanism [FACT 104]
+
+  - hero: tachi
+    mechanisms: [displacement]
+    detail: มีสกิลผลักหรือปัดศัตรูให้ออกจากพื้นที่
+    source:
+      type: coach_input
+      ref: Rov เบสิคมาโครรูอี้ ฉบับเข้าใจง่ายๆ — C.MiNJuuu
+      detail: counter.md CTR-001 Displacement Mechanism [FACT 104]
+
+  - hero: chaugnar
+    mechanisms: [cleanse]
+    detail: >-
+      อัลติเมตล้างสถานะ CC ทั้งทีมพร้อมให้เกราะ/กันสถานะชั่วขณะ
+      และสกิล 2 มี Passive สะสมลดความเสียหาย
+    source:
+      type: coach_input
+      ref: มาเจาะพี่หมูกับปราสาทสายฟ้า — BAC vs BRU RPL winter 2026 leg 1
+      detail: counter.md CTR-003 [FACT 165, 180, 194]
+
+  - hero: hayate
+    mechanisms: [tank_melt]
+    detail: ดาเมจเจาะเกราะ True Damage สแปมยิงใส่แทงค์ศัตรูจากระยะไกล
+    source:
+      type: coach_input
+      ref: มาเจาะพี่หมูกับปราสาทสายฟ้า — BAC vs BRU RPL winter 2026 leg 1
+      detail: counter.md Problem-Based Q1 [FACT 163, 177, 181]
+
+  - hero: florentino
+    mechanisms: [tank_melt]
+    detail: รำทำดาเมจจริงตาม %HP ละลายแผงหน้าศัตรูได้อย่างรวดเร็ว
+    source:
+      type: coach_input
+      ref: มาเจาะพี่หมูกับปราสาทสายฟ้า — BAC vs BRU RPL winter 2026 leg 1
+      detail: counter.md Problem-Based Q1 [FACT 163, 177, 181]
+
+  - hero: liliana
+    mechanisms: [dive, burst]
+    detail: >-
+      ร่างหมามีความคล่องตัวสูง พุ่งผ่านแผงหน้าข้ามไปเบิร์สสังหาร
+      ตัวขาตายที่แผงหลังได้อย่างรวดเร็ว
+    source:
+      type: coach_input
+      ref: Draft 101 ดราฟยังไงคร่าวๆให้ตัวเองไม่เสียเปรียบ — AnalysttSeak-
+      detail: counter.md CTR-005 + Role Counter [FACT 6, 24, 93, 95, 99]
+
+  - hero: krizzix
+    mechanisms: [dive]
+    detail: มีสกิลพุ่งไกลข้ามแผงหน้าเพื่อเปิดไฟต์ถึงตัวแผงหลัง
+    source:
+      type: coach_input
+      ref: "Rov : เข้าทำแบบไหนให้ดีในไฟต์ ทุกตำแหน่ง — Cozmos"
+      detail: counter.md Role Counter — Enemy Poke/Siege [FACT 93, 95, 99]
+
+  - hero: elandorr
+    mechanisms: [dive]
+    detail: มีสกิลพุ่งไกลข้ามแผงหน้าเพื่อเปิดไฟต์ถึงตัวแผงหลัง
+    source:
+      type: coach_input
+      ref: "Rov : เข้าทำแบบไหนให้ดีในไฟต์ ทุกตำแหน่ง — Cozmos"
+      detail: counter.md Role Counter — Enemy Poke/Siege [FACT 93, 95, 99]
+
+  - hero: sinestrea
+    mechanisms: [burst]
+    detail: เบิร์สต์สังหารเมจขาตายที่แผงหลัง
+    source:
+      type: coach_input
+      ref: Draft 101 ดราฟยังไงคร่าวๆให้ตัวเองไม่เสียเปรียบ — AnalysttSeak-
+      detail: counter.md CTR-005 [FACT 24, 26]
+
+  - hero: mina
+    mechanisms: [lane_trade]
+    detail: ชุดสกิลดึง ยั่วยุ (Taunt) และเทรดดาเมจระยะใกล้ที่ได้เปรียบ
+    source:
+      type: coach_input
+      ref: Draft 101 ดราฟยังไงคร่าวๆให้ตัวเองไม่เสียเปรียบ — AnalysttSeak-
+      detail: counter.md CTR-002 [FACT 35, 39]
+
+  - hero: murad
+    mechanisms: [lane_trade]
+    detail: ตอดสกิลแล้วใช้วาร์ปถอยโดยไม่เสียเลือด
+    source:
+      type: coach_input
+      ref: "Rov : วิธีการเดินเกมโรมมิ่งยังไงให้ง่ายในช่วงต้นเกม — MRX CH"
+      detail: counter.md CTR-004 [FACT 23, 25, 63]
+
+  - hero: ryoma
+    mechanisms: [lane_trade]
+    detail: ระยะสกิลตอดไกลกว่าในต้นเกม
+    source:
+      type: coach_input
+      ref: Draft 101 ดราฟยังไงคร่าวๆให้ตัวเองไม่เสียเปรียบ — AnalysttSeak-
+      detail: counter.md CTR-004 [FACT 23, 63]
+
+  - hero: ybneth
+    mechanisms: [peel]
+    detail: ยึดพุ่มไม้วิชั่น รับดาเมจชุดแรก และเปิดไฟต์ด้วย AoE CC
+    source:
+      type: coach_input
+      ref: "Rov : เข้าทำแบบไหนให้ดีในไฟต์ ทุกตำแหน่ง — Cozmos"
+      detail: counter.md Problem-Based Q4 [FACT 26, 99, 150]
+
+  - hero: toro
+    mechanisms: [peel]
+    detail: ยึดพุ่มไม้วิชั่น รับดาเมจชุดแรก และเปิดไฟต์ด้วย AoE CC
+    source:
+      type: coach_input
+      ref: "Rov : เข้าทำแบบไหนให้ดีในไฟต์ ทุกตำแหน่ง — Cozmos"
+      detail: counter.md Problem-Based Q4 [FACT 26, 99, 150]
+
+# ─────────────────────────────────────────────────────────────────────
+# กลไกไหนตอบภัยแบบไหนได้ — ขากลางของ mechanism matching
+# ─────────────────────────────────────────────────────────────────────
+answers:
+  - threat: recall_warp
+    mechanisms: [burst, displacement]
+    reason: >-
+      ต้องฆ่าเป้าหมายให้ตายก่อนวงวาร์ปทำงานสำเร็จ หรือผลักศัตรูออกจาก
+      พื้นที่วงวาร์ปเพื่อไม่ให้กดวาร์ปกลับบ้านได้
+    confidence: HIGH
+    source:
+      type: coach_input
+      ref: Rov เบสิคมาโครรูอี้ ฉบับเข้าใจง่ายๆ — C.MiNJuuu
+      detail: counter.md Composition Counter Case 2 [FACT 104, 105]
+
+  - threat: heavy_cc
+    mechanisms: [cleanse]
+    reason: ล้างสถานะ CC ทั้งทีมทำให้คอมพ์เปิด CC ของศัตรูเสียจังหวะไฟต์ทันที
+    confidence: HIGH
+    source:
+      type: coach_input
+      ref: มาเจาะพี่หมูกับปราสาทสายฟ้า — BAC vs BRU RPL winter 2026 leg 1
+      detail: counter.md Rule 03 / Composition Counter Case 1 [FACT 163, 165, 180]
+
+  - threat: tank_frontline
+    mechanisms: [tank_melt, cleanse]
+    reason: >-
+      ต้องมีดาเมจจริงหรือดาเมจตาม %HP ละลายแผงหน้า ควบคู่กับการล้าง CC
+      ไม่ให้แทงค์ศัตรูรวบไฟต์ได้ฟรี
+    confidence: HIGH
+    source:
+      type: coach_input
+      ref: มาเจาะพี่หมูกับปราสาทสายฟ้า — BAC vs BRU RPL winter 2026 leg 1
+      detail: counter.md Composition Counter Case 1 [FACT 163, 165, 177, 181]
+
+  - threat: poke_siege
+    mechanisms: [dive]
+    reason: ใช้ฮีโร่ที่มีสกิลพุ่งไกลข้ามแผงหน้าเพื่อเปิดไฟต์ถึงตัวแผงหลัง
+    confidence: MEDIUM
+    source:
+      type: coach_input
+      ref: "Rov : เข้าทำแบบไหนให้ดีในไฟต์ ทุกตำแหน่ง — Cozmos"
+      detail: counter.md Role Counter — Enemy Poke/Siege [FACT 24, 93, 95, 99]
+
+  - threat: immobile_backline
+    mechanisms: [dive, burst]
+    reason: >-
+      ตัวขาตายที่แผงหลังไม่มีสกิลหนี จึงถูกพุ่งข้ามแผงหน้าเข้าไปเบิร์สต์
+      สังหารได้ก่อนจ่ายดาเมจ
+    confidence: HIGH
+    source:
+      type: coach_input
+      ref: Draft 101 ดราฟยังไงคร่าวๆให้ตัวเองไม่เสียเปรียบ — AnalysttSeak-
+      detail: counter.md CTR-005 [FACT 6, 24, 26]
+
+# ─────────────────────────────────────────────────────────────────────
+# Direct Hero Counter — counter.md §1
+# ─────────────────────────────────────────────────────────────────────
+evidence:
+  # ── CTR-001 · Rouie ───────────────────────────────────────────────
+  - evidence_id: CTR-001-billow
+    target: rouie
+    counter: billow
+    counter_type: burst
+    threat: recall_warp
+    mechanism: burst
+    mechanism_detail: >-
+      สกิล Burst ดาเมจมหาศาล สังหาร Rouie หรือเป้าหมายเดี่ยวให้ตายทันที
+      ก่อนที่วงวาร์ปจะทำงานสำเร็จ
+    condition:
+      - cue: ต้องเลือกหลังจากศัตรูเปิดเผย Rouie แล้ว หรือเลือกดักทางในเฟสสุดท้าย
+    risk: หากทีมศัตรูมีตัวค้ำแผงหน้าหนาแน่น อาจพุ่งเข้าไปไม่ถึงตัว Rouie ในช่วงเลทเกม
+    confidence: HIGH
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: Rov เบสิคมาโครรูอี้ ฉบับเข้าใจง่ายๆ (เกมบุก-เกมรับ) — C.MiNJuuu
+      detail: counter.md CTR-001 [FACT 102, 104, 105]
+    data_check:
+      verdict: agrees
+      n: 43
+      detail: counter_score +0.40 · adjusted 0.507 จาก 43 เกมที่อยู่คนละฝั่ง
+
+  - evidence_id: CTR-001-omen
+    target: rouie
+    counter: omen
+    counter_type: displacement
+    threat: recall_warp
+    mechanism: displacement
+    mechanism_detail: มีสกิลผลักหรือปัดศัตรูให้ออกจากพื้นที่วงวาร์ป ทำให้กดวาร์ปกลับบ้านไม่ได้
+    condition:
+      - cue: ต้องเลือกหลังจากศัตรูเปิดเผย Rouie แล้ว หรือเลือกดักทางในเฟสสุดท้าย
+    risk: หากทีมศัตรูมีตัวค้ำแผงหน้าหนาแน่น อาจพุ่งเข้าไปไม่ถึงตัว Rouie ในช่วงเลทเกม
+    confidence: HIGH
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: Rov เบสิคมาโครรูอี้ ฉบับเข้าใจง่ายๆ (เกมบุก-เกมรับ) — C.MiNJuuu
+      detail: counter.md CTR-001 [FACT 104]
+    data_check:
+      verdict: insufficient
+      n: 0
+      detail: ไม่มีเกมที่ Omen กับ Rouie อยู่คนละฝั่งเลยในชุด 861 เกม
+
+  - evidence_id: CTR-001-tachi
+    target: rouie
+    counter: tachi
+    counter_type: displacement
+    threat: recall_warp
+    mechanism: displacement
+    mechanism_detail: มีสกิลผลักหรือปัดศัตรูให้ออกจากพื้นที่วงวาร์ป ทำให้กดวาร์ปกลับบ้านไม่ได้
+    condition:
+      - cue: ต้องเลือกหลังจากศัตรูเปิดเผย Rouie แล้ว หรือเลือกดักทางในเฟสสุดท้าย
+    risk: หากทีมศัตรูมีตัวค้ำแผงหน้าหนาแน่น อาจพุ่งเข้าไปไม่ถึงตัว Rouie ในช่วงเลทเกม
+    # ลดจาก HIGH เพราะข้อมูลเราค้าน — ไม่ได้ลบทิ้ง กลไกยังจริงอยู่
+    confidence: MEDIUM
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: Rov เบสิคมาโครรูอี้ ฉบับเข้าใจง่ายๆ (เกมบุก-เกมรับ) — C.MiNJuuu
+      detail: counter.md CTR-001 [FACT 104]
+    data_check:
+      verdict: disagrees
+      n: 25
+      detail: counter_score -0.41 · adjusted 0.491 จาก 25 เกม — ไม่เห็นความได้เปรียบ
+
+  - evidence_id: CTR-001-skud
+    target: rouie
+    counter: skud
+    counter_type: displacement
+    threat: recall_warp
+    mechanism: displacement
+    mechanism_detail: มีสกิลผลักหรือปัดศัตรูให้ออกจากพื้นที่วงวาร์ป ทำให้กดวาร์ปกลับบ้านไม่ได้
+    condition:
+      - cue: ต้องเลือกหลังจากศัตรูเปิดเผย Rouie แล้ว หรือเลือกดักทางในเฟสสุดท้าย
+    risk: หากทีมศัตรูมีตัวค้ำแผงหน้าหนาแน่น อาจพุ่งเข้าไปไม่ถึงตัว Rouie ในช่วงเลทเกม
+    confidence: MEDIUM
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: Rov เบสิคมาโครรูอี้ ฉบับเข้าใจง่ายๆ (เกมบุก-เกมรับ) — C.MiNJuuu
+      detail: counter.md CTR-001 [FACT 104]
+    data_check:
+      verdict: disagrees
+      n: 22
+      detail: counter_score -2.44 · adjusted 0.442 จาก 22 เกม — ข้อมูลเราชี้ไปทางตรงข้าม
+
+  - evidence_id: CTR-001-qi
+    target: rouie
+    counter: qi
+    counter_type: displacement
+    threat: recall_warp
+    mechanism: displacement
+    mechanism_detail: มีสกิลผลักหรือปัดศัตรูให้ออกจากพื้นที่วงวาร์ป ทำให้กดวาร์ปกลับบ้านไม่ได้
+    condition:
+      - cue: ต้องเลือกหลังจากศัตรูเปิดเผย Rouie แล้ว หรือเลือกดักทางในเฟสสุดท้าย
+    risk: หากทีมศัตรูมีตัวค้ำแผงหน้าหนาแน่น อาจพุ่งเข้าไปไม่ถึงตัว Rouie ในช่วงเลทเกม
+    confidence: MEDIUM
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: Rov เบสิคมาโครรูอี้ ฉบับเข้าใจง่ายๆ (เกมบุก-เกมรับ) — C.MiNJuuu
+      detail: counter.md CTR-001 [FACT 104]
+    data_check:
+      verdict: disagrees
+      n: 29
+      detail: counter_score -2.08 · adjusted 0.458 จาก 29 เกม — ข้อมูลเราชี้ไปทางตรงข้าม
+
+  - evidence_id: CTR-001-aoi
+    target: rouie
+    counter: aoi
+    counter_type: burst
+    threat: recall_warp
+    mechanism: burst
+    mechanism_detail: สกิล Burst ดาเมจมหาศาล สังหารเป้าหมายเดี่ยวก่อนวงวาร์ปทำงานสำเร็จ
+    condition:
+      - cue: ต้องเลือกหลังจากศัตรูเปิดเผย Rouie แล้ว หรือเลือกดักทางในเฟสสุดท้าย
+    risk: หากทีมศัตรูมีตัวค้ำแผงหน้าหนาแน่น อาจพุ่งเข้าไปไม่ถึงตัว Rouie ในช่วงเลทเกม
+    confidence: HIGH
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: Rov เบสิคมาโครรูอี้ ฉบับเข้าใจง่ายๆ (เกมบุก-เกมรับ) — C.MiNJuuu
+      detail: counter.md CTR-001 [FACT 104, 105]
+    data_check:
+      verdict: insufficient
+      n: 4
+      detail: มีแค่ 4 เกม ต่ำกว่าเกณฑ์ MIN_PAIR_GAMES = 8 · Aoi presence แค่ 6.6%
+
+  - evidence_id: CTR-001-zata
+    target: rouie
+    counter: zata
+    counter_type: burst
+    threat: recall_warp
+    mechanism: burst
+    mechanism_detail: สกิล Burst ดาเมจมหาศาล สังหารเป้าหมายเดี่ยวก่อนวงวาร์ปทำงานสำเร็จ
+    condition:
+      - cue: ต้องเลือกหลังจากศัตรูเปิดเผย Rouie แล้ว หรือเลือกดักทางในเฟสสุดท้าย
+    risk: หากทีมศัตรูมีตัวค้ำแผงหน้าหนาแน่น อาจพุ่งเข้าไปไม่ถึงตัว Rouie ในช่วงเลทเกม
+    confidence: HIGH
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: Rov เบสิคมาโครรูอี้ ฉบับเข้าใจง่ายๆ (เกมบุก-เกมรับ) — C.MiNJuuu
+      detail: counter.md CTR-001 [FACT 104, 105]
+    data_check:
+      verdict: insufficient
+      n: 6
+      detail: มีแค่ 6 เกม ต่ำกว่าเกณฑ์ MIN_PAIR_GAMES = 8
+
+  # ── CTR-002 · Omen / Marja ────────────────────────────────────────
+  - evidence_id: CTR-002-mina-omen
+    target: omen
+    counter: mina
+    counter_type: lane
+    lane: ds
+    mechanism: lane_trade
+    mechanism_detail: >-
+      Mina ชนะทาง Omen ทั้งการชนเลนแบบ 1v1 และจังหวะทีมไฟต์
+      ทำให้ Omen จับขังลำบาก
+    condition:
+      - cue: เลือก Mina มายืน Offlane สวน Omen หรือใช้ Flex สลับเลนไปชน
+    risk: Mina เป็นฮีโร่ระยะสั้น ถ้าทีมไฟต์ศัตรูเป็นคอมพ์ตอดระยะไกล อาจโดนตอดก่อนเข้าถึงตัว
+    confidence: HIGH
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: Draft 101 ดราฟยังไงคร่าวๆให้ตัวเองไม่เสียเปรียบ — AnalysttSeak-
+      detail: counter.md CTR-002 [FACT 35, 38, 39]
+    data_check:
+      verdict: insufficient
+      n: 0
+      detail: ไม่มีเกมที่ Mina กับ Omen อยู่คนละฝั่งเลย · Omen presence 32% Mina 21%
+
+  - evidence_id: CTR-002-mina-marja
+    target: marja
+    counter: mina
+    counter_type: lane
+    lane: ds
+    mechanism: lane_trade
+    mechanism_detail: >-
+      ชุดสกิลดึงและยั่วยุของ Mina ขัดขวางจังหวะการเลื้อยทำดาเมจของ Marja
+    condition:
+      - cue: เลือก Mina มายืน Offlane สวน Marja หรือใช้ Flex สลับเลนไปชน
+    risk: Mina เป็นฮีโร่ระยะสั้น ถ้าทีมไฟต์ศัตรูเป็นคอมพ์ตอดระยะไกล อาจโดนตอดก่อนเข้าถึงตัว
+    confidence: HIGH
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: Draft 101 ดราฟยังไงคร่าวๆให้ตัวเองไม่เสียเปรียบ — AnalysttSeak-
+      detail: counter.md CTR-002 / Rule 02 [FACT 35, 38, 39]
+    data_check:
+      verdict: insufficient
+      n: 6
+      detail: มีแค่ 6 เกม ต่ำกว่าเกณฑ์ MIN_PAIR_GAMES = 8
+
+  # ── CTR-003 · Y'bneth / Heavy CC ──────────────────────────────────
+  - evidence_id: CTR-003-chaugnar
+    target: ybneth
+    counter: chaugnar
+    counter_type: cleanse
+    threat: heavy_cc
+    mechanism: cleanse
+    mechanism_detail: >-
+      อัลติเมตล้างสถานะ CC ทั้งทีมพร้อมให้เกราะ/กันสถานะชั่วขณะ และสกิล 2
+      มี Passive สะสมลดความเสียหาย ทำให้คอมพ์เปิด CC ของ Y'bneth เสียจังหวะไฟต์ทันที
+    condition:
+      - cue: เลือก Chaugnar ในตำแหน่ง Support เมื่อฝั่งตรงข้าม pick Y'bneth หรือแทงค์สายสเปม CC
+    risk: Chaugnar ขาด Hard CC ในการเปิดไฟต์เอง ต้องพึ่งพาดาเมจหลักจากเพื่อนในทีม
+    confidence: HIGH
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: มาเจาะพี่หมูกับปราสาทสายฟ้า — BAC vs BRU RPL winter 2026 leg 1
+      detail: counter.md CTR-003 / Rule 03 [FACT 163, 165, 180, 194]
+    data_check:
+      verdict: agrees
+      n: 14
+      detail: counter_score +2.89 · adjusted 0.591 จาก 14 เกม — แรงที่สุดในบรรดาข้ออ้างทั้งหมด
+
+  # ── CTR-004 · Marja offlane 1v1 ───────────────────────────────────
+  - evidence_id: CTR-004-murad
+    target: marja
+    counter: murad
+    counter_type: lane
+    lane: ds
+    mechanism: lane_trade
+    mechanism_detail: >-
+      Murad ตอดสกิลแล้วใช้วาร์ปถอยโดยไม่เสียเลือด ทำให้ Marja ลิงก์สายใย
+      เก็บสแตกไม่ได้และจ่ายสกิลคืนไม่ทัน
+    condition:
+      - cue: เลน 1v1 ในช่วงต้นเกม ก่อน Marja ได้ไอเทมหลัก (ดาบ Z)
+    risk: หาก Marja สลับเลน (Flex) ไป Carry หรือ Jungle Murad จะเล่นยากทันทีเพราะจะเจอ Mina สวน
+    confidence: MEDIUM
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: "Rov : วิธีการเดินเกมโรมมิ่งยังไงให้ง่ายในช่วงต้นเกม — MRX CH"
+      detail: counter.md CTR-004 [FACT 23, 25, 42, 63]
+    data_check:
+      verdict: mixed
+      n: 16
+      detail: >-
+        counter_score +0.00 · adjusted 0.500 จาก 16 เกม — ไม่เห็นความได้เปรียบ
+        แต่ตัวเลขนับทุกเกม ไม่ได้กรองเฉพาะที่ Marja ยืน Offlane ตามเงื่อนไข
+
+  - evidence_id: CTR-004-ryoma
+    target: marja
+    counter: ryoma
+    counter_type: lane
+    lane: ds
+    mechanism: lane_trade
+    mechanism_detail: Ryoma มีระยะสกิลตอดไกลกว่าในต้นเกม กดดันการฟาร์มของ Marja ในเลนออฟเลน
+    condition:
+      - cue: เลน 1v1 ในช่วงต้นเกม ก่อน Marja ได้ไอเทมหลัก (ดาบ Z)
+    risk: หาก Marja สลับเลน (Flex) ไป Carry หรือ Jungle ข้อได้เปรียบนี้หายไปทันที
+    confidence: MEDIUM
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: Draft 101 ดราฟยังไงคร่าวๆให้ตัวเองไม่เสียเปรียบ — AnalysttSeak-
+      detail: counter.md CTR-004 [FACT 23, 63]
+    data_check:
+      verdict: disagrees
+      n: 75
+      detail: >-
+        counter_score -2.38 · adjusted 0.467 จาก 75 เกม — ตัวอย่างเยอะที่สุดในชุด
+        และชี้ไปทางตรงข้ามอย่างชัดเจน
+
+  - evidence_id: CTR-004-hayate
+    target: marja
+    counter: hayate
+    counter_type: lane
+    lane: ds
+    mechanism: lane_trade
+    mechanism_detail: ตอดจากระยะไกลกดดันการฟาร์มของ Marja ในเลนออฟเลนช่วงต้นเกม
+    condition:
+      - cue: เลน 1v1 ในช่วงต้นเกม ก่อน Marja ได้ไอเทมหลัก (ดาบ Z)
+    risk: หาก Marja สลับเลน (Flex) ไป Carry หรือ Jungle ข้อได้เปรียบนี้หายไปทันที
+    confidence: MEDIUM
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: Draft 101 ดราฟยังไงคร่าวๆให้ตัวเองไม่เสียเปรียบ — AnalysttSeak-
+      detail: counter.md CTR-004 [FACT 23, 25, 63]
+    data_check:
+      verdict: disagrees
+      n: 51
+      detail: >-
+        counter_score -5.05 · adjusted 0.420 จาก 51 เกม — ค้านแรงที่สุดในชุดข้ออ้างทั้งหมด
+        ข้อสังเกต Hayate เล่นเลน Dragon เป็นหลัก จึงอาจไม่เคยประกบ Marja ในเลนจริง
+
+  # ── CTR-005 · Iggy ────────────────────────────────────────────────
+  - evidence_id: CTR-005-liliana
+    target: iggy
+    counter: liliana
+    counter_type: burst
+    threat: immobile_backline
+    mechanism: dive
+    mechanism_detail: >-
+      ร่างหมามีความคล่องตัวสูง พุ่งผ่านแผงหน้าข้ามไปเบิร์สสังหาร Iggy
+      ที่ขาตายอยู่แผงหลังได้อย่างรวดเร็ว
+    condition:
+      - cue: ต้องรอจังหวะ Iggy จ่ายสกิลคุมแม่น้ำเรียบร้อยแล้ว หรือเข้าทำพร้อมการโซนของ Roamer
+    risk: หากพุ่งเข้าไปในร่างหมาโดยไม่มีเพื่อนตาม อาจโดนเพื่อนร่วมทีม Iggy สวนจนตายได้
+    confidence: MEDIUM
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: Draft 101 ดราฟยังไงคร่าวๆให้ตัวเองไม่เสียเปรียบ — AnalysttSeak-
+      detail: counter.md CTR-005 [FACT 6, 24, 26]
+    data_check:
+      verdict: disagrees
+      n: 26
+      detail: counter_score -1.66 · adjusted 0.464 จาก 26 เกม
+
+  - evidence_id: CTR-005-sinestrea
+    target: iggy
+    counter: sinestrea
+    counter_type: burst
+    threat: immobile_backline
+    mechanism: burst
+    mechanism_detail: เบิร์สต์สังหาร Iggy ที่ขาตายอยู่แผงหลัง
+    condition:
+      - cue: ต้องรอจังหวะ Iggy จ่ายสกิลคุมแม่น้ำเรียบร้อยแล้ว หรือเข้าทำพร้อมการโซนของ Roamer
+    risk: หากพุ่งเข้าไปโดยไม่มีเพื่อนตาม อาจโดนเพื่อนร่วมทีม Iggy สวนจนตายได้
+    confidence: MEDIUM
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: Draft 101 ดราฟยังไงคร่าวๆให้ตัวเองไม่เสียเปรียบ — AnalysttSeak-
+      detail: counter.md CTR-005 [FACT 24, 26]
+    data_check:
+      verdict: mixed
+      n: 18
+      detail: counter_score +0.00 · adjusted 0.500 จาก 18 เกม — ไม่เห็นความได้เปรียบ
