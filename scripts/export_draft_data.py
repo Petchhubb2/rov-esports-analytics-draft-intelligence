@@ -38,6 +38,7 @@ from rov.draft.teamcomp import (  # noqa: E402
     SHAPES,
     collect_comps,
     league_shape_rates,
+    newest_first,
     team_comp_profiles,
 )
 from rov.macro.plays import MacroBook  # noqa: E402
@@ -48,6 +49,10 @@ MIN_PAIR_GAMES = 8
 # หน้าต่าง scouting นับย้อนจากแมตช์ล่าสุดในชุดข้อมูล ไม่ใช่วันนี้
 # เพราะไฟล์ export อาจถูกสร้างทิ้งไว้หลายเดือนก่อนเปิดดู ถ้านับจากวันนี้จะกลายเป็นช่วงว่าง
 RECENT_DAYS = 120
+
+# จำนวนคอมพ์จริงที่ส่งไปหน้าเว็บต่อทีม — ตัดหางเพื่อคุมขนาดไฟล์
+# สถิติทุกตัวยังคิดจากคอมพ์ทั้งหมด การตัดนี้กระทบแค่รายการที่กางให้ดู
+RECENT_COMPS = 30
 
 
 def main() -> int:
@@ -287,6 +292,33 @@ def main() -> int:
                     }
                     for b in prof.bonds
                 ],
+                # ตาแบนเรียงตามลำดับจริง (ยืนยันแล้ว ดู teamcomp.BanSlot)
+                # ส่งแค่ 6 ตัวแรกต่อช่อง — หางยาวไม่ได้บอกทางของทีม
+                "ban_slots": [
+                    {
+                        "slot": b.slot,
+                        "n": b.n,
+                        "conc": round(b.concentration, 3),
+                        "top": b.top[:6],
+                    }
+                    for b in prof.bans
+                ],
+                # คอมพ์จริงรายเกม เรียงใหม่ไปเก่า
+                #
+                # ตัดเหลือ RECENT_COMPS เกม เพราะ (1) ไฟล์จะโตเกินจำเป็น
+                # และ (2) สิ่งที่คนสเกาต์ต้องการคือฟอร์มล่าสุด ไม่ใช่ทั้งปี
+                # ตัวเลขสถิติด้านบนยังคิดจากคอมพ์ **ทั้งหมด** ไม่ได้ตัด
+                "recent": [
+                    {
+                        "d": c.date,
+                        "vs": c.opponent,
+                        "side": "blue" if c.blue else "red",
+                        "w": c.won,
+                        "h": list(c.heroes),
+                        "b": list(c.bans),
+                    }
+                    for c in newest_first(prof.comps)[:RECENT_COMPS]
+                ],
             }
         return out, league, league_n
 
@@ -372,6 +404,9 @@ def main() -> int:
     print(f"  คอมพ์ทีม    {len(team_comps)} ทีม (>= {MIN_COMPS} คอมพ์) "
           f"· ทรงที่ต่างจากลีกอย่างมีนัย {notable} · คู่ที่เกินความบังเอิญ {bonds}")
     print(f"             เส้นฐานลีกจาก {comp_league_n} คอมพ์ที่รู้ class ครบ")
+    shown = sum(len(t["recent"]) for t in team_comps.values())
+    print(f"             ตาแบนแยกช่อง {len(SLOT_LANES) - 1} ช่อง "
+          f"· คอมพ์จริงที่กางให้ดู {shown} เกม (ทีมละไม่เกิน {RECENT_COMPS})")
     return 0
 
 

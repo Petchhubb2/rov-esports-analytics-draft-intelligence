@@ -461,6 +461,25 @@ table.rec tbody tr.sel { background: color-mix(in srgb, var(--amber) 10%, transp
 .tc-matrix td.down { color: var(--red); font-weight: 700; }
 .tc-matrix tr.sel { background: rgba(47,147,230,.07); }
 .tc-matrix tbody tr { cursor: pointer; }
+.tc-games { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+.tc-games th, .tc-games td { padding: 4px 8px; border-bottom: 1px solid var(--line-soft);
+  text-align: left; vertical-align: middle; }
+.tc-games thead th { font-family: var(--fx-display); font-size: 9.5px;
+  letter-spacing: .06em; color: var(--text-faint); white-space: nowrap; }
+.tc-games td.mono { font-family: var(--fx-mono); font-size: 10.5px; white-space: nowrap; }
+.tc-games td.w { color: var(--good); font-weight: 700; }
+.tc-games td.l { color: var(--red); }
+.tc-lane { display: inline-flex; flex-direction: column; align-items: center;
+  gap: 1px; margin-right: 5px; }
+.tc-lane i { font-style: normal; font-family: var(--fx-display); font-size: 8px;
+  letter-spacing: .05em; color: var(--text-faint); }
+.tc-slot { display: grid; grid-template-columns: 96px 1fr; gap: 9px;
+  align-items: start; padding: 8px 12px; }
+.tc-slot + .tc-slot { border-top: 1px solid var(--line-soft); }
+.tc-slot > b { font-family: var(--fx-display); font-size: 9.5px; letter-spacing: .08em;
+  color: var(--text-faint); padding-top: 3px; }
+.tc-slot > b i { font-style: normal; display: block; font-family: var(--fx-mono);
+  font-size: 9px; margin-top: 2px; }
 .cnote.warn { color: var(--amber); }
 /* แถบค้นหา rule มาโคร */
 .macbar { display: flex; gap: 8px; align-items: center; margin: 0 0 10px; }
@@ -1148,7 +1167,27 @@ input.search:focus { outline: none; border-color: var(--amber); }
       <div id="tcShapes"></div>
       <div class="psteps"><h3>คู่ที่มาด้วยกันเกินความบังเอิญ</h3></div>
       <div id="tcBonds"></div>
+      <div class="psteps"><h3>ใครลงเลนไหน</h3></div>
+      <div id="tcLanes"></div>
+      <div class="psteps"><h3>ตาแบน — แบนอะไรที่ตาไหน</h3></div>
+      <div id="tcBans"></div>
       <p class="cnote" id="tcNote" style="padding:0 12px 12px"></p>
+    </div>
+
+    <div class="pool" style="margin-bottom:12px">
+      <div class="pool-head">
+        <h2>คอมพ์จริงรายเกม</h2>
+        <span class="count" id="tcGamesCount"></span>
+      </div>
+      <div style="overflow-x:auto"><table class="tc-games" id="tcGames"></table></div>
+      <p class="cnote" style="padding:10px 12px 12px">
+        <b>ห้าตัวเรียงตามเลน ไม่ใช่ลำดับการเลือก</b> — ช่อง <code>t1h1..t1h5</code>
+        ของ Liquipedia เรียงตาม roster ของทีม ยืนยันแล้วจากข้อมูล 1,722 ทีม
+        (ช่อง 4 เป็น marksman 97%) จึงบอกได้ว่า <b>ใครลงเลนไหน</b>
+        แต่บอกไม่ได้ว่า <b>หยิบตัวไหนก่อน</b>
+        <br>ส่วนตาแบนตรงข้าม — ช่อง <code>t1b1..t1b4</code> เรียงตามลำดับการแบนจริง
+        ดูหลักฐานท้ายหน้า
+      </p>
     </div>
 
     <div class="pool">
@@ -1636,6 +1675,9 @@ function renderScout() {
 // สิ่งเดียวที่หน้านี้คำนวณเองคือ hits/n เป็นเปอร์เซ็นต์ ซึ่งเป็นการหารตรง ๆ
 const TCS = D.comp_shapes || [];
 const TCL = D.comp_league || {};
+// ลำดับช่อง roster = ลำดับเลน มาจาก rov/draft/lanes.py SLOT_LANES
+// อ่านจากข้อมูลที่ export มา ไม่พิมพ์ทับ เพื่อไม่ให้มีสำเนาที่สอง
+const TC_LANES = D.lanes || [];
 
 function tcTeams() { return D.team_comps || {}; }
 
@@ -1736,9 +1778,82 @@ function renderTeamComp() {
     `<br><b>ทำไมไม่ใช้ Composition Engine ที่ละเอียดกว่า</b> เพราะมันต้องการ attribute ` +
     `ครบทั้ง 5 ตัว ซึ่งกรอกแล้ว 30/119 จึงวิเคราะห์คอมพ์จริงได้เพียง 10.6% ` +
     `และ 10.6% นั้นเอียงไปทางคอมพ์ที่ใช้ฮีโร่ยอดนิยมล้วน การสรุปนิสัยทีมจากสไลซ์นั้นจะผิดอย่างเป็นระบบ` +
-    `<br><b>อัตราชนะเป็นค่าดิบ ไม่ถ่วงขนาดตัวอย่าง</b> ใช้ดูประกอบเท่านั้น ห้ามใช้จัดอันดับ`;
+    `<br><b>อัตราชนะเป็นค่าดิบ ไม่ถ่วงขนาดตัวอย่าง</b> ใช้ดูประกอบเท่านั้น ห้ามใช้จัดอันดับ` +
+    `<br><b>ทำไมถึงรู้ว่าช่องแบนเรียงตามลำดับจริง</b> วัดจาก 1,722 ทีม ` +
+    `ช่อง b1→b4 มีตัวที่ต่างกัน 45→84 ตัว · 3 ตัวแรกกิน 49%→21.6% · entropy 3.95→5.60 bits ` +
+    `· presence เฉลี่ย 0.621→0.357 ถ้าช่องไม่มีความหมายทั้งสี่ค่าต้องเท่ากัน ` +
+    `และ 10 ตัวที่ถูกแบนบ่อยสุดใน b1 กิน 80% ของ b1 แต่กินแค่ 15.9% ของ b4 ` +
+    `· รอยต่อเฟสเห็นได้จากชุดตัวที่เปลี่ยนระหว่าง b2 กับ b3` +
+    `<br><b>แต่ช่อง pick ตรงข้าม</b> มันเรียงตาม roster ตามเลน ไม่ใช่ลำดับการเลือก ` +
+    `หน้านี้จึงตอบได้ว่าทีมส่งใครลงเลนไหน แต่ตอบไม่ได้ว่าหยิบตัวไหนก่อน`;
 
+  renderTcLanes(name);
+  renderTcBans(t);
+  renderTcGames(name, t);
   renderTcMatrix(name);
+}
+
+// hero pool ต่อเลน — ใช้ข้อมูลชุดเดียวกับการ์ด scouting ในหน้าดราฟต์
+// ไม่ได้คำนวณใหม่ จึงไม่มีทางที่สองหน้าจะบอกไม่ตรงกัน
+function renderTcLanes(name) {
+  const prof = (D.teams || {})[name];
+  const box = el("tcLanes");
+  if (!prof || !prof.lanes) {
+    box.innerHTML = `<p class="tc-none">ไม่มีข้อมูลเลนของทีมนี้</p>`;
+    return;
+  }
+  box.innerHTML = TC_LANES.map(ln => {
+    const pool = prof.lanes[ln];
+    if (!pool) return "";
+    const rows = Object.entries(pool).sort((a, b) => b[1] - a[1]);
+    const total = rows.reduce((a, b) => a + b[1], 0);
+    const top3 = rows.slice(0, 3).reduce((a, b) => a + b[1], 0);
+    // เลนที่ตัวไม่กี่ตัวกินพื้นที่เกือบหมด = เลนที่ตัดของถนัดได้ด้วยการแบนไม่กี่ตา
+    const narrow = total >= 6 && top3 / total >= 0.75;
+    return `<div class="prow"><b>${escape(LANE_TH[ln] || ln)}</b><span>${
+      rows.slice(0, 6).map(([h, n]) =>
+        `<span class="ptag"><span class="pic" ${picStyle(h)}></span>${
+          escape(HERO.get(h)?.name || h)}<em>${n}</em></span>`).join("")}${
+      narrow ? `<em style="font-family:var(--fx-mono);font-size:9.5px;color:var(--amber)">
+        ← แคบ 3 ตัวแรกกิน ${(top3 / total * 100).toFixed(0)}%</em>` : ""}</span></div>`;
+  }).join("");
+}
+
+function renderTcBans(t) {
+  const box = el("tcBans");
+  if (!t.ban_slots || !t.ban_slots.length) {
+    box.innerHTML = `<p class="tc-none">ไม่มีข้อมูลตาแบนของทีมนี้</p>`;
+    return;
+  }
+  box.innerHTML = t.ban_slots.map(sl => `<div class="tc-slot">
+    <b>ตาแบนที่ ${sl.slot}<i>${sl.n} ครั้ง · 3 ตัวแรก ${(sl.conc * 100).toFixed(0)}%</i></b>
+    <span>${sl.top.map(([h, n]) =>
+      `<span class="ptag"><span class="pic" ${picStyle(h)}></span>${
+        escape(HERO.get(h)?.name || h)}<em>${n}</em></span>`).join("")}</span>
+  </div>`).join("");
+}
+
+function renderTcGames(name, t) {
+  const rows = t.recent || [];
+  el("tcGamesCount").textContent =
+    `${escape(name)} · ${rows.length} เกมล่าสุดจาก ${t.n} คอมพ์ทั้งหมด`;
+  const head = `<thead><tr><th>วันที่</th><th>เจอ</th><th>ฝั่ง</th><th>ผล</th>
+    <th>ห้าตัว (เรียงตามเลน)</th><th>แบน</th></tr></thead>`;
+  const body = rows.map(g => `<tr>
+    <td class="mono">${escape(g.d || "—")}</td>
+    <td>${escape(g.vs || "—")}</td>
+    <td class="mono" style="color:var(--${g.side === "blue" ? "blue" : "red"})">${
+      g.side === "blue" ? "น้ำเงิน" : "แดง"}</td>
+    <td class="${g.w ? "w" : "l"}">${g.w ? "ชนะ" : "แพ้"}</td>
+    <td>${g.h.map((h, i) => `<span class="tc-lane">
+      <span class="ptag"><span class="pic" ${picStyle(h)}></span>${
+        escape(HERO.get(h)?.name || h)}</span>
+      <i>${escape(LANE_TH[TC_LANES[i]] || "")}</i></span>`).join("")}</td>
+    <td>${(g.b || []).map(h =>
+      `<span class="ptag" style="opacity:.65"><span class="pic" ${picStyle(h)}></span>${
+        escape(HERO.get(h)?.name || h)}</span>`).join("")}</td>
+  </tr>`).join("");
+  el("tcGames").innerHTML = head + `<tbody>${body}</tbody>`;
 }
 
 function renderTcMatrix(selected) {

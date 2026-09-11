@@ -48,6 +48,7 @@ from dataclasses import dataclass, field
 
 from rov.draft.heroes import HeroDB
 from rov.draft.importer.parser import SeriesDraft
+from rov.draft.scouting import parse_date
 
 # ไม่คัดลอกสูตร Wilson มาไว้ที่นี่ — โปรเจกต์นี้ถือหลัก "สูตรเดียวอยู่ที่เดียว"
 # (ดู PHASE B Q6) rankmetrics ไม่ import อะไรจาก rov.draft จึงไม่เกิดวงจร
@@ -121,12 +122,23 @@ SHAPES: tuple[ShapeRule, ...] = (
 
 @dataclass(frozen=True)
 class Comp:
-    """คอมพ์หนึ่งชุดของทีมหนึ่งในเกมหนึ่ง"""
+    """คอมพ์หนึ่งชุดของทีมหนึ่งในเกมหนึ่ง
+
+    `heroes` เรียงตาม **ช่อง roster ของ Liquipedia** ซึ่งพิสูจน์แล้วว่าเรียงตามเลน
+    (ds · jungle · mid · dragon · support — ดู `lanes.SLOT_LANES`)
+    **ไม่ใช่ลำดับการเลือก** จึงห้ามตีความว่า heroes[0] คือตัวที่หยิบก่อน
+    """
 
     team: str
     heroes: tuple[str, ...]
     won: bool
     blue: bool
+    # ISO `2026-05-09` ไม่ใช่ wikitext ดิบ — เก็บแบบเรียงได้ตั้งแต่ต้นทาง
+    # ถ้าเก็บดิบ ("September 7, 2025 - 18:00 {{Abbr/ICT}}") การเรียงจะกลาย
+    # เป็นเรียงตามตัวอักษร แล้ว "September" จะมาก่อน "May" โดยไม่มีใครเห็น
+    date: str | None = None
+    opponent: str | None = None
+    bans: tuple[str, ...] = ()
 
     @property
     def key(self) -> frozenset[str]:
@@ -216,12 +228,67 @@ class PairBond:
 
 
 @dataclass
+class BanSlot:
+    """ทีมนี้แบนอะไรที่ตาแบนที่ n
+
+    **ช่อง `t1b1..t1b4` ของ Liquipedia เรียงตามลำดับการแบนจริง**
+
+    ต่างจากช่อง pick ที่เรียงตาม roster (ดู `lanes.py`) — ยืนยันจากข้อมูล
+    1,722 ทีมด้วยหลักฐานสามทางที่ชี้ไปทางเดียวกัน
+
+        ช่อง   ตัวที่ต่างกัน  3 ตัวแรกกิน  entropy   presence เฉลี่ย
+        b1        45           49.0%      3.95      0.621
+        b2        56           30.0%      4.70      0.527
+        b3        79           24.6%      5.39      0.379
+        b4        84           21.6%      5.60      0.357
+
+    ถ้าช่องไม่มีความหมาย (เป็นเซ็ตไม่เรียง) ทั้งสี่แถวต้องเหมือนกัน
+    แต่มันไล่ระดับทุกคอลัมน์ และ 10 ตัวที่ถูกแบนบ่อยสุดใน b1 กิน 80% ของ b1
+    แต่กินแค่ 15.9% ของ b4
+
+    รอยต่อเฟสก็เห็นได้ — b1/b2 เป็นตัว must-ban (sinestrea · rouie · elandorr)
+    ส่วน b3/b4 เปลี่ยนชุดไปเป็นตัวที่แบนตอบสนอง (florentino · omen · murad)
+
+    ⚠️ นี่คือการยืนยันว่า **ช่องข้อมูลเรียงตามลำดับ** ไม่ใช่การยืนยัน
+    ลำดับ ban/pick ตาม rulebook ของรายการ ซึ่งยังไม่มีเอกสารรองรับ
+    (ดู configs/draft/format.yaml)
+    """
+
+    slot: int                       # 1-based
+    picks: Counter[str] = field(default_factory=Counter)
+    n: int = 0
+
+    @property
+    def top(self) -> list[tuple[str, int]]:
+        return self.picks.most_common()
+
+    @property
+    def concentration(self) -> float:
+        """3 ตัวแรกกินสัดส่วนเท่าไร — ยิ่งสูงยิ่งเดาทางได้"""
+        if not self.n:
+            return 0.0
+        return sum(k for _, k in self.picks.most_common(3)) / self.n
+
+
+def ban_slots(comps: list[Comp]) -> list[BanSlot]:
+    """แยกการแบนของทีมตามลำดับตา"""
+    out: dict[int, BanSlot] = {}
+    for comp in comps:
+        for i, hero in enumerate(comp.bans):
+            slot = out.setdefault(i + 1, BanSlot(slot=i + 1))
+            slot.picks[hero] += 1
+            slot.n += 1
+    return [out[k] for k in sorted(out)]
+
+
+@dataclass
 class TeamCompProfile:
     team: str
     comps: list[Comp] = field(default_factory=list)
     repeats: RepeatStats = field(default_factory=RepeatStats)
     shapes: list[ShapeRate] = field(default_factory=list)
     bonds: list[PairBond] = field(default_factory=list)
+    bans: list[BanSlot] = field(default_factory=list)
     # เกณฑ์ความบังเอิญที่ได้จากการสับไพ่ — คู่ที่ต่ำกว่านี้ไม่ถูกเก็บเข้า bonds
     bond_threshold: int = 0
     skipped_unknown_class: int = 0
@@ -272,10 +339,10 @@ def collect_comps(all_series: list[SeriesDraft]) -> dict[str, list[Comp]]:
     for series in all_series:
         for game in series.complete_games:
             sides = (
-                (game.blue_team, game.blue_picks, True),
-                (game.red_team, game.red_picks, False),
+                (game.blue_team, game.blue_picks, game.blue_bans, game.red_team, True),
+                (game.red_team, game.red_picks, game.red_bans, game.blue_team, False),
             )
-            for team, picks, is_blue in sides:
+            for team, picks, bans, foe, is_blue in sides:
                 if not team or len(picks) != TEAM_SIZE:
                     continue
                 out[team].append(
@@ -284,9 +351,23 @@ def collect_comps(all_series: list[SeriesDraft]) -> dict[str, list[Comp]]:
                         heroes=tuple(picks),
                         won=team == game.winner_team,
                         blue=is_blue,
+                        date=(d.isoformat() if (d := parse_date(series.date)) else None),
+                        opponent=foe,
+                        bans=tuple(bans),
                     )
                 )
     return dict(out)
+
+
+def newest_first(comps: list[Comp]) -> list[Comp]:
+    """เรียงใหม่ไปเก่า โดยดันเกมที่อ่านวันที่ไม่ได้ไปท้ายสุด
+
+    ห้ามใช้ `sorted(..., reverse=True)` ตรง ๆ กับค่าที่อาจเป็น None
+    และห้ามแทน None ด้วยสตริงว่าง เพราะ reverse จะดันมันขึ้นมาอยู่บนสุด
+    กลายเป็นว่าเกมที่ไม่รู้วันที่ถูกนำเสนอเป็น "ล่าสุด"
+    """
+    dated = sorted((c for c in comps if c.date), key=lambda c: c.date, reverse=True)
+    return dated + [c for c in comps if not c.date]
 
 
 def repeat_stats(comps: list[Comp]) -> RepeatStats:
@@ -439,6 +520,7 @@ def team_comp_profiles(
             repeats=repeat_stats(comps),
             shapes=shapes,
             bonds=pair_bonds(comps, threshold),
+            bans=ban_slots(comps),
             bond_threshold=threshold,
             skipped_unknown_class=skipped,
         )
@@ -486,6 +568,25 @@ def report(profile: TeamCompProfile) -> str:
             f"    {b.a} + {b.b}  {b.together} ครั้ง "
             f"(คาด {b.expected:.1f} · {b.lift:.1f}x){wr}"
         )
+    lines += ["", "  ตาแบน — ช่องเรียงตามลำดับการแบนจริง"]
+    if not p.bans:
+        lines.append("    ไม่มีข้อมูลการแบน")
+    for slot in p.bans:
+        top = " · ".join(f"{h} {k}" for h, k in slot.top[:5])
+        lines.append(
+            f"    ตาที่ {slot.slot}  ({slot.n} ครั้ง · 3 ตัวแรกกิน "
+            f"{slot.concentration * 100:.0f}%)  {top}"
+        )
+
+    lines += ["", "  คอมพ์ล่าสุด 5 เกม (ห้าตัวเรียงตามเลน ไม่ใช่ลำดับการเลือก)"]
+    for c in newest_first(p.comps)[:5]:
+        mark = "ชนะ" if c.won else "แพ้"
+        side = "น้ำเงิน" if c.blue else "แดง"
+        lines.append(
+            f"    {c.date or '??':<10} เจอ {c.opponent or '?':<12} {side:<7} {mark}  "
+            + " ".join(c.heroes)
+        )
+
     if p.skipped_unknown_class:
         lines.append("")
         lines.append(

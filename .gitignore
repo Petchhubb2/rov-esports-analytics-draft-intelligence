@@ -27,3 +27,9 @@ data/exports/
 
 # ภาพจากภายนอก ไม่ commit (ดู data/assets/heroes/ATTRIBUTION.md)
 data/assets/
+
+# ไฟล์ที่เครื่องมือทดสอบเบราว์เซอร์ทิ้งไว้ ไม่ใช่ส่วนของโปรเจกต์
+.playwright-mcp/
+*.png
+!data/assets/**/*.png
+!data/exports/**/*.png

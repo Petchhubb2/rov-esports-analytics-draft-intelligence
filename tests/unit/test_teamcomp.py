@@ -19,9 +19,11 @@ from rov.draft.teamcomp import (
     SHAPES,
     Comp,
     ShapeRule,
+    ban_slots,
     chance_threshold,
     collect_comps,
     league_shape_rates,
+    newest_first,
     pair_bonds,
     repeat_stats,
     report,
@@ -316,3 +318,94 @@ def test_report_mentions_the_repeat_finding_and_survives_empty_sections(db):
     assert "ชุด 5 ตัวซ้ำไหม" in text
     assert "ไม่มี — ทุกทรงอยู่ในช่วงเดียวกับลีก" in text
     assert "ไม่มี — เกณฑ์ความบังเอิญอยู่ที่ 7 ครั้ง" in text
+
+
+# ─────────────────────────────────── วันที่ · การเรียง · ตาแบน
+
+
+def dated(team: str, *rows: tuple[str, tuple[str, ...]]) -> list[Comp]:
+    return [
+        Comp(team=team, heroes=h, won=True, blue=True, date=d)
+        for d, h in rows
+    ]
+
+
+def test_newest_first_sorts_by_time_not_alphabetically():
+    """★ บั๊กที่เคยหลุดจริง
+
+    วันที่ดิบของ Liquipedia คือ "September 7, 2025 - 18:00 {{Abbr/ICT}}"
+    การ sort สตริงแบบนั้นได้ลำดับตามตัวอักษร ทำให้ September มาก่อน May
+    แล้วหน้าเว็บจะขึ้นเกมเก่าที่สุดในช่อง "30 เกมล่าสุด"
+    """
+    rows = dated(
+        "x",
+        ("2025-09-07", ("a",)),
+        ("2026-05-09", ("b",)),
+        ("2026-01-02", ("c",)),
+    )
+    assert [c.date for c in newest_first(rows)] == [
+        "2026-05-09", "2026-01-02", "2025-09-07",
+    ]
+
+
+def test_comps_without_a_date_go_last_not_first():
+    """เกมที่อ่านวันที่ไม่ได้ ต้องไม่ถูกนำเสนอว่าเป็นเกมล่าสุด"""
+    rows = dated("x", ("2026-05-09", ("a",)), (None, ("b",)), ("2026-01-02", ("c",)))
+    assert [c.date for c in newest_first(rows)] == ["2026-05-09", "2026-01-02", None]
+
+
+def test_collect_comps_stores_an_iso_date_not_raw_wikitext():
+    s = SeriesDraft(
+        team1="x", team2="y", best_of=1,
+        date="September 7, 2025 - 18:00 {{Abbr/ICT}}",
+        games=[draft("x", ["a", "b", "c", "d", "e"], "y", ["f", "g", "h", "i", "j"])],
+    )
+    assert collect_comps([s])["x"][0].date == "2025-09-07"
+
+
+def test_an_unparsable_date_becomes_none_rather_than_today():
+    s = SeriesDraft(
+        team1="x", team2="y", best_of=1, date="ไม่ใช่วันที่",
+        games=[draft("x", ["a", "b", "c", "d", "e"], "y", ["f", "g", "h", "i", "j"])],
+    )
+    assert collect_comps([s])["x"][0].date is None
+
+
+def test_collect_comps_records_the_opponent_and_side():
+    s = SeriesDraft(
+        team1="x", team2="y", best_of=1, date="2026-01-01",
+        games=[draft("x", ["a", "b", "c", "d", "e"], "y", ["f", "g", "h", "i", "j"])],
+    )
+    got = collect_comps([s])
+    assert got["x"][0].opponent == "y" and got["x"][0].blue is True
+    assert got["y"][0].opponent == "x" and got["y"][0].blue is False
+
+
+def test_ban_slots_keep_draft_order_separate():
+    """ตาแบนที่ 1 กับที่ 3 ต้องนับแยกกัน ไม่ใช่กองรวมเป็นเซ็ตเดียว"""
+    rows = [
+        Comp(team="x", heroes=("a",), won=True, blue=True, bans=("first", "second")),
+        Comp(team="x", heroes=("b",), won=True, blue=True, bans=("first", "third")),
+    ]
+    slots = ban_slots(rows)
+    assert [s.slot for s in slots] == [1, 2]
+    assert slots[0].picks["first"] == 2 and slots[0].n == 2
+    assert slots[1].picks["second"] == 1 and slots[1].picks["third"] == 1
+
+
+def test_ban_slot_concentration_shows_how_predictable_the_turn_is():
+    same = [
+        Comp(team="x", heroes=("a",), won=True, blue=True, bans=("always",))
+        for _ in range(10)
+    ]
+    assert ban_slots(same)[0].concentration == pytest.approx(1.0)
+    spread = [
+        Comp(team="x", heroes=("a",), won=True, blue=True, bans=(f"h{i}",))
+        for i in range(10)
+    ]
+    assert ban_slots(spread)[0].concentration == pytest.approx(0.3)
+
+
+def test_a_team_with_no_bans_recorded_gets_an_empty_list():
+    rows = [Comp(team="x", heroes=("a",), won=True, blue=True)]
+    assert ban_slots(rows) == []
