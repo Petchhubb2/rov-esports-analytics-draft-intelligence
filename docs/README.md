@@ -8,6 +8,7 @@
 
 | # | เอกสาร | เนื้อหา |
 |---|--------|---------|
+| 00 | [project-structure.md](00-project-structure.md) | **แผนที่โฟลเดอร์/ไฟล์ทั้งโปรเจค** · อะไรอยู่ตรงไหน ทำอะไร สถานะเป็นยังไง |
 | 01 | [assessment.md](01-assessment.md) | ประเมินแผนเดิม · ช่องว่าง 10 ข้อที่ต้องปิดก่อนเริ่มโค้ด |
 | 02 | [architecture.md](02-architecture.md) | สถาปัตยกรรม · โครงสร้างโปรเจกต์ · การตัดสินใจด้าน stack |
 | 03 | [data-contracts.md](03-data-contracts.md) | สคีมาทุก Layer · artifact ระหว่าง stage · DDL ฐานข้อมูล |
