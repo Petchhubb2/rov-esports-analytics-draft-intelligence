@@ -24,8 +24,14 @@
 | 13 | [draft-simulator.md](13-draft-simulator.md) | **คู่มือใช้ Draft Simulator** · อ่านผลอย่างไร · ข้อจำกัด |
 | 14 | [deployment.md](14-deployment.md) | **จากเครื่องตัวเองไปเซิร์ฟเวอร์จริง** · ลิขสิทธิ์ภาพ · สิ่งที่ยังขาด |
 | 15 | [getting-footage.md](15-getting-footage.md) | **เอาคลิปแข่งเข้าระบบ** · หา VOD · ตัดเฟรม · ตอบคำถาม Phase 0 |
+| 16 | [map-guide.md](16-map-guide.md) | คู่มือแผนที่ Antaris Battlefield · โซน · objective |
+| 17 | [intelligence-audit.md](17-intelligence-audit.md) | **ตรวจความฉลาดของ Draft Engine** · scorecard 22/100 · 13 จุดอ่อน · quick/medium/large wins |
+| 18 | [hero-data-coverage.md](18-hero-data-coverage.md) | **ฮีโร่ตัวไหนมีข้อมูลแล้ว** · 30/119 = 72.3% ของ pick+ban · ลำดับที่ควรกรอกต่อ |
+| 19 | [python-js-parity.md](19-python-js-parity.md) | **ทุกจุดที่ตรรกะถูกเขียนซ้ำ** Python ↔ JS · 18 จุด · มีเทสต์คุม 11 ขาด 7 |
+| 20 | [draft-intelligence-spec.md](20-draft-intelligence-spec.md) | **แบบที่จะสร้าง** · conceptual model · 11 factor · counter 5 ชั้น · benchmark plan |
 
-> ลำดับความน่าเชื่อถือเมื่อเอกสารขัดแย้งกัน: **09/10 > 08 > 01–07**
+> ลำดับความน่าเชื่อถือเมื่อเอกสารขัดแย้งกัน: **09/10 > 17–19 > 08 > 01–07, 20**
+> (17–19 คือการตรวจโค้ดจริง ส่วน 20 คือแผนที่ยังไม่ได้ทำ)
 > 01–07 เขียนจากแผนแนวคิดแรก · 08 ข้อเท็จจริงจากการค้น · 09 ผลจากการรันจริง
 > 10 การเทียบกับ Blueprint ฉบับใหม่ · 11 ออกแบบส่วนที่ Blueprint เพิ่มเข้ามา
 
