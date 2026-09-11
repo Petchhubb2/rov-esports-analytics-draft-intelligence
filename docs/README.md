@@ -30,9 +30,10 @@
 | 19 | [python-js-parity.md](19-python-js-parity.md) | **ทุกจุดที่ตรรกะถูกเขียนซ้ำ** Python ↔ JS · 18 จุด · มีเทสต์คุม 11 ขาด 7 |
 | 20 | [draft-intelligence-spec.md](20-draft-intelligence-spec.md) | **แบบที่จะสร้าง** · conceptual model · 11 factor · counter 5 ชั้น · benchmark plan |
 | 21 | [phase-b-report.md](21-phase-b-report.md) | **ผลของ PHASE B** · เปิดใช้อะไรไปบ้าง · regression · benchmark · พร้อม PHASE M ไหม |
+| 22 | [benchmark-foundation.md](22-benchmark-foundation.md) | **engine เทียบ baseline 3 แบบ** · top1/top3/MRR/mean rank · แยก ban/pick · leakage test |
 
-> ลำดับความน่าเชื่อถือเมื่อเอกสารขัดแย้งกัน: **09/21 > 10 > 17–19 > 08 > 01–07, 20**
-> (09/21 คือผลจากการรันจริง · 17–19 คือการตรวจโค้ด · 20 คือแผนที่ยังไม่ได้ทำ)
+> ลำดับความน่าเชื่อถือเมื่อเอกสารขัดแย้งกัน: **09/21/22 > 10 > 17–19 > 08 > 01–07, 20**
+> (09/21/22 คือผลจากการรันจริง · 17–19 คือการตรวจโค้ด · 20 คือแผนที่ยังไม่ได้ทำ)
 > 01–07 เขียนจากแผนแนวคิดแรก · 08 ข้อเท็จจริงจากการค้น · 09 ผลจากการรันจริง
 > 10 การเทียบกับ Blueprint ฉบับใหม่ · 11 ออกแบบส่วนที่ Blueprint เพิ่มเข้ามา
 
