@@ -31,6 +31,7 @@ PHASE M1 · spec เต็มใน docs/28-counter-knowledge-spec.md
 
 from __future__ import annotations
 
+from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
@@ -506,3 +507,95 @@ def coverage(book: CounterBook, hero_ids: list[str]) -> dict[str, object]:
         "inferred": sum(1 for e in book.evidence if e.status == "inferred"),
         "unconditional": sum(1 for e in book.evidence if e.unconditional),
     }
+
+
+# ─────────────────────────────── คุณภาพของหลักฐาน — M1.5 · GOAL 4
+
+
+# ป้ายผลการเทียบ — ใช้คำเดียวกับที่ M1.5 กำหนด
+VERDICT_LABEL: dict[str, str] = {
+    "agrees": "agree",
+    "disagrees": "disagree",
+    "mixed": "partial",
+    "insufficient": "insufficient",
+}
+
+
+@dataclass
+class QualityRow:
+    """ข้ออ้างหนึ่งข้อ เทียบกับข้อมูลของเราเอง — เก็บทั้งสองฝั่งไว้ด้วยกัน
+
+    **disagree ไม่ได้แปลว่า rule ใช้ไม่ได้**
+
+    มันแปลว่าหลักฐานเชิงกลไกกับผลแพ้ชนะของทั้งเกมให้ข้อมูลคนละมิติ
+    ความรู้ตอบว่า "กลไกนี้ทำงานไหม" ข้อมูลตอบว่า "ฝ่ายที่มีตัวนี้ชนะบ่อยไหม"
+    คำถามที่สองมีตัวแปรแทรกเต็มไปหมด — ทีมที่เล่น ฟอร์มวันนั้น อีกสี่ตัวในคอมพ์
+    และที่สำคัญที่สุดคือ **ตัวอย่างถูกคัดมาแล้วด้วยการแบน**
+
+    ดังนั้นห้ามเอา match data ไปเขียนทับ knowledge สิ่งที่ทำได้คือ
+    ลดความมั่นใจ และแสดงทั้งคู่ให้คนตัดสิน
+    """
+
+    evidence_id: str
+    target: str
+    counter: str
+    knowledge_claim: str
+    mechanism: MechanismTag
+    verdict: str
+    data_detail: str
+    n: int | None
+    confidence: Confidence
+    status: EvidenceStatus
+
+    @property
+    def rule_still_stands(self) -> bool:
+        """ข้ออ้างยังอยู่ในระบบไหม — ทุกข้อยังอยู่ แม้ข้อมูลจะค้าน"""
+        return True
+
+
+def quality_table(book: CounterBook) -> list[QualityRow]:
+    """ตารางคุณภาพของทุก evidence — knowledge กับ data ยืนคู่กัน"""
+    out: list[QualityRow] = []
+    for e in book.evidence:
+        dc = e.data_check
+        out.append(
+            QualityRow(
+                evidence_id=e.evidence_id,
+                target=e.target,
+                counter=e.counter,
+                knowledge_claim=(
+                    f"{e.counter} แก้ทาง {e.target} ด้วย {MECHANISM_LABEL[e.mechanism]}"
+                ),
+                mechanism=e.mechanism,
+                verdict=VERDICT_LABEL.get(dc.verdict, "insufficient") if dc else "insufficient",
+                data_detail=dc.detail if dc else "ยังไม่ได้ตรวจกับแมตช์จริง",
+                n=dc.n if dc else None,
+                confidence=e.confidence,
+                status=e.status,
+            )
+        )
+    return out
+
+
+def quality_report(book: CounterBook) -> str:
+    rows = quality_table(book)
+    counts = Counter(r.verdict for r in rows)
+    lines = [
+        "── คุณภาพหลักฐาน counter ──",
+        "",
+        f"  {'id':<20}{'counter → target':<26}{'verdict':<14}{'conf':<8}{'n':>5}",
+    ]
+    for r in sorted(rows, key=lambda x: (x.verdict, x.evidence_id)):
+        pair = f"{r.counter} → {r.target}"
+        lines.append(
+            f"  {r.evidence_id:<20}{pair:<26}{r.verdict:<14}"
+            f"{r.confidence.value:<8}{r.n if r.n is not None else '—':>5}"
+        )
+    lines += ["", "  สรุป  " + " · ".join(f"{k} {v}" for k, v in counts.most_common())]
+    lines += [
+        "",
+        "  ⚠️ disagree ไม่ได้แปลว่า rule ใช้ไม่ได้",
+        "     มันแปลว่าหลักฐานเชิงกลไกกับผลแพ้ชนะของทั้งเกมตอบคนละคำถาม",
+        "     ข้ออ้างทุกข้อยังอยู่ในระบบ · สิ่งที่เปลี่ยนคือความมั่นใจ",
+    ]
+    return "\n".join(lines)

@@ -38,8 +38,11 @@
 | 27 | [counter-knowledge-audit.md](27-counter-knowledge-audit.md) | **counter ตอนนี้มาจากไหน** · ไม่มี mechanism ไม่มี condition · ข้อมูลเราค้านความรู้ 8/15 |
 | 28 | [counter-knowledge-spec.md](28-counter-knowledge-spec.md) | **แบบของ CounterEvidence** · threat→mechanism→capability · pick ≠ ban · เขียนก่อนลงมือ |
 | 29 | [counter-knowledge-report.md](29-counter-knowledge-report.md) | **ผล M1** · coverage 6.6% ของตาจริง · UNKNOWN 79.8% · ยังไม่เปิดน้ำหนักอะไร |
+| 30 | [engine-version.md](30-engine-version.md) | **ล็อกเวอร์ชัน + หน้าต่างสะอาด** · fingerprint สามชั้น · clean window ยังว่าง 0 เกม |
+| 31 | [hero-knowledge-coverage.md](31-hero-knowledge-coverage.md) | **รู้อะไรเกี่ยวกับฮีโร่บ้าง** · A 18 · B 18 · C 83 · คิวที่ควรกรอกก่อน |
+| 32 | [synergy-audit.md](32-synergy-audit.md) | **synergy ก่อนแตะ** · co-occurrence ≠ synergy · 15.9% ของคู่เปลี่ยนเครื่องหมาย |
 
-> ลำดับความน่าเชื่อถือเมื่อเอกสารขัดแย้งกัน: **09/21/22/25/26/29 > 10 > 17–19, 23, 27 > 08 > 01–07, 20, 24, 28**
+> ลำดับความน่าเชื่อถือเมื่อเอกสารขัดแย้งกัน: **09/21/22/25/26/29/30/31/32 > 10 > 17–19, 23, 27 > 08 > 01–07, 20, 24, 28**
 > (เลขกลุ่มแรกคือผลจากการรันจริง · กลุ่มสองคือการตรวจโค้ด · กลุ่มสามคือแผนที่ยังไม่ได้ทำ)
 >
 > ⚠️ [docs/22 §4](22-benchmark-foundation.md) ระบุสาเหตุของปัญหาตาแบนไว้ผิด — ใช้ [docs/23](23-ban-intelligence-audit.md) แทน
