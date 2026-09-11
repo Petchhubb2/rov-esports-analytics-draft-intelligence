@@ -40,6 +40,25 @@ DEFAULT_WEIGHTS = {
 # จำนวนเกมขั้นต่ำของคู่ ก่อนจะนำ matchup มาคิด
 MIN_PAIR_GAMES = 8
 
+# ─────────────────────────────────────────────────────────────────────
+# น้ำหนักของ factor ที่เปิดใช้ใน PHASE B
+#
+# **ทุกตัวเริ่มที่ 0 โดยเจตนา** ไม่ใช่เพราะยังเขียนไม่เสร็จ
+#
+# เหตุผล: factor เหล่านี้คำนวณจากข้อมูลที่มีอยู่แล้วก็จริง แต่ยังไม่มีใคร
+# วัดได้ว่ามันทำให้คำแนะนำดีขึ้นหรือแย่ลง การเปิดน้ำหนักโดยไม่วัดก่อน
+# คือการเปลี่ยนคำแนะนำของผู้ใช้ด้วยการเดา ซึ่งแย่กว่าไม่เปลี่ยนเลย
+#
+# ค่าพวกนี้ยังถูกคำนวณและแสดงผลเสมอ ผู้ใช้จึงเห็นและตรวจได้ทันที
+# แต่ยังไม่มีผลต่ออันดับ จนกว่า benchmark ใน PHASE I จะบอกว่าควรเปิดเท่าไร
+#
+# tests/unit/test_recommend_regression.py พิสูจน์ว่า "0 แปลว่าไม่เปลี่ยนจริง"
+EXTRA_WEIGHTS: dict[str, float] = {
+    "composition": 0.0,   # Q1 — คอมพ์ดีขึ้นแค่ไหนถ้าได้ตัวนี้
+    "lane_counter": 0.0,  # Q2 — matchup เฉพาะคู่ที่ประกบกันในเลนเดียวกัน
+    "synergy_adj": 0.0,   # Q5 — synergy ที่หัก "ทีมเก่งเล่นคู่นี้บ่อย" ออกแล้ว
+}
+
 # ฮีโร่ที่ตำแหน่งเต็มแล้วยังได้คะแนนเท่านี้ของเดิม
 # ไม่ตัดเป็นศูนย์ เพราะข้อมูลเลนอาจไม่ครบ และตัวเฟลกอาจไปลงเลนอื่นได้
 ROLE_FLOOR = 0.35
@@ -142,6 +161,12 @@ class Suggestion:
     # 1.0 = ตรงกับตำแหน่งที่ฝ่ายนั้นยังต้องการเต็ม ๆ · 0.0 = ตำแหน่งเต็มแล้ว
     role_fit: float = 1.0
 
+    # Q1 — มิติที่ตัวนี้ช่วยยกขึ้น/กดลง เทียบกับคอมพ์ก่อนหยิบมัน
+    # (มิติ, ส่วนต่าง) เช่น ("frontline", +18.4)
+    # ว่างทั้งคู่ = ยังคำนวณไม่ได้ (attribute ไม่ครบ) ไม่ใช่แปลว่าไม่มีผล
+    fills_gaps: list[tuple[str, float]] = field(default_factory=list)
+    creates_gaps: list[tuple[str, float]] = field(default_factory=list)
+
     @property
     def reliable(self) -> bool:
         return self.games >= 15
@@ -161,11 +186,20 @@ def recommend(
     min_games: int = 5,
     lane_usage: dict[str, dict[str, int]] | None = None,
     lanes: list[str] | None = None,
+    hero_db: object | None = None,
+    extra_weights: dict[str, float] | None = None,
 ) -> list[Suggestion]:
     """จัดอันดับฮีโร่ที่ควรเลือกหรือแบนในตาปัจจุบัน
 
     ส่ง lane_usage เข้ามาด้วยเพื่อให้คิดเรื่องตำแหน่งที่ยังว่างได้
     (ได้จาก rov.draft.lanes.lane_usage) ถ้าไม่ส่งมาจะข้ามการคิดส่วนนี้ไป
+
+    ส่ง hero_db (rov.draft.heroes.HeroDB) เข้ามาเพื่อเปิด component
+    "composition" ถ้าไม่ส่ง component นั้นจะไม่มีเลย — ไม่ใช่ค่า  50 แทน
+    เพราะ "ไม่รู้" กับ "กลาง ๆ" ไม่เหมือนกัน
+
+    extra_weights ทับ EXTRA_WEIGHTS ได้ ใช้ตอนทดสอบว่าเปิดน้ำหนักแล้วอันดับเปลี่ยนจริง
+    ห้ามใช้เปลี่ยนน้ำหนักจริงจนกว่า benchmark ใน PHASE I จะบอกว่าควรเท่าไร
     """
     turn = state.current
     if turn is None:
@@ -192,6 +226,12 @@ def recommend(
     # ถ้าผู้เรียกส่ง weights มาเอง ให้ทับลงบนค่าที่คำนวณได้
     # ส่งมาบางคีย์ก็ได้ ที่เหลือใช้ค่าไดนามิก
     w = {**weights_for(len(theirs), len(ours)), **(weights or {})}
+    # factor ที่เปิดใช้ใน PHASE B รวมเข้ามาโดยมีค่าเริ่มต้นเป็น 0
+    w_all = {**w, **EXTRA_WEIGHTS, **(extra_weights or {})}
+
+    # บริบทของ composition — เตรียมครั้งเดียวนอกลูป ไม่ใช่ต่อ candidate
+    # เพราะ dimension ของทีมก่อนหยิบ เป็นค่าเดียวกันสำหรับทุก candidate
+    comp_ctx = _composition_context(hero_db, ours)
 
     legal = state.legal_moves()
     if is_ban:
@@ -232,7 +272,21 @@ def recommend(
             "synergy", "Synergy", y_raw, _scale(y_raw, -3.0, 3.0), y_detail
         )
 
-        base = sum(w[k] * c.scaled for k, c in s.components.items())
+        # Q1 — composition ดีขึ้นแค่ไหนถ้าได้ตัวนี้
+        # มีเฉพาะเมื่อส่ง hero_db มา และ attribute ของทุกตัวครบ
+        if comp_ctx is not None:
+            cf = _composition_fit(comp_ctx, hid)
+            if cf is not None:
+                raw, fills, creates, detail = cf
+                s.components["composition"] = Component(
+                    "composition", "Composition", raw, _scale(raw, -12.0, 12.0), detail
+                )
+                s.fills_gaps = fills
+                s.creates_gaps = creates
+
+        # น้ำหนักของ factor ใหม่เป็น 0 สูตรจึงให้ผลเท่าเดิมเป๊ะ
+        # ใช้ .get(k, 0.0) แทน w[k] เพราะ components มีคีย์ที่ w ไม่รู้จักแล้ว
+        base = sum(w_all.get(k, 0.0) * c.scaled for k, c in s.components.items())
         fit = role_fit(hid, need, lu, ln_all) if need else 1.0
         s.role_fit = fit
         s.total = base * (ROLE_FLOOR + (1.0 - ROLE_FLOOR) * fit)
@@ -241,6 +295,87 @@ def recommend(
 
     out.sort(key=lambda x: x.total, reverse=True)
     return out[:limit]
+
+
+# ---------------------------------------------------------------- Q1 · composition
+
+
+# มิติที่ถือว่า "ยิ่งสูงยิ่งดี" ทั้งหมด — ใช้วัดว่าหยิบตัวนี้แล้วคอมพ์ขยับไปทางไหน
+# ไม่รวม damage_mix เพราะมันเป็นความสมดุล ไม่ใช่ยิ่งมากยิ่งดี
+# และไม่รวม role_balance เพราะ role_fit จัดการเรื่องตำแหน่งอยู่แล้ว
+# การนับซ้ำจะทำให้เรื่องตำแหน่งมีน้ำหนักเกินจริง
+_FIT_DIMS = (
+    "frontline", "engage", "disengage", "peel",
+    "objective", "crowd_control", "waveclear", "split_push",
+)
+
+# ส่วนต่างที่ถือว่ามีนัย ต่ำกว่านี้คือความผันผวนปกติ ไม่ต้องรายงาน
+_GAP_DELTA = 5.0
+
+
+def _composition_context(hero_db: object | None, ours: list[str]):
+    """เตรียมข้อมูลที่ทุก candidate ใช้ร่วมกัน — คืน None ถ้าคิดไม่ได้
+
+    คืน None เมื่อ (ก) ไม่ได้ส่ง hero_db มา (ข) ทีมเรามีตัวที่ attribute ไม่ครบ
+    ทั้งสองกรณีคือ "ยังไม่รู้" ซึ่งต้องไม่มี component ออกไปเลย
+    ไม่ใช่ใส่ค่ากลางแล้วทำเหมือนรู้
+    """
+    if hero_db is None:
+        return None
+    from rov.draft.composition import partial_dimensions
+
+    try:
+        team = [hero_db.require(h) for h in ours]
+    except KeyError:
+        return None
+    before = partial_dimensions(team)
+    if before is None:
+        return None
+    return hero_db, team, before
+
+
+def _composition_fit(ctx, hero_id: str):
+    """คอมพ์ขยับไปทางไหนถ้าเพิ่มฮีโร่ตัวนี้เข้าไป
+
+    คืน (raw, fills_gaps, creates_gaps, detail) หรือ None ถ้าฮีโร่ตัวนี้
+    ยังไม่ได้กรอก attribute
+
+    **raw ถ่วงด้วยความต้องการ** — การยก frontline จาก 10 เป็น 40 มีค่ากว่า
+    การยกจาก 80 เป็น 95 มาก เพราะทีมที่ frontline 80 แล้วไม่ได้ขาดมันอีก
+    ใช้ (100 - ค่าเดิม)/100 เป็นตัวถ่วง ซึ่งเป็นหลักเดียวกับที่
+    `_saturating_sum` ใช้กับ CC คือผลตอบแทนลดลงเมื่อมีมากแล้ว
+    """
+    from rov.draft.composition import partial_dimensions
+
+    hero_db, team, before = ctx
+    hero = hero_db.get(hero_id)
+    if hero is None or not hero.complete:
+        return None
+    after = partial_dimensions([*team, hero])
+    if after is None:
+        return None
+
+    raw = 0.0
+    fills: list[tuple[str, float]] = []
+    creates: list[tuple[str, float]] = []
+    for dim in _FIT_DIMS:
+        delta = after[dim] - before[dim]
+        raw += delta * (100.0 - before[dim]) / 100.0
+        if delta >= _GAP_DELTA:
+            fills.append((dim, round(delta, 1)))
+        elif delta <= -_GAP_DELTA:
+            creates.append((dim, round(delta, 1)))
+    raw /= len(_FIT_DIMS)
+
+    fills.sort(key=lambda x: -x[1])
+    creates.sort(key=lambda x: x[1])
+    if fills:
+        detail = "ยก " + ", ".join(f"{k} {v:+.0f}" for k, v in fills[:3])
+    elif creates:
+        detail = "กด " + ", ".join(f"{k} {v:+.0f}" for k, v in creates[:3])
+    else:
+        detail = "ไม่เปลี่ยนมิติไหนเกิน 5 แต้ม"
+    return raw, fills, creates, detail
 
 
 def _counter_against(

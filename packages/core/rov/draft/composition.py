@@ -117,6 +117,62 @@ def _mean(vals: list[int]) -> float:
     return sum(vals) / len(vals) if vals else 0.0
 
 
+# --------------------------------------------------------- ทีมที่ยังไม่ครบ
+
+
+# ชื่อมิติที่คิดจาก utility ตรง ๆ คู่กับฟังก์ชันรวมของมัน
+# **ต้องตรงกับที่ analyze() ใช้เป๊ะ ๆ** — ถ้าวันหนึ่งไม่ตรง คะแนนระหว่างดราฟต์
+# จะคนละมาตรกับคะแนนตอนดราฟต์จบ ซึ่งผู้ใช้จะงงว่าทำไมตัวเลขกระโดด
+# tests/unit/test_composition_partial.py คอยจับให้
+_PARTIAL_DIMS: dict[str, tuple[str, str]] = {
+    "frontline": ("frontline", "top"),
+    "engage": ("engage", "top"),
+    "disengage": ("disengage", "top"),
+    "peel": ("peel", "top"),
+    "objective": ("objective", "top"),
+    "crowd_control": ("cc_hard", "sat"),
+    "waveclear": ("waveclear", "weak_mean"),
+    "split_push": ("splitpush", "top80"),
+}
+
+
+def partial_dimensions(heroes: list[Hero]) -> dict[str, float] | None:
+    """คะแนนแต่ละมิติของทีมที่ยังเลือกไม่ครบ 5 ตัว
+
+    ใช้ระหว่างดราฟต์ ตอนที่ยังมี 0-4 ตัว ซึ่ง `analyze()` รับไม่ได้
+    เพราะมันบังคับ 5 ตัวพอดีและโยน IncompleteDataError
+
+    **ใช้ฟังก์ชันรวมชุดเดียวกับ analyze() ทุกตัว ไม่ได้เขียนสูตรใหม่**
+    ต่างกันแค่รับจำนวนตัวไม่ครบได้ และคืน None แทนการโยน exception
+
+    คืน `None` เมื่อมีตัวใดตัวหนึ่ง attribute ไม่ครบ — ไม่เดาค่าให้
+    เป็นหลักเดียวกับ `Hero.u()` ที่ยอมโยน exception ดีกว่าคืนค่ากลาง
+
+    ทีมว่าง (ยังไม่เลือกใคร) คืน dict ที่ทุกมิติเป็น 0.0 ซึ่งถูกต้อง —
+    ทีมที่ยังไม่มีใครเลย ไม่มี frontline จริง ๆ ไม่ใช่ "ไม่รู้"
+    """
+    if any(not h.complete for h in heroes):
+        return None
+
+    out: dict[str, float] = {}
+    for name, (key, how) in _PARTIAL_DIMS.items():
+        vals = [h.u(key) for h in heroes]
+        if not vals:
+            out[name] = 0.0
+        elif how == "top":
+            out[name] = _top_weighted(vals)
+        elif how == "top80":
+            out[name] = _top_weighted(vals, (0.8, 0.2))
+        elif how == "sat":
+            out[name] = _saturating_sum(vals, 180.0)
+        else:  # weak_mean
+            out[name] = 0.45 * _weakest(vals) + 0.55 * _mean(vals)
+
+    out["role_balance"] = _role_balance(heroes).value if heroes else 0.0
+    out["damage_mix"] = _damage_mix(heroes).value if heroes else 0.0
+    return {k: max(0.0, min(100.0, v)) for k, v in out.items()}
+
+
 # ------------------------------------------------------------------- หลัก
 
 
