@@ -33,6 +33,13 @@ from rov.draft.scouting import (  # noqa: E402
     team_profiles,
 )
 from rov.draft.stats import MIN_GAMES_RELIABLE, SHRINKAGE_K  # noqa: E402
+from rov.draft.teamcomp import (  # noqa: E402
+    MIN_COMPS,
+    SHAPES,
+    collect_comps,
+    league_shape_rates,
+    team_comp_profiles,
+)
 from rov.macro.plays import MacroBook  # noqa: E402
 
 # เก็บเฉพาะคู่ที่มีข้อมูลพอ เพื่อไม่ให้ไฟล์ใหญ่เกินจำเป็น
@@ -59,6 +66,7 @@ def main() -> int:
     names: dict[str, str] = {}
     attrs: dict[str, dict] = {}
     hero_file = Path("configs/draft/heroes.yaml")
+    db: HeroDB | None = None
     if hero_file.exists():
         db = HeroDB.load(hero_file)
         for h in db.heroes:
@@ -236,6 +244,54 @@ def main() -> int:
             }
         return out
 
+    # ── คอมพ์รายทีม ───────────────────────────────────────────────────
+    #
+    # ส่งเฉพาะช่วงทั้งหมด ไม่แยกช่วงล่าสุดเหมือน hero pool
+    # เพราะรูปทรงคอมพ์ต้องการตัวอย่างเยอะกว่าจะมีนัย (MIN_COMPS = 40)
+    # การหั่นเป็น 120 วันจะเหลือทีมที่พูดถึงได้ไม่กี่ทีม
+    def pack_team_comps() -> tuple[dict, dict, int]:
+        if db is None:
+            return {}, {}, 0
+        every = [c for rows in collect_comps(all_series).values() for c in rows]
+        league, league_n = league_shape_rates(every, {h.id: h for h in db.heroes})
+        out = {}
+        for name, prof in team_comp_profiles(all_series, db).items():
+            out[name] = {
+                "n": prof.n,
+                "wins": sum(c.won for c in prof.comps),
+                "distinct": prof.repeats.distinct,
+                "max_repeat": prof.repeats.max_repeat,
+                "verdict": prof.repeats.verdict,
+                "skipped": prof.skipped_unknown_class,
+                "bond_threshold": prof.bond_threshold,
+                # ส่งทุกทรง ไม่ใช่เฉพาะที่มีนัย — หน้าเว็บต้องแสดงทรงที่
+                # "เหมือนลีก" ได้ด้วย ไม่งั้นผู้ใช้จะเห็นแต่ด้านที่โดดเด่น
+                # แล้วเข้าใจว่าทีมนี้พิเศษกว่าความจริง
+                "shapes": [
+                    {
+                        "k": s.rule.key,
+                        "hits": s.hits,
+                        "n": s.n,
+                        "wins": s.wins,
+                        "lo": round(s.lo, 4),
+                        "hi": round(s.hi, 4),
+                        "notable": s.notable,
+                    }
+                    for s in prof.shapes
+                ],
+                "bonds": [
+                    {
+                        "a": b.a, "b": b.b, "n": b.together,
+                        "exp": round(b.expected, 2), "lift": round(b.lift, 2),
+                        "wins": b.wins,
+                    }
+                    for b in prof.bonds
+                ],
+            }
+        return out, league, league_n
+
+    team_comps, comp_league, comp_league_n = pack_team_comps()
+
     league_pick_rate = {h: stats.pick_rate(h) for h in stats.heroes}
     teams_all = pack_teams(all_series)
     teams_recent = (
@@ -254,6 +310,13 @@ def main() -> int:
         "hero_attrs": attrs,
         "teams": teams_all,
         "teams_recent": teams_recent,
+        "team_comps": team_comps,
+        "comp_shapes": [
+            {"k": r.key, "label": r.label, "why": r.why} for r in SHAPES
+        ],
+        "comp_league": {k: round(v, 4) for k, v in comp_league.items()},
+        "comp_league_n": comp_league_n,
+        "comp_min": MIN_COMPS,
         "total_games": stats.total_games,
         "min_lane_pair_games": MIN_LANE_PAIR_GAMES,
         "lanes": [lane.value for lane in SLOT_LANES],
@@ -302,6 +365,13 @@ def main() -> int:
     print(f"  matchup    {len(data['matchups']):,} คู่ (>= {MIN_PAIR_GAMES} เกม)")
     print(f"  synergy    {len(data['synergies']):,} คู่")
     print(f"  รายการ      {len(data['sources'])}")
+    notable = sum(
+        1 for t in team_comps.values() for s in t["shapes"] if s["notable"]
+    )
+    bonds = sum(len(t["bonds"]) for t in team_comps.values())
+    print(f"  คอมพ์ทีม    {len(team_comps)} ทีม (>= {MIN_COMPS} คอมพ์) "
+          f"· ทรงที่ต่างจากลีกอย่างมีนัย {notable} · คู่ที่เกินความบังเอิญ {bonds}")
+    print(f"             เส้นฐานลีกจาก {comp_league_n} คอมพ์ที่รู้ class ครบ")
     return 0
 
 

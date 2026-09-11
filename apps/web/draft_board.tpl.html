@@ -412,6 +412,55 @@ table.rec tbody tr.sel { background: color-mix(in srgb, var(--amber) 10%, transp
 .cdims .lo i { background: var(--red); }
 .cdims .hi i { background: var(--good); }
 .cnote { font-size: 10.5px; color: var(--text-faint); margin: 7px 0 0; line-height: 1.6; }
+
+/* ── ทีม / คอมพ์ ──────────────────────────────────────────────────── */
+.tc-warn { border: 1px solid var(--amber); border-left-width: 3px; border-radius: 3px;
+  padding: 10px 12px; margin: 0 0 12px; background: rgba(232,163,61,.06); }
+.tc-warn h3 { font-family: var(--fx-display); font-size: 12px; letter-spacing: .06em;
+  margin: 0 0 5px; color: var(--amber); }
+.tc-warn p { margin: 0; font-size: 12px; line-height: 1.7; color: var(--text-dim); }
+.tc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 10px; padding: 10px 12px; }
+.tc-stat { border: 1px solid var(--line); border-radius: 3px; padding: 8px 10px; }
+.tc-stat b { display: block; font-family: var(--fx-display); font-size: 9.5px;
+  letter-spacing: .09em; color: var(--text-faint); margin-bottom: 3px; }
+.tc-stat span { font-family: var(--fx-mono); font-size: 18px; }
+.tc-stat em { font-style: normal; font-size: 11px; color: var(--text-dim); display: block;
+  margin-top: 2px; line-height: 1.5; }
+/* แถบเทียบ — อัตราของทีมวางทับเส้นฐานลีก ให้เห็นส่วนต่างเป็นระยะทาง */
+.tc-shape { display: grid; grid-template-columns: 118px 1fr 96px; gap: 10px;
+  align-items: center; padding: 9px 12px; }
+.tc-shape + .tc-shape { border-top: 1px solid var(--line-soft); }
+.tc-shape.on { background: rgba(47,147,230,.05); }
+.tc-name { font-size: 12px; }
+.tc-name i { font-style: normal; display: block; font-family: var(--fx-mono);
+  font-size: 9.5px; color: var(--text-faint); }
+.tc-bar { position: relative; height: 20px; background: var(--line-soft);
+  border: 1px solid var(--line); border-radius: 2px; }
+.tc-fill { position: absolute; inset: 0 auto 0 0; border-radius: 1px;
+  background: var(--text-faint); opacity: .45; }
+.tc-shape.on .tc-fill { background: var(--blue); opacity: .55; }
+/* ช่วงความเชื่อมั่น วางทับแถบ — ยาวแค่ไหนคือความไม่แน่นอนแค่นั้น */
+.tc-ci { position: absolute; top: 50%; height: 3px; transform: translateY(-50%);
+  background: var(--text); opacity: .7; border-radius: 2px; }
+.tc-league { position: absolute; top: -2px; bottom: -2px; width: 2px;
+  background: var(--amber); }
+.tc-num { font-family: var(--fx-mono); font-size: 11.5px; text-align: right; }
+.tc-num i { font-style: normal; display: block; font-size: 9.5px; color: var(--text-faint); }
+.tc-why { grid-column: 1 / -1; font-size: 11px; color: var(--text-dim);
+  line-height: 1.6; margin: 2px 0 0; }
+.tc-none { padding: 10px 12px; font-size: 12px; color: var(--text-faint); margin: 0; }
+.tc-matrix { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+.tc-matrix th, .tc-matrix td { padding: 5px 7px; text-align: right;
+  border-bottom: 1px solid var(--line-soft); font-family: var(--fx-mono); }
+.tc-matrix th:first-child, .tc-matrix td:first-child { text-align: left;
+  font-family: var(--fx-body); }
+.tc-matrix thead th { font-family: var(--fx-display); font-size: 9.5px;
+  letter-spacing: .06em; color: var(--text-faint); white-space: nowrap; }
+.tc-matrix td.up { color: var(--good); font-weight: 700; }
+.tc-matrix td.down { color: var(--red); font-weight: 700; }
+.tc-matrix tr.sel { background: rgba(47,147,230,.07); }
+.tc-matrix tbody tr { cursor: pointer; }
 .cnote.warn { color: var(--amber); }
 /* แถบค้นหา rule มาโคร */
 .macbar { display: flex; gap: 8px; align-items: center; margin: 0 0 10px; }
@@ -765,6 +814,7 @@ input.search:focus { outline: none; border-color: var(--amber); }
     <button class="tab" id="tabDraft" role="tab" aria-selected="true">Draft Room</button>
     <button class="tab" id="tabCtr" role="tab" aria-selected="false">ตัวแก้ / แพ้ทาง</button>
     <button class="tab" id="tabMap" role="tab" aria-selected="false">แมพ</button>
+    <button class="tab" id="tabTeam" role="tab" aria-selected="false">ทีม / คอมพ์</button>
     <button class="tab" id="tabMac" role="tab" aria-selected="false">มาโคร / แผน</button>
   </div>
 
@@ -1071,6 +1121,47 @@ input.search:focus { outline: none; border-color: var(--amber); }
           <div class="tl" id="towers"></div>
         </div>
       </div>
+    </div>
+  </section>
+
+  <section id="viewTeam" hidden>
+    <div class="tc-warn">
+      <h3>อ่านก่อน — "คอมพ์ที่ทีมเล่นบ่อยสุด" ไม่มีอยู่จริง</h3>
+      <p>วัดจากข้อมูลจริงแล้วพบว่าทีมอาชีพ <b>แทบไม่เล่นชุด 5 ตัวซ้ำเลย</b>
+      ทีมใหญ่ที่สุดในชุดข้อมูลเล่นไป <b id="tcHeroN">—</b> คอมพ์ ได้ชุดที่ไม่ซ้ำกัน
+      <b id="tcHeroD">—</b> แบบ สาเหตุหลักคือกติกา Global Ban-Pick ที่ห้ามใช้ฮีโร่ซ้ำ
+      ในซีรีส์เดียว การจัดชุดเดิมจึงเป็นไปไม่ได้โดยโครงสร้าง
+      <br>หน้านี้จึงไม่ตอบว่า "ชุดไหน" แต่ตอบว่า <b>ทรงไหน</b> — ทีมไม่เล่นชุดเดิม
+      แต่เล่นทรงเดิม ซึ่งวัดได้และต่างกันจริง</p>
+    </div>
+
+    <div class="pool" style="margin-bottom:12px">
+      <div class="pool-head">
+        <h2>ทรงคอมพ์รายทีม</h2>
+        <select id="tcTeam" style="font:inherit;font-size:12px;padding:2px 6px;
+          background:var(--bg-soft);color:var(--text);border:1px solid var(--line);
+          border-radius:3px" aria-label="เลือกทีม"></select>
+        <span class="count" id="tcCount"></span>
+      </div>
+      <div class="tc-grid" id="tcStats"></div>
+      <div class="psteps"><h3>ทรงที่ทีมนี้จัด เทียบกับลีก</h3></div>
+      <div id="tcShapes"></div>
+      <div class="psteps"><h3>คู่ที่มาด้วยกันเกินความบังเอิญ</h3></div>
+      <div id="tcBonds"></div>
+      <p class="cnote" id="tcNote" style="padding:0 12px 12px"></p>
+    </div>
+
+    <div class="pool">
+      <div class="pool-head">
+        <h2>ทุกทีมในตารางเดียว</h2>
+        <span class="count">ตัวเลขคือส่วนต่างจากลีกเป็นจุดเปอร์เซ็นต์ · หนา = ต่างอย่างมีนัย</span>
+      </div>
+      <div style="overflow-x:auto;padding:0 12px 12px">
+        <table class="tc-matrix" id="tcMatrix"></table>
+      </div>
+      <p class="cnote" style="padding:0 12px 12px">
+        คลิกแถวเพื่อดูทีมนั้นด้านบน · ช่องว่างคือทีมที่คอมพ์ไม่ถึงเกณฑ์จึงยังไม่พูดถึง
+      </p>
     </div>
   </section>
 
@@ -1534,6 +1625,149 @@ function renderScout() {
     <div class="psteps" style="padding:10px 0 0"><h3>ควรแบนอะไรใส่ทีมนี้</h3>${banRows}</div>
     <p class="cnote">คะแนนรวมสามอย่าง — เขาหยิบบ่อยแค่ไหน · บ่อยกว่าลีกกี่เท่า ·
       ตัวนั้นกินพื้นที่เลนเขาเท่าไร · ข้อมูลระดับทีม ไม่ใช่ระดับผู้เล่น</p>`;
+}
+
+
+// ── ทีม / คอมพ์ ───────────────────────────────────────────────────────
+//
+// ทุกตัวเลขคำนวณฝั่ง Python แล้ว (rov/draft/teamcomp.py) หน้านี้แค่แสดง
+// จึงไม่มีสูตรซ้ำให้เพี้ยน — ต่างจาก composition ที่ต้องคิดสดตอนดราฟต์
+//
+// สิ่งเดียวที่หน้านี้คำนวณเองคือ hits/n เป็นเปอร์เซ็นต์ ซึ่งเป็นการหารตรง ๆ
+const TCS = D.comp_shapes || [];
+const TCL = D.comp_league || {};
+
+function tcTeams() { return D.team_comps || {}; }
+
+function fillTeamSelect() {
+  const sel = el("tcTeam"), teams = tcTeams();
+  const names = Object.keys(teams).sort((a, b) => teams[b].n - teams[a].n);
+  if (!names.length) return;
+  sel.innerHTML = names.map(n =>
+    `<option value="${escape(n)}">${escape(n)} · ${teams[n].n} คอมพ์</option>`).join("");
+}
+
+// แถบเดียวกินความหมายสามอย่าง: อัตราของทีม · ช่วงความเชื่อมั่น · เส้นฐานลีก
+// วางไว้บนแกนเดียวกัน ผู้อ่านจึงเห็นได้ทันทีว่าช่วงคร่อมเส้นลีกหรือไม่
+// ซึ่งคือเกณฑ์เดียวกับที่ Python ใช้ตัดสินคำว่า "มีนัย"
+function shapeBar(row, league) {
+  const pct = row.n ? row.hits / row.n : 0;
+  const w = v => (Math.max(0, Math.min(1, v)) * 100).toFixed(1) + "%";
+  return `<div class="tc-bar">
+    <div class="tc-fill" style="width:${w(pct)}"></div>
+    <div class="tc-ci" style="left:${w(row.lo)};width:${w(row.hi - row.lo)}"></div>
+    <div class="tc-league" style="left:${w(league)}" title="ลีก ${(league*100).toFixed(1)}%"></div>
+  </div>`;
+}
+
+function renderTeamComp() {
+  const teams = tcTeams();
+  const names = Object.keys(teams);
+  if (!names.length) { el("viewTeam").innerHTML =
+    `<p class="tc-none">ยังไม่มีข้อมูลคอมพ์รายทีม — รัน scripts/export_draft_data.py ใหม่</p>`;
+    return; }
+
+  // ตัวเลขพาดหัว: ทีมที่เล่นเยอะสุด ใช้แสดงว่าชุด 5 ตัวไม่ซ้ำจริง
+  const biggest = names.reduce((a, b) => teams[a].n >= teams[b].n ? a : b);
+  el("tcHeroN").textContent = teams[biggest].n;
+  el("tcHeroD").textContent = teams[biggest].distinct;
+
+  if (!el("tcTeam").options.length) fillTeamSelect();
+  const name = el("tcTeam").value || biggest;
+  el("tcTeam").value = name;
+  const t = teams[name];
+  el("tcCount").textContent =
+    `เกณฑ์ขั้นต่ำ ${D.comp_min} คอมพ์ · เส้นฐานลีกจาก ${D.comp_league_n} คอมพ์`;
+
+  const wr = t.n ? (t.wins / t.n * 100).toFixed(0) + "%" : "—";
+  el("tcStats").innerHTML = `
+    <div class="tc-stat"><b>คอมพ์ทั้งหมด</b><span>${t.n}</span>
+      <em>ชนะ ${t.wins} (${wr})</em></div>
+    <div class="tc-stat"><b>ชุด 5 ตัวที่ไม่ซ้ำกัน</b><span>${t.distinct}</span>
+      <em>${(t.distinct / t.n * 100).toFixed(0)}% ของคอมพ์ทั้งหมด</em></div>
+    <div class="tc-stat"><b>ชุดที่ใช้ซ้ำมากสุด</b><span>${t.max_repeat} ครั้ง</span>
+      <em>${escape(t.verdict)}</em></div>`;
+
+  // เรียงตามขนาดของส่วนต่าง ไม่ใช่ตามอัตราดิบ — ทรงที่ทุกทีมเล่นเท่ากัน
+  // ไม่ได้บอกอะไรเกี่ยวกับทีมนี้ สิ่งที่บอกคือส่วนที่ต่างจากลีก
+  const rows = t.shapes.slice().sort((a, b) => {
+    const da = Math.abs(a.hits / a.n - (TCL[a.k] || 0));
+    const db_ = Math.abs(b.hits / b.n - (TCL[b.k] || 0));
+    return db_ - da;
+  });
+  el("tcShapes").innerHTML = rows.map(r => {
+    const meta = TCS.find(x => x.k === r.k) || {label: r.k, why: ""};
+    const league = TCL[r.k] || 0;
+    const pct = r.n ? r.hits / r.n : 0;
+    const diff = (pct - league) * 100;
+    const swr = r.hits ? (r.wins / r.hits * 100).toFixed(0) + "%" : "—";
+    return `<div class="tc-shape${r.notable ? " on" : ""}">
+      <div class="tc-name">${escape(meta.label)}<i>${r.hits}/${r.n} เกม</i></div>
+      ${shapeBar(r, league)}
+      <div class="tc-num">${(pct * 100).toFixed(1)}%
+        <i>${diff >= 0 ? "+" : ""}${diff.toFixed(1)} · ชนะ ${swr}</i></div>
+      <p class="tc-why">${r.notable
+        ? `<b style="color:var(--blue)">ต่างจากลีกอย่างมีนัย</b> — ` +
+          `ช่วงความเชื่อมั่น [${(r.lo*100).toFixed(1)}, ${(r.hi*100).toFixed(1)}] ` +
+          `ไม่คร่อมค่าลีก ${(league*100).toFixed(1)}% · ${escape(meta.why)}`
+        : `อยู่ในช่วงเดียวกับลีก — ช่วง [${(r.lo*100).toFixed(1)}, ${(r.hi*100).toFixed(1)}] ` +
+          `คร่อมค่าลีก ${(league*100).toFixed(1)}% จึงยังแยกไม่ออกจากความผันผวน`}</p>
+    </div>`;
+  }).join("");
+
+  el("tcBonds").innerHTML = t.bonds.length
+    ? t.bonds.map(b => `<div class="prow"><b>${b.n} ครั้ง</b><span>
+        <span class="ptag"><span class="pic" ${picStyle(b.a)}></span>${
+          escape(HERO.get(b.a)?.name || b.a)}</span>
+        <span class="ptag"><span class="pic" ${picStyle(b.b)}></span>${
+          escape(HERO.get(b.b)?.name || b.b)}</span>
+        <em style="font-family:var(--fx-mono);font-size:10px;color:var(--text-faint)">
+          คาด ${b.exp} · ${b.lift}x · ชนะ ${(b.wins / b.n * 100).toFixed(0)}%</em>
+      </span></div>`).join("")
+    : `<p class="tc-none">ไม่มี — สับฮีโร่ที่ทีมนี้ใช้ใหม่แบบสุ่มแล้ว
+        คู่ที่บังเอิญมาด้วยกันบ่อยสุดยังได้ถึง ${t.bond_threshold} ครั้ง
+        ไม่มีคู่จริงคู่ไหนเกินค่านั้น <b>ลิสต์ว่างคือคำตอบ ไม่ใช่ข้อมูลขาด</b></p>`;
+
+  el("tcNote").innerHTML =
+    `<b>ทรงคอมพ์นับจาก hero_class ของ Liquipedia</b> ซึ่งรู้ครบ 117/119 ตัว ` +
+    `ครอบคลุม 92.9% ของคอมพ์จริง` +
+    (t.skipped ? ` · ทีมนี้ข้ามไป <b>${t.skipped} คอมพ์</b> ที่มีตัวยังไม่รู้ class ` +
+      `— ข้ามทิ้ง ไม่ได้เดาว่าไม่มี class นั้น` : "") +
+    `<br><b>ทำไมไม่ใช้ Composition Engine ที่ละเอียดกว่า</b> เพราะมันต้องการ attribute ` +
+    `ครบทั้ง 5 ตัว ซึ่งกรอกแล้ว 30/119 จึงวิเคราะห์คอมพ์จริงได้เพียง 10.6% ` +
+    `และ 10.6% นั้นเอียงไปทางคอมพ์ที่ใช้ฮีโร่ยอดนิยมล้วน การสรุปนิสัยทีมจากสไลซ์นั้นจะผิดอย่างเป็นระบบ` +
+    `<br><b>อัตราชนะเป็นค่าดิบ ไม่ถ่วงขนาดตัวอย่าง</b> ใช้ดูประกอบเท่านั้น ห้ามใช้จัดอันดับ`;
+
+  renderTcMatrix(name);
+}
+
+function renderTcMatrix(selected) {
+  const teams = tcTeams();
+  const names = Object.keys(teams).sort((a, b) => teams[b].n - teams[a].n);
+  const head = `<thead><tr><th>ทีม</th><th>คอมพ์</th>${
+    TCS.map(x => `<th>${escape(x.label)}</th>`).join("")}</tr>
+    <tr><td style="color:var(--amber)">ลีก</td><td>${D.comp_league_n}</td>${
+    TCS.map(x => `<td style="color:var(--amber)">${((TCL[x.k]||0)*100).toFixed(1)}%</td>`).join("")
+    }</tr></thead>`;
+  const body = names.map(n => {
+    const t = teams[n];
+    const cells = TCS.map(x => {
+      const r = t.shapes.find(y => y.k === x.k);
+      if (!r || !r.n) return `<td>—</td>`;
+      const d = (r.hits / r.n - (TCL[x.k] || 0)) * 100;
+      const cls = r.notable ? (d > 0 ? "up" : "down") : "";
+      return `<td class="${cls}">${d >= 0 ? "+" : ""}${d.toFixed(1)}</td>`;
+    }).join("");
+    return `<tr data-t="${escape(n)}" class="${n === selected ? "sel" : ""}">
+      <td>${escape(n)}</td><td>${t.n}</td>${cells}</tr>`;
+  }).join("");
+  const tbl = el("tcMatrix");
+  tbl.innerHTML = head + `<tbody>${body}</tbody>`;
+  tbl.onclick = e => {
+    const tr = e.target.closest("tr[data-t]"); if (!tr) return;
+    el("tcTeam").value = tr.dataset.t;
+    renderTeamComp();
+  };
 }
 
 // ── render ───────────────────────────────────────────────────────────
@@ -2935,11 +3169,14 @@ function setView(v) {
   el("viewCtr").hidden = v !== "counter";
   el("viewMap").hidden = v !== "map";
   el("viewMac").hidden = v !== "macro";
+  el("viewTeam").hidden = v !== "team";
   el("tabDraft").setAttribute("aria-selected", String(v === "draft"));
   el("tabCtr").setAttribute("aria-selected", String(v === "counter"));
   el("tabMap").setAttribute("aria-selected", String(v === "map"));
   el("tabMac").setAttribute("aria-selected", String(v === "macro"));
+  el("tabTeam").setAttribute("aria-selected", String(v === "team"));
   if (v === "counter") renderCtr();
+  if (v === "team") renderTeamComp();
   if (v === "macro") renderMacro();
   if (v === "map" && D.minimap) renderBoard();
 }
@@ -3016,6 +3253,14 @@ el("tabDraft").onclick = () => setView("draft");
 el("tabCtr").onclick   = () => setView("counter");
 el("tabMap").onclick   = () => setView("map");
 el("tabMac").onclick   = () => setView("macro");
+el("tabTeam").onclick  = () => setView("team");
+if (D.team_comps && Object.keys(D.team_comps).length) {
+  fillTeamSelect();
+  el("tcTeam").addEventListener("change", renderTeamComp);
+} else {
+  el("tabTeam").disabled = true;
+  el("tabTeam").title = "ยังไม่มีข้อมูลคอมพ์รายทีม";
+}
 el("phaseBar").addEventListener("click", e => {
   const b = e.target.closest(".ph"); if (!b) return;
   S.macPhase = b.dataset.p; renderMacro();

@@ -274,3 +274,61 @@ def test_unverified_clock_must_say_so_on_screen(tpl, fmt):
     if fmt.turn_clock.verified:
         pytest.skip("เวลายืนยันแล้ว ไม่ต้องมีคำเตือน")
     assert "ยังไม่ยืนยัน" in tpl, "นาฬิกาที่ยังไม่ยืนยันต้องมีคำเตือนใน template"
+
+
+# ── ทีม / คอมพ์ ──────────────────────────────────────────────────────
+#
+# หน้านี้ตั้งใจออกแบบให้ **ไม่มีสูตรซ้ำ** ต่างจากหน้าดราฟต์
+# ตัวเลขทุกตัวคำนวณใน rov/draft/teamcomp.py แล้วส่งมาทั้งก้อน
+# เทสต์กลุ่มนี้กันไม่ให้ใครเผลอย้ายตรรกะกลับเข้ามาใน JS ภายหลัง
+
+
+def test_comp_shape_labels_are_not_hard_coded_in_javascript(tpl):
+    """ชื่อทรงต้องมาจาก D.comp_shapes ไม่ใช่ลิสต์ที่พิมพ์ไว้ใน JS
+
+    ถ้าพิมพ์ไว้สองที่ วันที่เพิ่มทรงใหม่ใน SHAPES หน้าเว็บจะเงียบ
+    แล้วผู้ใช้จะเห็นไม่ครบโดยไม่มีใครรู้
+    """
+    from rov.draft.teamcomp import SHAPES
+
+    assert "D.comp_shapes" in tpl, "หน้าเว็บต้องอ่านรายชื่อทรงจากข้อมูล"
+    for rule in SHAPES:
+        assert f'"{rule.key}"' not in tpl, (
+            f"key ของทรง {rule.key} ไม่ควรถูกพิมพ์ไว้ใน template"
+        )
+        assert rule.label not in tpl, (
+            f"ป้ายทรง '{rule.label}' ถูกพิมพ์ไว้ใน template — ต้องมาจากข้อมูลเท่านั้น"
+        )
+
+
+def test_team_comp_page_does_not_recompute_confidence_intervals(tpl):
+    """ช่วงความเชื่อมั่นต้องมาจาก Python — JS แค่วาด
+
+    Wilson score เป็นสูตรที่เขียนผิดง่ายมาก การมีสำเนาที่สองในเบราว์เซอร์
+    คือหนี้ที่จะเงียบจนวันที่ตัวเลขสองฝั่งไม่ตรงกัน
+    """
+    block = tpl[tpl.index("// ── ทีม / คอมพ์"):tpl.index("// ── render ──")]
+    assert "r.lo" in block and "r.hi" in block, "ต้องใช้ค่าที่ Python คำนวณมาแล้ว"
+    for banned in ("Math.sqrt", "1.96", "wilson"):
+        assert banned not in block, f"พบร่องรอยการคิด CI เองใน JS: {banned}"
+
+
+def test_team_comp_notability_is_decided_in_python(tpl):
+    """คำว่า 'มีนัย' ต้องตัดสินที่เดียว — ฝั่ง Python
+
+    ถ้า JS ตัดสินเอง เกณฑ์สองฝั่งจะเลื่อนออกจากกันโดยไม่มีใครสังเกต
+    """
+    block = tpl[tpl.index("// ── ทีม / คอมพ์"):tpl.index("// ── render ──")]
+    assert "r.notable" in block
+    assert "MIN_COMPS" not in block, "เกณฑ์ขั้นต่ำต้องไม่ถูกคัดลอกมาไว้ใน JS"
+
+
+def test_export_sends_every_shape_not_only_the_notable_ones():
+    """หน้าเว็บต้องแสดงทรงที่ 'เหมือนลีก' ได้ด้วย
+
+    ถ้าส่งเฉพาะทรงที่โดดเด่น ผู้ใช้จะเห็นแต่ด้านที่ต่าง แล้วเข้าใจว่า
+    ทีมนี้พิเศษกว่าความจริง — การเห็นว่า 'ส่วนใหญ่เหมือนลีก' คือข้อมูล
+    """
+    src = Path("scripts/export_draft_data.py").read_text(encoding="utf-8")
+    assert "for s in prof.shapes" in src, "ต้องวนทุกทรง ไม่ใช่ prof.notable_shapes"
+    assert "prof.notable_shapes" not in src
