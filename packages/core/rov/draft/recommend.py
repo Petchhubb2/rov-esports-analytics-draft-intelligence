@@ -57,6 +57,7 @@ EXTRA_WEIGHTS: dict[str, float] = {
     "composition": 0.0,   # Q1 — คอมพ์ดีขึ้นแค่ไหนถ้าได้ตัวนี้
     "lane_counter": 0.0,  # Q2 — matchup เฉพาะคู่ที่ประกบกันในเลนเดียวกัน
     "synergy_adj": 0.0,   # Q5 — synergy ที่หัก "ทีมเก่งเล่นคู่นี้บ่อย" ออกแล้ว
+    "trait_counter": 0.0, # Q4 — counter เชิงคุณภาพ (ยังไม่มีข้อมูล trait)
 }
 
 # ฮีโร่ที่ตำแหน่งเต็มแล้วยังได้คะแนนเท่านี้ของเดิม
@@ -289,6 +290,26 @@ def recommend(
                 _scale(lc_raw, -3.0, 3.0), lc_detail,
             )
 
+        # Q5 — synergy ที่หักค่าที่คาดหวังออกแล้ว
+        # ใช้ expected_synergy() ที่มีอยู่ใน stats.py มาตั้งแต่ต้น ไม่ได้เขียนใหม่
+        ya_raw, ya_detail = _synergy_adjusted(pooled, hid, ours)
+        s.components["synergy_adj"] = Component(
+            "synergy_adj", "Synergy (adj)", ya_raw,
+            _scale(ya_raw, -3.0, 3.0), ya_detail,
+        )
+
+        # Q4 — counter เชิงคุณภาพจาก trait
+        # มี component เฉพาะเมื่อมี trait จริง ซึ่งตอนนี้ยังไม่มีสักตัว
+        # ไม่ใส่ค่ากลางแทน เพราะ "ยังไม่รู้" กับ "ไม่ได้เปรียบไม่เสียเปรียบ" ต่างกัน
+        if comp_ctx is not None:
+            tc = _trait_counter_component(comp_ctx, hid, theirs)
+            if tc is not None:
+                t_raw, t_detail = tc
+                s.components["trait_counter"] = Component(
+                    "trait_counter", "Trait counter", t_raw,
+                    _scale(t_raw, -2.0, 2.0), t_detail,
+                )
+
         # Q1 — composition ดีขึ้นแค่ไหนถ้าได้ตัวนี้
         # มีเฉพาะเมื่อส่ง hero_db มา และ attribute ของทุกตัวครบ
         if comp_ctx is not None:
@@ -482,6 +503,77 @@ def _composition_fit(ctx, hero_id: str):
     else:
         detail = "ไม่เปลี่ยนมิติไหนเกิน 5 แต้ม"
     return raw, fills, creates, detail
+
+
+# ------------------------------------------------- Q5 · synergy ที่หักค่าคาดหวัง
+
+
+def _synergy_adjusted(
+    pooled: PooledStats, hero: str, allies: list[str]
+) -> tuple[float, str]:
+    """synergy ที่หัก "ทีมเก่งเล่นคู่นี้บ่อย" ออกไปแล้ว
+
+    ต่างจาก `_synergy_with()` ตรงตัวเทียบ ไม่ใช่ตรงสูตร
+        _synergy_with      เทียบ win rate ของคู่กับ prior 0.5
+                           คู่ที่ต่างคนต่างเก่งจะดูดีทั้งคู่ ทั้งที่อาจไม่เข้ากันเลย
+        _synergy_adjusted  เทียบกับ expected_synergy() คือ win rate ที่ควรได้
+                           ถ้าสองตัวไม่มีผลต่อกันเลย ส่วนต่างจึงคือ synergy จริง
+
+    `expected_synergy()` อยู่ใน stats.py มาตั้งแต่ต้นแต่ไม่เคยถูกเรียก
+    ตรงนี้เรียกของเดิม **ไม่ได้เขียนสูตรซ้ำ**
+
+    ยังไม่สมบูรณ์ — docstring ของ expected_synergy() ยอมรับเองว่า
+    ยังไม่ได้หักความแข็งของทีมออก แต่ดีกว่าใช้ค่าดิบมาก
+    """
+    from rov.draft.stats import SHRINKAGE_K, expected_synergy
+
+    if not allies:
+        return 0.0, "ทีมยังไม่ได้เลือก จึงยังคิด synergy ไม่ได้"
+    syn = pooled.synergies
+    if not syn:
+        return 0.0, "ยังไม่ได้คำนวณ synergy"
+
+    stats = pooled.stats
+    total = 0.0
+    used = 0
+    for a in allies:
+        key = (hero, a) if hero < a else (a, hero)
+        m = syn.get(key)
+        if m is None or m.games < MIN_PAIR_GAMES:
+            continue
+        exp = expected_synergy(stats, hero, a)
+        # สูตรเดียวกับ counter_score ทุกประการ ต่างแค่ตัวเทียบเป็น exp ไม่ใช่ prior
+        conf = m.games / (m.games + SHRINKAGE_K)
+        total += (m.adjusted(exp) - exp) * 100.0 * conf
+        used += 1
+    if used == 0:
+        return 0.0, f"ยังไม่มีคู่ที่ถึง {MIN_PAIR_GAMES} เกมกับตัวที่ทีมเลือก"
+    total /= max(1, len(allies))
+    return total, f"จาก {used}/{len(allies)} คู่ · หักค่าที่คาดหวังออกแล้ว"
+
+
+# ---------------------------------------------------- Q4 · counter เชิงคุณภาพ
+
+
+def _trait_counter_component(ctx, hero_id: str, enemies: list[str]):
+    """ต่อ `composition.trait_counter()` เข้ากับ recommend
+
+    คืน None เมื่อยังไม่รู้ ซึ่งตอนนี้คือทุกกรณี เพราะ trait ว่างทั้ง 119 ตัว
+    """
+    from rov.draft.composition import trait_counter
+
+    hero_db, _team, _before = ctx
+    hero = hero_db.get(hero_id)
+    if hero is None:
+        return None
+    foes = [h for e in enemies if (h := hero_db.get(e)) is not None]
+    if not foes:
+        return None
+    out = trait_counter(hero, foes)
+    if out is None:
+        return None
+    score, used = out
+    return score, f"จาก trait ของศัตรู {used} ตัว"
 
 
 def _counter_against(

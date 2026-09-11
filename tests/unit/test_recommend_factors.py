@@ -277,3 +277,133 @@ def test_lane_counter_is_neutral_when_no_shared_lane(ctx, lmu):
     for s in blanks:
         assert s.components["lane_counter"].detail.strip()
         assert s.components["lane_counter"].scaled == pytest.approx(50.0)
+
+
+# --------------------------------------------------- Q5 · synergy ที่หักค่าคาดหวัง
+
+
+def with_allies(ctx):
+    """เดินจนทีมเรามีเพื่อนหลายตัว เพื่อให้ synergy มีอะไรให้คิด"""
+    _fx, pooled, _lu, fmt = ctx
+    st = DraftState(fmt=fmt, pool=set(pooled.stats.heroes))
+    for h in ["murad", "keera", "florentino", "omen", "marja", "qi",
+              "tachi", "hayate", "capheny", "rouie"]:
+        if h in st.legal_moves():
+            st.apply(h)
+    return st
+
+
+def test_synergy_adj_component_always_present(ctx):
+    """Q5 — เป็นคู่ขนานของ synergy จึงต้องมีทุกตาเหมือนกัน"""
+    st = mid_draft(ctx)
+    for s in run(ctx, None, st):
+        assert "synergy_adj" in s.components
+        assert s.components["synergy_adj"].detail.strip()
+
+
+def test_synergy_adj_does_not_change_ranking(ctx):
+    """น้ำหนัก 0 — snapshot regression ครอบคลุมอยู่แล้ว ตรงนี้ยืนยันซ้ำเฉพาะจุด"""
+    st = with_allies(ctx)
+    base = [s.hero_id for s in run(ctx, None, st)]
+    again = [s.hero_id for s in run(ctx, None, st, extra_weights={"synergy_adj": 0.0})]
+    assert base == again
+
+
+def test_opening_the_synergy_adj_weight_changes_the_ranking(ctx):
+    st = with_allies(ctx)
+    base = [s.hero_id for s in run(ctx, None, st)]
+    opened = [s.hero_id for s in run(ctx, None, st, extra_weights={"synergy_adj": 0.9})]
+    assert base != opened, "เปิดน้ำหนักแล้วอันดับไม่เปลี่ยน — factor ไม่ได้ถูกใช้จริง"
+
+
+def test_synergy_adj_differs_from_raw_synergy(ctx):
+    """หัวใจของ Q5 — ถ้าสองค่าเท่ากันทุกตัว แปลว่าไม่ได้หักค่าคาดหวังจริง"""
+    st = with_allies(ctx)
+    pairs = [
+        (s.components["synergy"].raw, s.components["synergy_adj"].raw)
+        for s in run(ctx, None, st)
+    ]
+    assert any(abs(a - b) > 1e-9 for a, b in pairs), (
+        "synergy_adj เท่ากับ synergy ทุกตัว — น่าจะไม่ได้เรียก expected_synergy()"
+    )
+
+
+def test_synergy_adj_uses_the_existing_expected_synergy(ctx):
+    """ห้าม duplicate implementation — ต้องเรียกของที่มีอยู่ใน stats.py"""
+    import inspect
+
+    from rov.draft import recommend as rec
+
+    src = inspect.getsource(rec._synergy_adjusted)
+    assert "expected_synergy" in src
+    assert "math.sqrt" not in src, "เขียนสูตร odds ซ้ำแทนที่จะเรียกของเดิม"
+
+
+# ------------------------------------------------------ Q4 · trait counter
+
+
+def test_traits_are_still_unknown_for_every_hero(db):
+    """Q4 — ยังไม่มี source จึงต้องคง UNKNOWN ห้ามเติมค่าเดา"""
+    filled = [
+        h.id for h in db.heroes
+        if h.strong_against_traits or h.weak_against_traits
+    ]
+    assert not filled, (
+        f"มีการเติม trait โดยไม่มี source: {filled[:5]} — "
+        "ดู docs/20-draft-intelligence-spec.md §7 ก่อนเติม"
+    )
+
+
+def test_trait_counter_returns_none_while_traits_are_empty(db):
+    from rov.draft.composition import trait_counter
+
+    ready = db.complete_heroes
+    assert len(ready) >= 2
+    assert trait_counter(ready[0], ready[1:3]) is None
+
+
+def test_no_trait_counter_component_while_data_is_unknown(ctx, db):
+    """ไม่รู้ = ไม่มี component ไม่ใช่ใส่ค่ากลางแล้วทำเหมือนรู้"""
+    st = with_allies(ctx)
+    for s in run(ctx, db, st):
+        assert "trait_counter" not in s.components
+
+
+def test_derive_traits_reads_only_filled_attributes(db):
+    from rov.draft.composition import derive_traits
+    from rov.draft.heroes import Hero
+
+    assert derive_traits(Hero(id="empty")) is None, "attribute ไม่ครบต้องได้ None"
+    for h in db.complete_heroes[:5]:
+        t = derive_traits(h)
+        assert t is not None and isinstance(t, set)
+
+
+def test_derive_traits_matches_the_attribute_it_reads(db):
+    """ป้ายต้องสอดคล้องกับตัวเลข ไม่ใช่ความรู้ใหม่ที่โผล่มาเอง"""
+    from rov.draft.composition import derive_traits
+
+    for h in db.complete_heroes:
+        t = derive_traits(h)
+        assert ("immobile" in t) == (h.u("mobility") < 40), h.id
+        assert ("high_mobility" in t) == (h.u("mobility") >= 70), h.id
+        assert ("frontliner" in t) == (h.u("frontline") >= 65), h.id
+
+
+def test_trait_counter_works_once_traits_exist(db):
+    """พิสูจน์ว่ากลไกพร้อมใช้ ไม่ใช่โค้ดตายที่รอวันถูกลบ
+
+    ใส่ trait ชั่วคราวในหน่วยความจำ ไม่แตะไฟล์ heroes.yaml
+    """
+    from rov.draft.composition import derive_traits, trait_counter
+
+    ready = db.complete_heroes
+    foe = next((h for h in ready if "immobile" in (derive_traits(h) or set())), None)
+    if foe is None:
+        pytest.skip("ยังไม่มีฮีโร่ที่ได้ป้าย immobile")
+    hero = ready[0].model_copy(deep=True)
+    hero.strong_against_traits = ["immobile"]
+    out = trait_counter(hero, [foe])
+    assert out is not None
+    score, used = out
+    assert score > 0 and used == 1

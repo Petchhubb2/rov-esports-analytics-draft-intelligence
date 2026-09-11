@@ -250,13 +250,37 @@ def test_recommendation_respects_min_games(fmt):
 
 
 def test_components_explain_themselves(fmt):
+    """ทุก component ต้องบอกที่มาได้ ไม่ว่าจะเป็นตัวหลักหรือตัวที่เพิ่มใน PHASE B
+
+    เดิมเทสต์นี้ล็อกว่าต้องมีสี่ตัวพอดี ซึ่งทำให้เพิ่ม factor ใหม่ไม่ได้เลย
+    ตอนนี้เปลี่ยนเป็นล็อกสองอย่างที่สำคัญกว่า:
+      1. สี่ตัวหลักต้องมีเสมอ (ไม่หายไปเพราะ refactor)
+      2. ทุกตัวที่มี ต้องอธิบายตัวเองได้ (ไม่มีคะแนนลึกลับ)
+    """
     p = _pooled()
     st = DraftState(fmt=fmt, pool=set(p.stats.heroes))
     s = recommend(st, p, limit=1, min_games=5)[0]
-    assert set(s.components) == {"meta", "winrate", "counter", "synergy"}
+    assert {"meta", "winrate", "counter", "synergy"} <= set(s.components)
     for c in s.components.values():
         assert 0 <= c.scaled <= 100
-        assert c.detail, "ทุกองค์ประกอบต้องอธิบายที่มาได้"
+        assert c.detail, f"{c.key} ไม่บอกที่มา — ห้ามมีคะแนนที่ตรวจสอบไม่ได้"
+
+
+def test_no_component_appears_without_a_weight_entry(fmt):
+    """กันไม่ให้มี component ที่ไม่มีน้ำหนักรองรับ
+
+    base = Σ w_all.get(k, 0) * scaled[k] ใช้ .get() จึงไม่ระเบิดถ้าลืมใส่น้ำหนัก
+    แต่จะกลายเป็น factor ที่ไม่มีวันถูกใช้และไม่มีใครรู้ เทสต์นี้จับตรงนั้น
+    """
+    from rov.draft.recommend import EXTRA_WEIGHTS, weights_for
+
+    p = _pooled()
+    st = DraftState(fmt=fmt, pool=set(p.stats.heroes))
+    s = recommend(st, p, limit=1, min_games=5)[0]
+    known = set(weights_for(0, 0)) | set(EXTRA_WEIGHTS)
+    assert set(s.components) <= known, (
+        f"component ที่ไม่มีน้ำหนักรองรับ: {set(s.components) - known}"
+    )
 
 
 def test_counter_is_neutral_before_enemy_picks(fmt):

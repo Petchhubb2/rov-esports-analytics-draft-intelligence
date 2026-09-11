@@ -130,6 +130,84 @@ def _mean(vals: list[int]) -> float:
     return sum(vals) / len(vals) if vals else 0.0
 
 
+# ------------------------------------------------ Q4 · trait ที่คำนวณจาก attribute
+
+
+# เกณฑ์แปลง attribute ตัวเลขเป็นป้ายเชิงคุณภาพ — docs/06-draft-engine.md §3.4
+#
+# **นี่ไม่ใช่การเพิ่มข้อเท็จจริงของเกม** เป็นการพูดสิ่งที่ attribute บอกอยู่แล้ว
+# ด้วยคำอีกแบบ ฮีโร่ที่ mobility 20 "เคลื่อนที่ช้า" ไม่ใช่ความรู้ใหม่
+# ที่มาจึงเป็น derived ไม่ใช่ coach_input และไม่ต้องมี source ภายนอก
+#
+# ป้ายพวกนี้มีไว้จับคู่กับ Hero.strong_against_traits / weak_against_traits
+# ซึ่ง**ยังว่างทั้ง 119 ตัว** จนกว่าจะมีคนหรือแหล่งข้อมูลมากรอก
+#
+# เกณฑ์ทั้งหมดอยู่ใน derive_traits() ที่เดียว ไม่แยกเป็นตารางต่างหาก
+# เพื่อไม่ให้มีสองที่ที่ต้อง sync กันเอง
+
+
+def derive_traits(hero: Hero) -> set[str] | None:
+    """ป้ายเชิงคุณภาพที่คำนวณจาก attribute ที่กรอกแล้ว
+
+    คืน `None` ถ้า attribute ไม่ครบ — ไม่ใช่ set ว่าง
+    เพราะ "ยังไม่รู้" กับ "รู้แล้วว่าไม่มีป้ายไหนเลย" ต้องแยกออกจากกัน
+    """
+    if not hero.complete:
+        return None
+    u = hero.u
+    out: set[str] = set()
+    if u("mobility") < 40:
+        out.add("immobile")
+    if u("mobility") >= 70:
+        out.add("high_mobility")
+    if u("frontline") < 30 and hero.range == "long":
+        out.add("squishy_backline")
+    if u("frontline") >= 65:
+        out.add("frontliner")
+    if u("cc_hard") >= 60:
+        out.add("hard_cc")
+    if u("sustain") >= 65:
+        out.add("sustain_heavy")
+    if u("poke") >= 65:
+        out.add("poke_threat")
+    if u("splitpush") >= 65:
+        out.add("splitpusher")
+    if u("engage") >= 70:
+        out.add("engager")
+    return out
+
+
+def trait_counter(hero: Hero, enemies: list[Hero]) -> tuple[float, int] | None:
+    """counter เชิงคุณภาพจาก trait — ไม่ต้องมีข้อมูลแมตช์เลยสักเกม
+
+    ออกแบบไว้ใน docs/06 §3.4 ตั้งแต่ต้น แต่ไม่เคยถูกเขียน
+
+    คืน `None` เมื่อ **ยังไม่รู้** ซึ่งตอนนี้คือทุกกรณี เพราะ
+    `strong_against_traits` / `weak_against_traits` ว่างทั้ง 119 ตัว
+
+    คืน (คะแนน, จำนวนศัตรูที่เทียบได้) เมื่อมีข้อมูลพอ
+
+    ⚠️ **ห้ามเติม trait จากการเดา** — ต้องมาจากคนที่รู้เกม หรือจากแหล่งที่
+    อ้างอิงได้ (เช่น external_knowledge/rov-claude-kit ที่มี tag พร้อม source)
+    ดู docs/20-draft-intelligence-spec.md §7
+    """
+    if not (hero.strong_against_traits or hero.weak_against_traits):
+        return None
+    score = 0.0
+    used = 0
+    strong = set(hero.strong_against_traits)
+    weak = set(hero.weak_against_traits)
+    for e in enemies:
+        traits = derive_traits(e)
+        if traits is None:
+            continue
+        used += 1
+        score += len(strong & traits) - len(weak & traits)
+    if used == 0:
+        return None
+    return score / used, used
+
+
 # --------------------------------------------------------- ทีมที่ยังไม่ครบ
 
 
