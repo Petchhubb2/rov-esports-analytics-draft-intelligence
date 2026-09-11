@@ -33,11 +33,15 @@ from pathlib import Path
 from typing import Any
 
 from rov.draft.importer.parser import SeriesDraft
+from rov.draft.lanes import LaneMatchup
 from rov.draft.meta import PooledStats
 from rov.draft.stats import DraftStats, HeroStat, MatchupStat
 
 # ต้องตรงกับ recommend.MIN_PAIR_GAMES — คู่ที่ต่ำกว่านี้ถูกข้ามอยู่แล้ว
 FIXTURE_MIN_PAIR_GAMES = 8
+
+# คู่ในเลนเดียวกันมีตัวอย่างน้อยกว่ามาก เกณฑ์จึงต่ำกว่า — ตรงกับ recommend.MIN_LANE_PAIR
+FIXTURE_MIN_LANE_PAIR = 3
 
 
 @dataclass
@@ -62,7 +66,11 @@ class ReplayTurn:
 # ------------------------------------------------------------------ fixture
 
 
-def pooled_to_dict(pooled: PooledStats, lane_usage: dict[str, dict[str, int]]) -> dict:
+def pooled_to_dict(
+    pooled: PooledStats,
+    lane_usage: dict[str, dict[str, int]],
+    lane_matchups: dict | None = None,
+) -> dict:
     """แปลง PooledStats เป็น dict ที่ round-trip กลับมาได้เหมือนเดิม"""
     st = pooled.stats
     return {
@@ -82,6 +90,11 @@ def pooled_to_dict(pooled: PooledStats, lane_usage: dict[str, dict[str, int]]) -
             if m.games >= FIXTURE_MIN_PAIR_GAMES
         ),
         "lane_usage": {k: dict(sorted(v.items())) for k, v in sorted(lane_usage.items())},
+        "lane_matchups": sorted(
+            [str(lane), a, b, m.games, m.wins]
+            for (lane, a, b), m in (lane_matchups or {}).items()
+            if m.games >= FIXTURE_MIN_LANE_PAIR
+        ),
     }
 
 
@@ -109,6 +122,20 @@ def dict_to_pooled(raw: dict) -> tuple[PooledStats, dict[str, dict[str, int]]]:
         games_by_source={"fixture": raw["total_games"]},
     )
     return pooled, raw["lane_usage"]
+
+
+def dict_to_lane_matchups(raw: dict) -> dict:
+    """สร้างตาราง lane matchup กลับจาก fixture
+
+    key เก็บเป็น (str, str, str) ได้ เพราะ LaneRole เป็น StrEnum
+    การค้นด้วยสตริงธรรมดาจึงเจอคีย์ที่เก็บด้วย enum ได้ตามปกติ
+    """
+    out: dict = {}
+    for lane, a, b, g, w in raw.get("lane_matchups", []):
+        out[(lane, a, b)] = LaneMatchup(
+            lane=lane, hero_id=a, enemy_id=b, games=g, wins=w
+        )
+    return out
 
 
 def pick_drafts(all_series: list[SeriesDraft], limit: int) -> list[dict]:
@@ -179,6 +206,7 @@ def replay_draft(
     top_k: int = 5,
     min_games: int = 5,
     stop_after: int | None = None,
+    lane_matchups: dict | None = None,
 ) -> list[ReplayTurn]:
     """เดินดราฟต์จริงทีละตา แล้วเก็บคำแนะนำของทุกตา
 
@@ -209,6 +237,7 @@ def replay_draft(
             min_games=min_games,
             lane_usage=lane_usage or None,
             lanes=lanes or None,
+            lane_matchups=lane_matchups or None,
         )
         out.append(
             ReplayTurn(
@@ -229,6 +258,7 @@ def replay_all(fixture: dict, fmt, recommend_fn, **kw) -> dict[str, list[tuple[s
     """เดินทุกดราฟต์ใน fixture คืน {draft#turn: [(hero, total), ...]}"""
     pooled, lane_usage = dict_to_pooled(fixture["pool"])
     lanes = fixture.get("lanes") or []
+    kw.setdefault("lane_matchups", dict_to_lane_matchups(fixture["pool"]))
     out: dict[str, list[tuple[str, float]]] = {}
     for draft in fixture["drafts"]:
         for t in replay_draft(draft, fmt, pooled, lane_usage, lanes, recommend_fn, **kw):

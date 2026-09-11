@@ -20,7 +20,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "packages" / "core"
 
 from rov.cli.console import setup_console  # noqa: E402
 from rov.cli.main import _regions  # noqa: E402
-from rov.draft.lanes import SLOT_LANES, lane_usage, slot_evidence  # noqa: E402
+from rov.draft.lanes import (  # noqa: E402
+    SLOT_LANES,
+    compute_lane_matchups,
+    lane_usage,
+    slot_evidence,
+)
 from rov.draft.meta import pool  # noqa: E402
 from rov.draft.recommend import recommend  # noqa: E402
 from rov.draft.state import DraftFormat  # noqa: E402
@@ -67,6 +72,7 @@ def main() -> int:
         else {}
     )
     lanes = [ln.value for ln in SLOT_LANES] if evidence["passes"] else []
+    lmu = compute_lane_matchups(all_series) if evidence["passes"] else {}
 
     drafts = pick_drafts(all_series, args.drafts)
     fmt = DraftFormat.load()
@@ -78,21 +84,24 @@ def main() -> int:
         ),
         "top_k": TOP_K,
         "lanes": lanes,
-        "pool": pooled_to_dict(pooled, lu),
+        "pool": pooled_to_dict(pooled, lu, lmu),
         "drafts": drafts,
         "expected": {},
     }
 
     turns = 0
     for d in drafts:
-        for t in replay_draft(d, fmt, pooled, lu, lanes, recommend, top_k=TOP_K):
+        for t in replay_draft(
+            d, fmt, pooled, lu, lanes, recommend, top_k=TOP_K, lane_matchups=lmu
+        ):
             fixture["expected"][t.key] = t.top
             turns += 1
 
     print(f"ดราฟต์ {len(drafts)} เกม · {turns} ตา")
     print(f"ฮีโร่ {len(fixture['pool']['heroes'])} ตัว · "
           f"matchup {len(fixture['pool']['matchups'])} คู่ · "
-          f"synergy {len(fixture['pool']['synergies'])} คู่")
+          f"synergy {len(fixture['pool']['synergies'])} คู่ · "
+          f"lane matchup {len(fixture['pool']['lane_matchups'])} คู่")
     empty = [k for k, v in fixture["expected"].items() if not v]
     if empty:
         print(f"⚠️ มี {len(empty)} ตาที่ไม่มีคำแนะนำเลย")

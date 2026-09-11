@@ -173,3 +173,107 @@ def test_a_tank_fills_frontline(ctx, db):
     if yb is None:
         pytest.skip("ybneth ไม่ติด 8 อันดับแรกในตานี้")
     assert any(dim == "frontline" and d > 0 for dim, d in yb.fills_gaps)
+
+
+# ------------------------------------------------------------ Q2 · lane counter
+
+
+@pytest.fixture(scope="module")
+def lmu(ctx):
+    from rov.eval.draftbench import dict_to_lane_matchups
+
+    fx, *_ = ctx
+    return dict_to_lane_matchups(fx["pool"])
+
+
+def run_lane(ctx, st, lmu_, **kw):
+    fx, pooled, lu, _ = ctx
+    return recommend(
+        st, pooled, limit=8, lane_usage=lu, lanes=fx["lanes"],
+        lane_matchups=lmu_, **kw
+    )
+
+
+def test_fixture_carries_lane_matchups(ctx):
+    fx, *_ = ctx
+    assert fx["pool"]["lane_matchups"], "fixture ไม่มีข้อมูล lane matchup"
+
+
+def test_lane_matchup_keys_work_with_plain_strings(lmu):
+    """LaneRole เป็น StrEnum — การค้นด้วยสตริงต้องเจอคีย์ที่เก็บด้วย enum
+
+    ถ้าข้อนี้พัง `_lane_counter_against()` จะหาไม่เจอทั้งตารางแบบเงียบ ๆ
+    """
+    assert lmu
+    lane, a, b = next(iter(lmu))
+    assert isinstance(lane, str)
+    assert lmu.get((str(lane), a, b)) is not None
+
+
+def test_passing_lane_matchups_does_not_change_ranking(ctx, lmu):
+    """Q2 — component ที่น้ำหนัก 0 ต้องไม่ขยับอันดับ"""
+    st = mid_draft(ctx)
+    without = run(ctx, None, st)
+    with_lane = run_lane(ctx, st, lmu)
+    assert [s.hero_id for s in without] == [s.hero_id for s in with_lane]
+    for a, b in zip(without, with_lane, strict=True):
+        assert a.total == pytest.approx(b.total, abs=1e-12)
+
+
+def test_opening_the_lane_counter_weight_changes_the_ranking(ctx, lmu):
+    """Q2 — พิสูจน์ว่าไม่ใช่ dead code"""
+    fx, pooled, lu, fmt = ctx
+    st = DraftState(fmt=fmt, pool=set(pooled.stats.heroes))
+    # เดินจนศัตรูเปิดตัวที่มีข้อมูลเลนแล้ว
+    for h in ["murad", "keera", "florentino", "omen", "marja", "qi",
+              "tachi", "hayate", "capheny"]:
+        if h in st.legal_moves():
+            st.apply(h)
+    base = [s.hero_id for s in run_lane(ctx, st, lmu)]
+    opened = [
+        s.hero_id
+        for s in run_lane(ctx, st, lmu, extra_weights={"lane_counter": 0.9})
+    ]
+    assert base != opened, "เปิดน้ำหนักแล้วอันดับไม่เปลี่ยน — factor ไม่ได้ถูกใช้จริง"
+
+
+def test_lane_counter_only_counts_heroes_that_actually_share_a_lane(ctx, lmu):
+    """หัวใจของ Q2 — ต้องต่างจาก counter แบบ TEAM ที่นับทุกคู่ข้ามทีม
+
+    ถ้าคะแนนสองตัวนี้เท่ากันทุก candidate แปลว่าไม่ได้แยก context จริง
+    """
+    fx, pooled, lu, fmt = ctx
+    st = DraftState(fmt=fmt, pool=set(pooled.stats.heroes))
+    for h in ["murad", "keera", "florentino", "omen", "marja", "qi",
+              "tachi", "hayate", "capheny"]:
+        if h in st.legal_moves():
+            st.apply(h)
+    sugs = run_lane(ctx, st, lmu)
+    pairs = [
+        (s.components["counter"].raw, s.components["lane_counter"].raw)
+        for s in sugs
+        if "lane_counter" in s.components
+    ]
+    assert pairs, "ไม่มี candidate ไหนได้ lane_counter เลย"
+    assert any(abs(a - b) > 1e-9 for a, b in pairs), (
+        "lane_counter เท่ากับ counter ทุกตัว — น่าจะไม่ได้ใช้ตาราง lane จริง"
+    )
+
+
+def test_no_lane_counter_component_without_the_table(ctx):
+    st = mid_draft(ctx)
+    for s in run(ctx, None, st):
+        assert "lane_counter" not in s.components
+
+
+def test_lane_counter_is_neutral_when_no_shared_lane(ctx, lmu):
+    """ไม่มีคู่ประกบ = 0 (กลาง) พร้อมบอกเหตุผล ไม่ใช่ค่าสุ่ม"""
+    st = mid_draft(ctx)
+    sugs = run_lane(ctx, st, lmu)
+    blanks = [
+        s for s in sugs
+        if "lane_counter" in s.components and s.components["lane_counter"].raw == 0.0
+    ]
+    for s in blanks:
+        assert s.components["lane_counter"].detail.strip()
+        assert s.components["lane_counter"].scaled == pytest.approx(50.0)

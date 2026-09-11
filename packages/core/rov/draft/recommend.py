@@ -187,6 +187,7 @@ def recommend(
     lane_usage: dict[str, dict[str, int]] | None = None,
     lanes: list[str] | None = None,
     hero_db: object | None = None,
+    lane_matchups: dict | None = None,
     extra_weights: dict[str, float] | None = None,
 ) -> list[Suggestion]:
     """จัดอันดับฮีโร่ที่ควรเลือกหรือแบนในตาปัจจุบัน
@@ -197,6 +198,10 @@ def recommend(
     ส่ง hero_db (rov.draft.heroes.HeroDB) เข้ามาเพื่อเปิด component
     "composition" ถ้าไม่ส่ง component นั้นจะไม่มีเลย — ไม่ใช่ค่า  50 แทน
     เพราะ "ไม่รู้" กับ "กลาง ๆ" ไม่เหมือนกัน
+
+    ส่ง lane_matchups (rov.draft.lanes.compute_lane_matchups) เข้ามาเพื่อเปิด
+    component "lane_counter" — counter ที่นับเฉพาะคู่ที่ประกบกันในเลนเดียวกันจริง
+    ต้องส่ง lane_usage มาด้วย ไม่งั้นไม่รู้ว่าใครประกบกับใคร
 
     extra_weights ทับ EXTRA_WEIGHTS ได้ ใช้ตอนทดสอบว่าเปิดน้ำหนักแล้วอันดับเปลี่ยนจริง
     ห้ามใช้เปลี่ยนน้ำหนักจริงจนกว่า benchmark ใน PHASE I จะบอกว่าควรเท่าไร
@@ -272,6 +277,18 @@ def recommend(
             "synergy", "Synergy", y_raw, _scale(y_raw, -3.0, 3.0), y_detail
         )
 
+        # Q2 — counter ที่นับเฉพาะคู่ที่ประกบกันในเลนเดียวกัน
+        # เป็น component แยก ไม่ได้ไปแก้ counter เดิม เพราะสองตัวตอบคนละคำถาม
+        # การกลืนเข้าด้วยกันจะทำให้ semantics เดิมหายไปโดยไม่มีใครสังเกต
+        if lane_matchups and lu:
+            lc_raw, lc_detail = _lane_counter_against(
+                lane_matchups, lu, hid, theirs, prior
+            )
+            s.components["lane_counter"] = Component(
+                "lane_counter", "Lane counter", lc_raw,
+                _scale(lc_raw, -3.0, 3.0), lc_detail,
+            )
+
         # Q1 — composition ดีขึ้นแค่ไหนถ้าได้ตัวนี้
         # มีเฉพาะเมื่อส่ง hero_db มา และ attribute ของทุกตัวครบ
         if comp_ctx is not None:
@@ -295,6 +312,93 @@ def recommend(
 
     out.sort(key=lambda x: x.total, reverse=True)
     return out[:limit]
+
+
+# ---------------------------------------------------------------- Q2 · lane counter
+
+
+# คู่ในเลนเดียวกันมีตัวอย่างน้อยกว่า context=TEAM มาก เพราะจับเฉพาะคู่ที่
+# ประกบกันจริง ไม่ใช่ทุกคู่ข้ามทีม เกณฑ์จึงต่ำกว่า MIN_PAIR_GAMES
+# ค่านี้ตรงกับ lanes.MIN_LANE_PAIR_GAMES ที่ใช้ตอน export อยู่แล้ว
+MIN_LANE_PAIR = 3
+
+# ฮีโร่จะถือว่า "ลงเลนนี้" เมื่อลงเลนนั้นเกินสัดส่วนนี้ของครั้งที่ถูกเลือก
+# ใช้เกณฑ์ต่ำกว่า LANE_OWN_SHARE (0.5) เพราะคำถามต่างกัน
+#   LANE_OWN_SHARE ถาม "ตัวนี้ปิดเลนนั้นให้ทีมหรือยัง" — ต้องมั่นใจสูง
+#   ตรงนี้ถาม     "ตัวนี้มีโอกาสไปประกบใครในเลนนั้นไหม" — เอาพอมีเหตุผล
+LANE_PLAY_SHARE = 0.30
+
+
+def _lanes_played(usage: dict[str, int] | None) -> list[str]:
+    """เลนที่ฮีโร่ตัวนี้ลงบ่อยพอจะนับ — เรียงจากบ่อยสุด"""
+    if not usage:
+        return []
+    total = sum(usage.values())
+    if not total:
+        return []
+    return [
+        ln
+        for ln, n in sorted(usage.items(), key=lambda kv: -kv[1])
+        if n / total >= LANE_PLAY_SHARE
+    ]
+
+
+def _lane_counter_against(
+    lane_matchups: dict,
+    lane_usage: dict[str, dict[str, int]],
+    hero: str,
+    enemies: list[str],
+    prior: float,
+) -> tuple[float, str]:
+    """ความได้เปรียบเมื่อ **ประกบกันในเลนเดียวกันจริง**
+
+    ต่างจาก `_counter_against()` ตรงบริบท ไม่ใช่ตรงสูตร
+        _counter_against      คู่ที่อยู่คนละทีมในเกมเดียวกัน (context=TEAM)
+                              ตัวอย่างเยอะแต่ปนคู่ที่ไม่เคยเจอหน้ากันเลย
+        _lane_counter_against คู่ที่ยืนเลนเดียวกัน (context=LANE)
+                              ตัวอย่างน้อยกว่ามาก แต่ตรงคำถาม "ชนเลนแล้วใครชนะ"
+
+    เฉลี่ยต่อจำนวนศัตรูที่เปิดมาทั้งหมด ไม่ใช่ต่อคู่ที่มีข้อมูล —
+    หลักเดียวกับ `_counter_against()` เพื่อให้คู่ที่ไม่รู้ถ่วงลงหาศูนย์เอง
+    """
+    if not enemies:
+        return 0.0, "ศัตรูยังไม่ได้เลือก จึงยังคิดการชนเลนไม่ได้"
+    if not lane_matchups or not lane_usage:
+        return 0.0, "ยังไม่มีข้อมูล matchup แยกเลน"
+
+    my_lanes = set(_lanes_played(lane_usage.get(hero)))
+    if not my_lanes:
+        return 0.0, "ไม่รู้ว่าฮีโร่ตัวนี้ลงเลนไหน"
+
+    total = 0.0
+    used = 0
+    best: tuple[str, str, float] | None = None
+    for e in enemies:
+        shared = my_lanes & set(_lanes_played(lane_usage.get(e)))
+        if not shared:
+            continue
+        # ถ้าเจอกันได้หลายเลน เอาเลนที่มีข้อมูลมากที่สุดเป็นตัวแทน
+        rows = [
+            (ln, lane_matchups.get((ln, hero, e)))
+            for ln in sorted(shared)
+        ]
+        rows = [(ln, m) for ln, m in rows if m is not None and m.games >= MIN_LANE_PAIR]
+        if not rows:
+            continue
+        ln, m = max(rows, key=lambda r: r[1].games)
+        sc = m.counter_score(prior)
+        total += sc
+        used += 1
+        if best is None or sc > best[2]:
+            best = (e, ln, sc)
+
+    if used == 0:
+        return 0.0, f"ยังไม่มีคู่ที่ประกบกันในเลนถึง {MIN_LANE_PAIR} เกม"
+    total /= max(1, len(enemies))
+    detail = f"จาก {used}/{len(enemies)} คู่ที่ประกบกันจริง"
+    if best and best[2] > 0.5:
+        detail += f" · เด่นเมื่อชน {best[0]} ที่เลน {best[1]} ({best[2]:+.1f})"
+    return total, detail
 
 
 # ---------------------------------------------------------------- Q1 · composition
