@@ -181,23 +181,54 @@ def _accumulate(st: DraftStats, g: GameDraft) -> None:
 # ---------------------------------------------------------------- matchup
 
 
+def shrink(games: int, wins: int, prior: float, k: int = SHRINKAGE_K) -> float:
+    """win rate ที่ดึงเข้าหาค่ากลางตามขนาดตัวอย่าง — Beta-Binomial"""
+    return (wins + k * prior) / (games + k)
+
+
+def confidence(games: int, k: int = SHRINKAGE_K) -> float:
+    """0..1 ตามขนาดตัวอย่าง — ไม่มีข้อมูลได้ 0 พอดี"""
+    return games / (games + k) if games else 0.0
+
+
+def counter_score(games: int, wins: int, prior: float, k: int = SHRINKAGE_K) -> float:
+    """ดีกว่าค่ากลางแค่ไหน ถ่วงด้วยความมั่นใจ
+
+    **นี่คือที่เดียวในระบบที่เขียนสูตรนี้** (PHASE B · Q6)
+
+    เดิมสูตรเดียวกันนี้ถูกเขียนไว้สามที่ — MatchupStat, LaneMatchup และ
+    `cscore()` ในหน้าเว็บ ซึ่งแก้ที่เดียวแล้วอีกสองที่เพี้ยนตามได้เงียบ ๆ
+    ตอนนี้ฝั่ง Python เหลือที่เดียว ส่วนฝั่ง JS ยังต้องเขียนซ้ำเพราะ
+    เบราว์เซอร์เรียก Python ไม่ได้ — มี tests/unit/test_counter_score_parity.py คุมไว้
+
+    คู่ที่ไม่มีข้อมูลได้ 0 โดยอัตโนมัติ ไม่ใช่ค่าสุดโต่ง
+    คุณสมบัตินี้เองที่ทำให้เพิ่มน้ำหนัก counter ได้โดยไม่ขยาย noise
+    """
+    return (shrink(games, wins, prior, k) - prior) * 100.0 * confidence(games, k)
+
+
+class ScoredPair:
+    """พฤติกรรมร่วมของคู่ฮีโร่ที่นับแพ้ชนะ — ใช้ทั้ง context=TEAM และ LANE
+
+    คลาสที่สืบทอดต้องมี `games` และ `wins`
+    """
+
+    games: int
+    wins: int
+
+    def adjusted(self, prior: float, k: int = SHRINKAGE_K) -> float:
+        return shrink(self.games, self.wins, prior, k)
+
+    def counter_score(self, prior: float, k: int = SHRINKAGE_K) -> float:
+        return counter_score(self.games, self.wins, prior, k)
+
+
 @dataclass
-class MatchupStat:
+class MatchupStat(ScoredPair):
     hero_id: str
     enemy_id: str
     games: int = 0
     wins: int = 0
-
-    def adjusted(self, prior: float, k: int = SHRINKAGE_K) -> float:
-        return (self.wins + k * prior) / (self.games + k)
-
-    def counter_score(self, prior: float, k: int = SHRINKAGE_K) -> float:
-        """ดีกว่าปกติแค่ไหน ถ่วงด้วยความมั่นใจ
-
-        คู่ที่ไม่มีข้อมูลได้ 0 โดยอัตโนมัติ ไม่ใช่ค่าสุดโต่ง
-        """
-        conf = self.games / (self.games + k) if self.games else 0.0
-        return (self.adjusted(prior, k) - prior) * 100.0 * conf
 
 
 def compute_matchups(all_series: list[SeriesDraft]) -> dict[tuple[str, str], MatchupStat]:

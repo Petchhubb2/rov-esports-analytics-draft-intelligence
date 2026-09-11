@@ -38,7 +38,7 @@ from dataclasses import dataclass
 
 from rov.domain.enums import LaneRole
 from rov.draft.importer.parser import SeriesDraft
-from rov.draft.stats import SHRINKAGE_K
+from rov.draft.stats import ScoredPair
 
 # ช่องที่ i ของ roster = เลนนี้ ลำดับยืนยันแล้วจากข้อมูล 5 รายการ
 SLOT_LANES: tuple[LaneRole, ...] = (
@@ -63,8 +63,12 @@ MIN_LANE_PAIR_GAMES = 3
 
 
 @dataclass
-class LaneMatchup:
-    """ฮีโร่สองตัวที่อยู่เลนเดียวกันคนละทีมในเกมเดียวกัน"""
+class LaneMatchup(ScoredPair):
+    """ฮีโร่สองตัวที่อยู่เลนเดียวกันคนละทีมในเกมเดียวกัน
+
+    `adjusted()` และ `counter_score()` มาจาก `ScoredPair` ใน stats.py
+    ซึ่งเป็นที่เดียวที่เขียนสูตร — เดิมเขียนซ้ำที่นี่แล้วเพี้ยนจากกันได้เงียบ ๆ
+    """
 
     lane: LaneRole
     hero_id: str
@@ -79,17 +83,6 @@ class LaneMatchup:
     @property
     def raw_win_rate(self) -> float | None:
         return self.wins / self.games if self.games else None
-
-    def adjusted(self, prior: float, k: int = SHRINKAGE_K) -> float:
-        return (self.wins + k * prior) / (self.games + k)
-
-    def counter_score(self, prior: float, k: int = SHRINKAGE_K) -> float:
-        """ดีกว่าปกติแค่ไหนเมื่อเจอกันในเลนนี้ ถ่วงด้วยความมั่นใจ
-
-        สูตรเดียวกับ MatchupStat.counter_score เพื่อให้เทียบข้ามหน้าได้
-        """
-        conf = self.games / (self.games + k) if self.games else 0.0
-        return (self.adjusted(prior, k) - prior) * 100.0 * conf
 
 
 def _lane_rows(all_series: list[SeriesDraft]):

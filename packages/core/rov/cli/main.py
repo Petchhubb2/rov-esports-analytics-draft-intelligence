@@ -620,13 +620,35 @@ def draft_comp(
             typer.secho(str(exc), fg=typer.colors.RED)
             raise typer.Exit(1) from exc
 
+    def plan_line(spec: str) -> str:
+        """จังหวะของคอมพ์ — เดิมมีแต่บนหน้าเว็บ CLI บอกไม่ได้ (Q7)
+
+        คืนข้อความว่างถ้ายังไม่มีข้อมูลแมตช์ใน cache — ไม่ใช่เดาแทน
+        """
+        from rov.draft.meta import pool
+        from rov.draft.winconditions import describe, team_tempo
+
+        regions = _regions()
+        if not regions:
+            return ""
+        st = pool(regions).stats
+        ids = [x.strip() for x in spec.split(",") if x.strip()]
+        tempo_by_hero = {h: st.game_length_tendency(h)[0] for h in ids}
+        return describe(team_tempo(ids, tempo_by_hero))
+
     try:
         ours = analyze(build(team))
         typer.echo(ours.report())
+        if line := plan_line(team):
+            typer.echo("")
+            typer.secho(f"  แผน · {line}", fg=typer.colors.CYAN)
         if enemy:
             theirs = analyze(build(enemy))
             typer.echo("")
             typer.echo(theirs.report())
+            if line := plan_line(enemy):
+                typer.echo("")
+                typer.secho(f"  แผน · {line}", fg=typer.colors.CYAN)
             typer.echo("")
             typer.echo(compare(ours, theirs))
     except IncompleteDataError as exc:
