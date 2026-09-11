@@ -236,11 +236,57 @@ class EngineRanker:
         return [h for h, _ in self.scores(ctx)]
 
 
-def default_rankers(recommend_fn) -> list[Ranker]:
-    """ชุดมาตรฐานที่ใช้เทียบ — engine ก่อน แล้วตามด้วย baseline A B C"""
-    return [
+class LegacyBanEngineRanker(EngineRanker):
+    """engine ก่อนแก้ ban context — ใช้เทียบ before/after บนตาเดียวกัน
+
+    จำลองพฤติกรรมเดิมโดยบังคับให้ตาแบนใช้ **โปรไฟล์น้ำหนักของ pick**
+    ซึ่งคือสิ่งที่โค้ดทำก่อน PHASE M0.75
+
+    ทำแบบนี้แทนการ checkout โค้ดเก่า เพราะต้องวัดบนตาชุดเดียวกันเป๊ะ ๆ
+    ในการรันครั้งเดียว ถ้าแยกรันสองรอบแล้วมีตาไหนหยุดคนละจุด
+    ตัวหารจะไม่ตรงกันและเทียบไม่ได้
+    """
+
+    name = "D · engine ก่อนแก้"
+    description = "ตาแบนใช้โปรไฟล์น้ำหนักของ pick (พฤติกรรมก่อน M0.75)"
+    limitations = "มีไว้เทียบเท่านั้น ไม่ใช่ตัวเลือกที่จะใช้จริง"
+
+    def scores(self, ctx: TurnContext) -> list[tuple[str, float]]:
+        from rov.draft.recommend import weights_for
+
+        override = None
+        if ctx.is_ban:
+            turn = ctx.state.current
+            subject = turn.team_enum.opponent
+            ours = ctx.state.picks(subject)
+            theirs = ctx.state.picks(subject.opponent)
+            # โปรไฟล์ pick บนตาแบน = สิ่งที่โค้ดทำก่อนแก้
+            override = weights_for(len(theirs), len(ours))
+        sugs = self._recommend(
+            ctx.state,
+            ctx.pooled,
+            weights=override,
+            limit=10**6,
+            min_games=ctx.min_games,
+            lane_usage=ctx.lane_usage or None,
+            lanes=ctx.lanes or None,
+            lane_matchups=ctx.lane_matchups or None,
+            hero_db=ctx.hero_db,
+        )
+        return [(s.hero_id, s.total) for s in sugs]
+
+
+def default_rankers(recommend_fn, *, include_legacy: bool = False) -> list[Ranker]:
+    """ชุดมาตรฐานที่ใช้เทียบ — engine ก่อน แล้วตามด้วย baseline A B C
+
+    `include_legacy` เพิ่ม D (engine ก่อนแก้ ban) เข้ามาเทียบ before/after
+    """
+    out: list = [
         EngineRanker(recommend_fn),
         PresenceBaseline(),
         WinRateBaseline(),
         RoleAwarePresenceBaseline(),
     ]
+    if include_legacy:
+        out.append(LegacyBanEngineRanker(recommend_fn))
+    return out

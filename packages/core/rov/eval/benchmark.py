@@ -247,6 +247,38 @@ class Comparison:
         rows = [(getattr(v, metric) or -1.0, k) for k, v in self.overall.items()]
         return max(rows)[1] if rows else None
 
+    def report_for(
+        self,
+        dimension: str,
+        metrics=("top1_acc", "top3_acc", "mrr", "mean_rank"),
+    ) -> str:
+        """ตารางเจาะมิติเดียว หลายตัวชี้วัด — ใช้ตอนสนใจแค่ ban หรือ pick"""
+        sl = self.slices.get(dimension)
+        if sl is None:
+            return f"ไม่มีมิติ {dimension}"
+        names = list(self.overall)
+        label = {"top1_acc": "top1", "top3_acc": "top3",
+                 "mrr": "MRR", "mean_rank": "mean rank"}
+        lines = [
+            f"  train {self.train_games} เกม · eval {self.eval_series} ซีรีส์ "
+            f"· {self.n_drafts} ดราฟต์ · ตานับคะแนน {self.n_turns_scored}",
+        ]
+        for key in sorted(sl.rows):
+            bucket = sl.rows[key]
+            n = max((s.n_ranked for s in bucket.values()), default=0)
+            lines += ["", f"  ══ {key}  (n={n}) ══", "",
+                      f"  {'ranker':<24}" + "".join(f"{label[m]:>11}" for m in metrics)]
+            for nm in names:
+                st = bucket.get(nm)
+                if st is None:
+                    continue
+                cells = []
+                for m in metrics:
+                    v = getattr(st, m)
+                    cells.append(f"{v:>11.3f}" if v is not None else f"{'—':>11}")
+                lines.append(f"  {nm:<24}" + "".join(cells))
+        return "\n".join(lines)
+
     def report(self) -> str:
         lines = [
             "═══ Benchmark Foundation — engine เทียบ baseline ═══",

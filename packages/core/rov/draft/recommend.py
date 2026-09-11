@@ -143,6 +143,50 @@ def weights_for(n_enemy: int, n_ally: int) -> dict[str, float]:
     }
 
 
+# สัดส่วนที่แบ่ง `rest` ระหว่าง meta กับ winrate — ต่างกันตามโจทย์
+#
+# pick ถาม "ตัวนี้เหมาะกับทีมเราแค่ไหน"
+#     win rate ของตัวเองมีน้ำหนักมากกว่า เพราะเราจะเป็นคนเล่นมันเอง
+#
+# ban ถาม  "ตัวนี้อันตรายแค่ไหนถ้าปล่อยให้ศัตรูได้"
+#     ซึ่งมีรูป BanPriority ~ P(ศัตรูได้) x Harm  โดย meta ประมาณ P
+#     ที่เป็น **ตัวคูณ** ของทุกอย่าง ไม่ใช่ตัวบวก
+#     ฮีโร่ที่แรงมากแต่ไม่มีใครแย่ง ไม่ใช่ตัวที่ควรเสียตาแบนไปกับมัน
+#
+# ดูที่มาเต็มใน docs/24-ban-intelligence-spec.md §4
+PICK_META_SHARE = 0.45
+BAN_META_SHARE = 0.75
+
+
+def _split(rest: float, meta_share: float) -> dict[str, float]:
+    return {"meta": rest * meta_share, "winrate": rest * (1.0 - meta_share)}
+
+
+def ban_weights_for(n_enemy: int, n_ally: int) -> dict[str, float]:
+    """น้ำหนักสำหรับ **ตาแบน** — คนละโจทย์กับตาเลือก
+
+    ใช้กลไกการไหลของ counter/synergy ชุดเดียวกับ `weights_for()` ทุกประการ
+    เพราะเหตุผลของมัน ("ยิ่งเปิดตัวยิ่งมีข้อมูลเฉพาะเกมนี้") ใช้ได้กับทั้งสองโจทย์
+    ต่างกันแค่การแบ่งส่วนที่เหลือระหว่าง meta กับ win rate
+
+    **ทำไม win rate ถึงมีน้ำหนักน้อยลงมากตอนแบน**
+
+    win rate ระดับอาชีพเกาะ 50% โดยโครงสร้าง เพราะทุกเกมมีผู้ชนะหนึ่งฝ่าย
+    ความต่างระหว่างตัวบนกับตัวล่างจึงแคบและไวต่อ noise โดยเฉพาะบนตัวอย่างเล็ก
+    ตอนเลือก เรายอมรับ noise นั้นได้เพราะเรากำลังหา "ตัวที่ดีที่สุดสำหรับเรา"
+    ตอนแบน สิ่งที่ต้องประมาณคือ "ศัตรูจะหยิบตัวไหน" ซึ่ง presence ตอบตรงกว่ามาก
+
+    หลักฐานเชิงประจักษ์ (docs/22): baseline ที่ใช้ win rate ล้วนได้ top-1 0.007
+    บนตาแบน ส่วน baseline ที่ใช้ presence ล้วนได้ 0.265
+
+    ⚠️ ค่า 0.75/0.25 เป็นการตัดสินใจเชิงโครงสร้างที่ประกาศไว้ก่อนวัดผล
+    ไม่ได้มาจากการไล่ลองค่าบน benchmark — ดู docs/24 §4
+    """
+    base = weights_for(n_enemy, n_ally)
+    rest = base["meta"] + base["winrate"]
+    return {**base, **_split(rest, BAN_META_SHARE)}
+
+
 @dataclass
 class Component:
     key: str
@@ -167,6 +211,10 @@ class Suggestion:
     # ว่างทั้งคู่ = ยังคำนวณไม่ได้ (attribute ไม่ครบ) ไม่ใช่แปลว่าไม่มีผล
     fills_gaps: list[tuple[str, float]] = field(default_factory=list)
     creates_gaps: list[tuple[str, float]] = field(default_factory=list)
+
+    # โจทย์ของตานี้ — "ban" กับ "pick" ใช้ฟังก์ชันเป้าหมายคนละตัว
+    # เก็บไว้เพื่อให้ผู้ใช้และเทสต์ตรวจได้ว่าคะแนนที่เห็นมาจากโจทย์ไหน
+    objective: str = "pick"
 
     @property
     def reliable(self) -> bool:
@@ -231,7 +279,10 @@ def recommend(
     # น้ำหนักขึ้นกับว่าเปิดตัวกันไปแล้วกี่ตัว
     # ถ้าผู้เรียกส่ง weights มาเอง ให้ทับลงบนค่าที่คำนวณได้
     # ส่งมาบางคีย์ก็ได้ ที่เหลือใช้ค่าไดนามิก
-    w = {**weights_for(len(theirs), len(ours)), **(weights or {})}
+    # ★ จุดเดียวที่ ban กับ pick แยกทางกัน
+    # ตา pick เดินเส้นทางเดิมทุกบรรทัด คะแนนจึงไม่เปลี่ยนแม้แต่หลักทศนิยม
+    profile = ban_weights_for if is_ban else weights_for
+    w = {**profile(len(theirs), len(ours)), **(weights or {})}
     # factor ที่เปิดใช้ใน PHASE B รวมเข้ามาโดยมีค่าเริ่มต้นเป็น 0
     w_all = {**w, **EXTRA_WEIGHTS, **(extra_weights or {})}
 
@@ -254,7 +305,10 @@ def recommend(
     out: list[Suggestion] = []
     for hid in candidates:
         hs = stats.get(hid)
-        s = Suggestion(hero_id=hid, total=0.0, games=hs.picks)
+        s = Suggestion(
+            hero_id=hid, total=0.0, games=hs.picks,
+            objective="ban" if is_ban else "pick",
+        )
 
         pres = stats.presence_rate(hid)
         s.components["meta"] = Component(
@@ -663,9 +717,18 @@ def report(sugs: list[Suggestion], state: DraftState, top: int = 8) -> str:
     turn = state.current
     if turn is None:
         return "draft จบแล้ว"
-    verb = "แบน" if turn.action is DraftAction.BAN else "เลือก"
+    is_ban = turn.action is DraftAction.BAN
+    verb = "แบน" if is_ban else "เลือก"
+    ratio = BAN_META_SHARE / (1 - BAN_META_SHARE)
+    objective_line = (
+        f"โจทย์: แบน — ให้น้ำหนัก meta ราว {ratio:.0f} เท่าของ win rate "
+        "เพราะแบนคือการตัดตัวที่ศัตรูจะได้ ไม่ใช่การหาตัวที่เข้ากับทีมเรา"
+        if is_ban
+        else "โจทย์: เลือก — มองจากมุมทีมเรา ว่าตัวไหนเข้ากับสิ่งที่มีอยู่มากที่สุด"
+    )
     lines = [
         f"── แนะนำให้{verb} ({state.team_name(turn.team_enum)}) ──",
+        f"  {objective_line}",
         "",
         f"  {'#':<3}{'hero':<16}{'รวม':>7}{'meta':>7}{'wr':>7}{'ctr':>7}{'syn':>7}{'เกม':>6}",
     ]

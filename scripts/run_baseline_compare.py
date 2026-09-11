@@ -39,7 +39,10 @@ EVAL_DAYS = 120
 def main() -> int:
     setup_console()
     ap = argparse.ArgumentParser()
-    ap.add_argument("--cutoff")
+    ap.add_argument("--cutoff", help="วันที่เริ่มชุด evaluation")
+    ap.add_argument("--eval-end", help="วันที่สิ้นสุดของชุด evaluation (ไม่รวมวันนี้)")
+    ap.add_argument("--legacy", action="store_true", help="เทียบกับ engine ก่อนแก้ ban")
+    ap.add_argument("--by-action", action="store_true", help="แสดงเฉพาะตาราง ban/pick")
     ap.add_argument("--drafts", type=int, default=10**6, help="ค่าเริ่มต้น = ทั้งหมด")
     ap.add_argument("--min-games", type=int, default=5)
     args = ap.parse_args()
@@ -74,13 +77,17 @@ def main() -> int:
     hero_file = Path("configs/draft/heroes.yaml")
     db = HeroDB.load(hero_file) if hero_file.exists() else None
 
-    rankers = default_rankers(recommend)
+    rankers = default_rankers(recommend, include_legacy=args.legacy)
     cmp_ = compare_rankers(
         train, ev, DraftFormat.load(), rankers,
         lane_usage=lu, lanes=lanes, lane_matchups=lmu, hero_db=db,
         min_games=args.min_games, max_drafts=args.drafts,
     )
-    print(cmp_.report())
+    if args.by_action:
+        # แสดงเฉพาะตาราง ban/pick ซึ่งเป็นแกนของ M0.75
+        print(cmp_.report_for("ประเภทตา"))
+    else:
+        print(cmp_.report())
 
     print("\n  ── engine เทียบทีละ baseline (top-1) ──\n")
     engine = cmp_.overall[rankers[0].name]

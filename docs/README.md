@@ -31,9 +31,14 @@
 | 20 | [draft-intelligence-spec.md](20-draft-intelligence-spec.md) | **แบบที่จะสร้าง** · conceptual model · 11 factor · counter 5 ชั้น · benchmark plan |
 | 21 | [phase-b-report.md](21-phase-b-report.md) | **ผลของ PHASE B** · เปิดใช้อะไรไปบ้าง · regression · benchmark · พร้อม PHASE M ไหม |
 | 22 | [benchmark-foundation.md](22-benchmark-foundation.md) | **engine เทียบ baseline 3 แบบ** · top1/top3/MRR/mean rank · แยก ban/pick · leakage test |
+| 23 | [ban-intelligence-audit.md](23-ban-intelligence-audit.md) | **ทำไมตาแบนถึงพัง** · trace ทั้งเส้น · แก้สาเหตุที่ docs/22 §4 เขียนผิด |
+| 24 | [ban-intelligence-spec.md](24-ban-intelligence-spec.md) | **ban ≠ pick** · `BanPriority ≈ P × Harm` · ประกาศค่าก่อนวัด · กติกา holdout |
+| 25 | [ban-benchmark.md](25-ban-benchmark.md) | **ผลหลังแก้ ban** · ban top-1 0.023 → 0.268 · pick identical · ความไม่แน่นอนที่เหลือ |
 
-> ลำดับความน่าเชื่อถือเมื่อเอกสารขัดแย้งกัน: **09/21/22 > 10 > 17–19 > 08 > 01–07, 20**
-> (09/21/22 คือผลจากการรันจริง · 17–19 คือการตรวจโค้ด · 20 คือแผนที่ยังไม่ได้ทำ)
+> ลำดับความน่าเชื่อถือเมื่อเอกสารขัดแย้งกัน: **09/21/22/25 > 10 > 17–19, 23 > 08 > 01–07, 20, 24**
+> (09/21/22/25 คือผลจากการรันจริง · 17–19/23 คือการตรวจโค้ด · 20/24 คือแผนที่ยังไม่ได้ทำ)
+>
+> ⚠️ [docs/22 §4](22-benchmark-foundation.md) ระบุสาเหตุของปัญหาตาแบนไว้ผิด — ใช้ [docs/23](23-ban-intelligence-audit.md) แทน
 > 01–07 เขียนจากแผนแนวคิดแรก · 08 ข้อเท็จจริงจากการค้น · 09 ผลจากการรันจริง
 > 10 การเทียบกับ Blueprint ฉบับใหม่ · 11 ออกแบบส่วนที่ Blueprint เพิ่มเข้ามา
 

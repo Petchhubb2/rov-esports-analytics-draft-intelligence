@@ -76,11 +76,34 @@ def test_fixture_covers_every_phase(fx):
 # ------------------------------------------------------------ regression จริง
 
 
+def _action_of(fmt, key: str) -> str:
+    """ตานี้เป็น BAN หรือ PICK — ดูจากลำดับใน format.yaml"""
+    idx = int(key.split("#")[1])
+    return str(fmt.sequence[idx].action) if idx < len(fmt.sequence) else "?"
+
+
 def test_recommendations_match_the_locked_snapshot(fx, replayed):
     """หัวใจของ PHASE B — คำแนะนำทุกตาต้องเหมือน snapshot เป๊ะ ๆ"""
     expected = {k: [tuple(r) for r in v] for k, v in fx["expected"].items()}
     diff = compare(expected, replayed)
     assert diff.identical, diff.report()
+
+
+def test_pick_turns_are_identical_to_the_snapshot(fx, fmt, replayed):
+    """แยกออกมาต่างหาก — PHASE M0.75 แตะเฉพาะตาแบน
+
+    ถ้าตา pick เปลี่ยนแม้ตาเดียว แปลว่าการแก้ ban รั่วไปโดนโจทย์อื่น
+    ซึ่งเป็นสิ่งที่ M0.75 ห้ามไว้ชัดเจน
+    """
+    expected = {
+        k: [tuple(r) for r in v]
+        for k, v in fx["expected"].items()
+        if _action_of(fmt, k) == "PICK"
+    }
+    assert expected, "fixture ไม่มีตา pick เลย"
+    got = {k: v for k, v in replayed.items() if k in expected}
+    diff = compare(expected, got)
+    assert diff.identical, "ตา pick เปลี่ยน: " + diff.report()
 
 
 def test_top1_is_stable(fx, replayed):
