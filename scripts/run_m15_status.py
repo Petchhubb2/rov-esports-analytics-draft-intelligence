@@ -20,6 +20,9 @@ from rov.draft import knowledgecoverage as kc  # noqa: E402
 from rov.draft.counterknowledge import CounterBook, quality_report  # noqa: E402
 from rov.draft.heroes import HeroDB  # noqa: E402
 from rov.draft.meta import pool  # noqa: E402
+from rov.draft.synergyknowledge import SynergyBook  # noqa: E402
+from rov.draft.synergyknowledge import data_check_report as syn_data_check_report  # noqa: E402
+from rov.draft.synergyknowledge import quality_report as syn_quality_report  # noqa: E402
 from rov.eval import cleanwindow as cw  # noqa: E402
 from rov.eval import version  # noqa: E402
 
@@ -48,6 +51,14 @@ def main() -> int:
 
     print()
     print(quality_report(book))
+
+    # M2A — คุณภาพ synergy + DataCheck สดเทียบข้อมูลจริง
+    synbook = SynergyBook.load()
+    if synbook.evidence:
+        print()
+        print(syn_quality_report(synbook))
+        print()
+        print(syn_data_check_report(pooled, synbook))
     return 0
 
 

@@ -59,6 +59,7 @@ EXTRA_WEIGHTS: dict[str, float] = {
     "synergy_adj": 0.0,   # Q5 — synergy ที่หัก "ทีมเก่งเล่นคู่นี้บ่อย" ออกแล้ว
     "trait_counter": 0.0, # Q4 — counter เชิงคุณภาพ (ยังไม่มีข้อมูล trait)
     "counter_evidence": 0.0,  # M1 — counter ที่มีกลไก เงื่อนไข และที่มา
+    "synergy_evidence": 0.0,  # M2A — synergy ที่มีกลไก เงื่อนไข ผลที่คาด และที่มา
 }
 
 # ฮีโร่ที่ตำแหน่งเต็มแล้วยังได้คะแนนเท่านี้ของเดิม
@@ -221,6 +222,10 @@ class Suggestion:
     # เก็บเป็น record ไม่ใช่คะแนน เพื่อให้อธิบายได้ว่า counter เพราะอะไร
     counter_matches: list = field(default_factory=list)
 
+    # M2A — หลักฐาน synergy ที่เข้ากับทีมนี้ (rov.draft.synergyknowledge.SynergyMatch)
+    # เก็บเป็น record ไม่ใช่คะแนน เพื่อให้อธิบายได้ว่าเข้าคู่กันเพราะอะไร
+    synergy_matches: list = field(default_factory=list)
+
     @property
     def reliable(self) -> bool:
         return self.games >= 15
@@ -244,6 +249,7 @@ def recommend(
     lane_matchups: dict | None = None,
     extra_weights: dict[str, float] | None = None,
     counter_book: object | None = None,
+    synergy_book: object | None = None,
 ) -> list[Suggestion]:
     """จัดอันดับฮีโร่ที่ควรเลือกหรือแบนในตาปัจจุบัน
 
@@ -262,6 +268,11 @@ def recommend(
     component "counter_evidence" — counter ที่บอกกลไก เงื่อนไข ความเสี่ยง และที่มา
     ไม่ส่งมา = ไม่มี component นั้น · ส่งมาแต่ไม่มีความรู้เรื่องคู่นี้ก็ไม่มีเหมือนกัน
     เพราะ "ไม่รู้" ต้องไม่ถูกแปลงเป็นคะแนน 0 (docs/28 §2.3)
+
+    ส่ง synergy_book (rov.draft.synergyknowledge.SynergyBook) เข้ามาเพื่อเปิด
+    component "synergy_evidence" — synergy ที่บอกกลไก เงื่อนไข ผลที่คาด และที่มา
+    หลักเดียวกับ counter_book: ไม่ส่ง = ไม่มี component · record ที่ alias ยังไม่ยืนยัน
+    (status=unknown) จะถูกข้าม ไม่ถูกนำมาคิด (docs/33 §5 · docs/34 §6)
 
     extra_weights ทับ EXTRA_WEIGHTS ได้ ใช้ตอนทดสอบว่าเปิดน้ำหนักแล้วอันดับเปลี่ยนจริง
     ห้ามใช้เปลี่ยนน้ำหนักจริงจนกว่า benchmark ใน PHASE I จะบอกว่าควรเท่าไร
@@ -392,6 +403,23 @@ def recommend(
                 )
                 s.counter_matches = matches
 
+        # M2A — synergy ที่มีกลไกและที่มา
+        #
+        # หลักเดียวกับ counter_evidence: เก็บ raw ใน Component แต่ match ทั้งหมด
+        # แนบไปกับ Suggestion เพื่อให้ report() กางกลไก · เงื่อนไข · ผลที่คาด · จุดอ่อน
+        # · ที่มา · ข้อมูลเราได้ครบ (docs/34 §7)
+        if synergy_book is not None:
+            se = _synergy_evidence_component(
+                synergy_book, hid, ours, is_ban, state
+            )
+            if se is not None:
+                se_raw, se_detail, se_matches = se
+                s.components["synergy_evidence"] = Component(
+                    "synergy_evidence", "Synergy evidence", se_raw,
+                    _scale(se_raw, 0.0, 3.0), se_detail,
+                )
+                s.synergy_matches = se_matches
+
         # Q1 — composition ดีขึ้นแค่ไหนถ้าได้ตัวนี้
         # มีเฉพาะเมื่อส่ง hero_db มา และ attribute ของทุกตัวครบ
         if comp_ctx is not None:
@@ -486,6 +514,43 @@ def _counter_evidence_component(
         " · ".join(parts)
         + f" · เด่นสุดเจอ {top.evidence.target} ({top.confidence.value})"
     )
+    return raw, detail, matches
+
+
+# ------------------------------------------------------- M2A · synergy evidence
+
+
+def _synergy_evidence_component(book, hero_id: str, allies: list[str], is_ban: bool, state):
+    """component ที่ตอบได้ว่าเข้าคู่กันเพราะอะไร — ไม่ใช่แค่ว่าเข้าคู่
+
+    คืน None เมื่อ **ไม่รู้** ซึ่งเป็นสถานะปกติของฮีโร่เกือบทั้งหมด (คลังมีแค่ 7 คู่)
+    ห้ามคืน 0.0 แทน เพราะ 0 แปลว่า "รู้แล้วว่าไม่เข้ากัน" ซึ่งคนละเรื่อง
+
+    ใช้ `ours` เป็น allies เหมือน `_synergy_with()` — ตอนแบน `ours` ถูกสลับเป็น
+    ฝั่งศัตรูมาแล้วตอนต้น recommend() จึงถามว่า "ตัวนี้เข้าคู่กับที่ศัตรูเปิดไปไหม"
+
+    record ที่ alias ยังไม่ยืนยัน (status=unknown) ถูกกรองทิ้งใน find_matches แล้ว
+    จึงไม่มีวันโผล่มาเป็นคะแนน (docs/33 §5)
+    """
+    from rov.draft.synergyknowledge import SynergyContext, find_matches, summarize
+
+    ctx = SynergyContext(
+        allies=list(allies),
+        phase=state.current.phase if state.current else 1,
+        objective="ban" if is_ban else "pick",
+    )
+    matches = [m for m in find_matches(book, hero_id, ctx) if m.counts]
+    if not matches:
+        return None
+
+    summary = summarize(matches)
+    raw = sum(_CONF_WEIGHT[m.confidence.value] for m in matches)
+
+    parts = [f"{summary.direct} คู่เข้ากัน"]
+    if summary.condition_unchecked:
+        parts.append(f"{summary.condition_unchecked} เงื่อนไขยังตรวจให้ไม่ได้")
+    top = max(matches, key=lambda m: _CONF_WEIGHT[m.confidence.value])
+    detail = " · ".join(parts) + f" · เด่นสุดเข้าคู่ {top.ally} ({top.confidence.value})"
     return raw, detail, matches
 
 
@@ -856,6 +921,16 @@ def report(sugs: list[Suggestion], state: DraftState, top: int = 8) -> str:
             lines += ["", "  หลักฐาน counter"]
             for m in best.counter_matches:
                 for row in explain(m, best.objective).splitlines():
+                    lines.append(f"    {row}")
+                lines.append("")
+        # M2A · กางหลักฐาน synergy ให้ครบทุกช่องที่ spec ขอ
+        # ชนิด · กลไก · เงื่อนไข · ผลที่คาด · จุดอ่อน · ที่มา · ความมั่นใจ · ข้อมูลเรา
+        if best.synergy_matches:
+            from rov.draft.synergyknowledge import explain as syn_explain
+
+            lines += ["", "  หลักฐาน synergy"]
+            for m in best.synergy_matches:
+                for row in syn_explain(m, best.objective).splitlines():
                     lines.append(f"    {row}")
                 lines.append("")
     lines += ["", "  * = เล่นน้อยกว่า 15 เกม ตัวเลขยังไม่นิ่ง",

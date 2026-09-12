@@ -1,0 +1,232 @@
+# Synergy Knowledge — ถอดจาก external_knowledge/rov-claude-kit/knowledge/synergy.md §1
+#
+# ทุก record ต้องมีบรรทัดใน synergy.md รองรับ ห้ามเติมจากความรู้ทั่วไป
+# evidence_id อ้างกลับไปที่ Pair n ในไฟล์ต้นทางตรง ๆ
+#
+# data_check ทุกข้อคำนวณจากแมตช์จริง 861 เกมของเราเอง (docs/33 §4)
+# วิธีคำนวณ: (shrink(g,w,exp) - exp) × 100 × conf(g)  โดย exp = expected_synergy()
+#   ← เทียบกับ **ค่าคาดหวัง** ไม่ใช่ prior 0.5 เพราะ co-occurrence ≠ synergy (docs/32)
+# ผลรวม (usable): agree 1 · disagree 3 · insufficient 3 · unknown 1
+#
+# ⚠️ KNOWLEDGE ≠ OUTCOME — data_check วัดผลแพ้ชนะทั้งเกม ซึ่งเป็นคนละมิติกับกลไก
+#    ข้อที่ข้อมูลค้าน ถูกลด confidence เป็น MEDIUM ตาม validator ไม่ได้ลบทิ้ง
+#
+# synergy_type = §6 Synergy Tag System (ป้ายหมวด) · mechanism = §1 Gameplay Interaction
+#    บาง pair สองอย่างนี้ไม่ตรงกันในไฟล์ต้นทาง (เช่น Ming = Gold_Boost tag แต่กลไกเป็น
+#    stat buff) — เก็บทั้งสองตามที่ source เขียน ไม่ตัดสินแทน (CLAUDE.md rule 3)
+
+evidence:
+  # ── Pair 1 · Rouie & Capheny ───────────────────────────────────────
+  - evidence_id: SYN-001-rouie-capheny
+    entity_a: rouie
+    entity_b: capheny
+    synergy_type: global_warp
+    mechanism: recall_warp
+    mechanism_detail: >-
+      Capheny ยืนดันเลนข้างร่วมกับ Rouie เมื่อเลือดต่ำ Rouie วางวงวาร์ปสกิล 2
+      ส่ง Capheny กลับบ้านรีเซตหลอด แล้วกดอัลติดึงกลับเข้าไฟต์/ดันป้อมด้วยเลือดเต็ม
+    condition:
+      - cue: Capheny ต้องมีไอเทมหลักระดับหนึ่ง และทีมไม่เสียเปรียบไฟต์หน้าตรงหนักในต้นเกม
+    expected_result: >-
+      สปีดดันป้อมเทียร์ 1-2 เลนข้างได้เร็ว พร้อมบู้สต์การเงินจากการสลับเลนดันป้อม
+    weakness: แพ้ทางตัวโถมเบิร์สหนัก หรือตัวผลักออกจากวงวาร์ป (Billow, Omen, Skud)
+    # ลดจาก HIGH เพราะข้อมูลเราค้าน — ไม่ได้ลบทิ้ง กลไกยังจริงอยู่
+    confidence: MEDIUM
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: Rov เบสิคมาโครรูอี้ ฉบับเข้าใจง่ายๆ (เกมบุก-เกมรับ) — C.MiNJuuu
+      detail: synergy.md §1 Pair 1 [FACT 102, 110, 114]
+    data_check:
+      verdict: disagrees
+      n: 29
+      detail: >-
+        adjusted 0.500 เทียบค่าคาดหวัง 0.516 · score -0.81 จาก 29 เกม —
+        คู่ไม่ชนะเกินที่ความแข็งรายตัวอธิบายได้ (วัดทั้งเกม ไม่ใช่กลไก)
+
+  # ── Pair 2 · Teemee & Capheny ──────────────────────────────────────
+  - evidence_id: SYN-002-teemee-capheny
+    entity_a: teemee
+    entity_b: capheny
+    synergy_type: gold_boost
+    mechanism: gold_accel
+    mechanism_detail: >-
+      Passive ของ Teemee เพิ่มโบนัสเงินจากการเก็บครีป เร่งให้ Capheny ได้ไอเทมหลัก
+      เร็วขึ้น 2,000-4,000 gold กลางเกม · Teemee ประคอง Capheny แท็กครีปเลน/ป่าเร่งเงิน
+    condition:
+      - cue: ต้องชนะทีมไฟต์หรือกดดันเลนฝั่งตรงข้ามได้ตั้งแต่ต้นเกมถึงกลางเกม
+    expected_result: >-
+      Capheny เงินนำศัตรูมหาศาล รวบไอเทมหลักครบก่อนเวลา กดดันป้อมและละลายทีมไฟต์ได้เด็ดขาด
+    weakness: หากโดนแก๊งต้นเกมจนการเงินไม่นำ ประสิทธิภาพของคอมโบจะลดลง
+    confidence: MEDIUM
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: Rov เบสิคมาโครรูอี้ ฉบับเข้าใจง่ายๆ (เกมบุก-เกมรับ) — C.MiNJuuu
+      detail: synergy.md §1 Pair 2 [FACT 102, 103]
+    data_check:
+      verdict: disagrees
+      n: 37
+      detail: >-
+        adjusted 0.434 เทียบค่าคาดหวัง 0.470 · score -1.96 จาก 37 เกม —
+        ค้านแรงสุดในชุด แต่วัดผลทั้งเกม ไม่ได้กรองว่าเล่นคู่นี้ในบทบาทที่อ้าง
+
+  # ── Pair 3 · Ming & Capheny ────────────────────────────────────────
+  # ⚠️ §6 tag = Gold_Boost_Synergy แต่ §1 บรรยายกลไกเป็น stat buff (เพิ่มพลัง/ความเร็ว)
+  #    เก็บทั้งสองตามต้นทาง ไม่รวบให้ตรงกันเอง
+  - evidence_id: SYN-003-ming-capheny
+    entity_a: ming
+    entity_b: capheny
+    synergy_type: gold_boost
+    mechanism: stat_buff
+    mechanism_detail: >-
+      Ming เชื่อมสายใยเพิ่มบัฟพลังโจมตีและความเร็วเคลื่อนที่ให้ Capheny เดินยิงกดดัน
+      ใต้ป้อม และช่วยเพิ่มความเร็วในการสังหารครีปและป่า
+    condition:
+      - cue: Capheny ต้องรักษาระยะยืน ไม่ให้โดนตัวล้วงฝั่งตรงข้ามเบิร์สพร้อมกันทั้งคู่
+    expected_result: >-
+      ชนะเลนแครี่ฝั่งตรงข้ามเด็ดขาด บุกแย่งทรัพยากรป่าศัตรู และทำลายป้อมแรกได้รวดเร็ว
+    weakness: Ming เป็นซัพพอร์ตตัวบาง ไม่มี Hard CC เปิดไฟต์หรือช่วยออฟเลนในเลเวล 1-2
+    confidence: HIGH
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: "Rov : วิธีการเดินเกมโรมมิ่งยังไงให้ง่ายในช่วงต้นเกม — MRX CH"
+      detail: synergy.md §1 Pair 3 [FACT 62, 102, 103]
+    data_check:
+      verdict: insufficient
+      n: 4
+      detail: มีแค่ 4 เกมที่ Ming กับ Capheny อยู่ทีมเดียวกัน ต่ำกว่าเกณฑ์ MIN_PAIR_GAMES = 8
+
+  # ── Pair 4 · Doria & Tachi — ⚠️ ENTITY ยังยืนยันไม่ได้ (docs/33 §5) ──
+  # ฐานข้อมูลมี dolia (Dolia) ไม่มี doria · ยังแยกไม่ออกว่าเป็นตัวเดียวกันหรือไม่
+  # status → unknown · ห้ามใช้ match/score จนกว่าจะยืนยันแล้วเพิ่มเข้า HERO_ALIASES
+  # กลไก ult reset เป็นข้อเท็จจริงของตัวเกม จึงเก็บความรู้ไว้ แต่ปิดการใช้งาน
+  - evidence_id: SYN-004-doria-tachi
+    entity_a: doria
+    entity_b: tachi
+    unresolved: [doria]
+    synergy_type: double_ult
+    mechanism: ult_reset
+    mechanism_detail: >-
+      Doria มีอัลติรีเซตคูลดาวน์อัลติของเพื่อน ทำให้ Tachi กระโดดปาดสร้าง true damage
+      และเกราะได้ 2 ครั้งติดต่อกัน · Tachi เปิดไฟต์อัลติชุดแรก Doria รีเซต Tachi กดซ้ำกลางวง
+    condition:
+      - cue: Doria และ Tachi ต้องเลเวล 4 ขึ้นไป และสื่อสารจังหวะการกดอัลติให้สอดคล้องกัน
+    expected_result: >-
+      สร้าง AoE true damage กว้าง ทลายแผงหน้ากับแผงหลังศัตรู เป็น hard counter ของคอมพ์ Rouie
+    weakness: Doria ตัวบาง เสี่ยงโดนแอสซาซินมุดพุ่มมาสังหารก่อนได้จ่ายอัลติ
+    # unresolved → validator บังคับว่าห้าม HIGH · ตั้ง LOW เพราะยังไม่รู้ด้วยซ้ำว่าเป็นตัวไหน
+    confidence: LOW
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: Rov เบสิคมาโครรูอี้ ฉบับเข้าใจง่ายๆ — C.MiNJuuu
+      detail: >-
+        synergy.md §1 Pair 4 [FACT 103, 363] · ⚠️ "Doria (ดอเรีย)" ยังยืนยันไม่ได้ว่า = dolia
+    data_check:
+      verdict: insufficient
+      detail: >-
+        51 เกมภายใต้สมมติฐาน doria = dolia ซึ่งยังไม่ยืนยัน (docs/33 §5) —
+        วัดคู่ที่อาจไม่ตรงกับข้ออ้าง จึงยังตัดสินไม่ได้ (ถ้าถือว่าใช่: score -0.88 → disagree)
+
+  # ── Pair 5 · Krizzix & Liliana ─────────────────────────────────────
+  - evidence_id: SYN-005-krizzix-liliana
+    entity_a: krizzix
+    entity_b: liliana
+    synergy_type: aoe_pull_burst
+    mechanism: engage_followup
+    mechanism_detail: >-
+      Krizzix เปิดพรางตัวพา Liliana มุดพุ่มไม้ แล้วใช้สกิลรวบศัตรูหลายตัวเข้าหากัน
+      Liliana จ่ายสกิล 1-2 ร่างคน หรือพุ่งร่างหมาเข้าเหยียบซ้ำสังหารยกทีม
+    condition:
+      - cue: Krizzix ต้องเปิดวิชั่นเช็คพุ่มไม้ และหาจังหวะรวบศัตรูให้ได้มากกว่า 1-2 ตัว
+    expected_result: สังหารตัวบางแผงหลัง หรือทำลายจังหวะไฟต์ของศัตรูได้ในชุดเดียว
+    weakness: หาก Krizzix รวบพลาด หรือศัตรูมีสกิลล้าง CC (เช่น Chaugnar) จะเสียจังหวะไฟต์ทันที
+    confidence: MEDIUM
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: Draft 101 ดราฟยังไงคร่าวๆให้ตัวเองไม่เสียเปรียบ — AnalysttSeak-
+      detail: synergy.md §1 Pair 5 [FACT 26, 28]
+    data_check:
+      verdict: disagrees
+      n: 10
+      detail: adjusted 0.476 เทียบค่าคาดหวัง 0.502 · score -0.64 จาก 10 เกม — เพิ่งถึงเกณฑ์ ตัวอย่างยังน้อย
+
+  # ── Pair 6 · Krizzix & Zuka ────────────────────────────────────────
+  # synergy.md เขียน "Zuka / Panda" — ฐานข้อมูลมีแต่ zuka (ไม่มี panda) จึงเก็บเฉพาะ zuka
+  - evidence_id: SYN-006-krizzix-zuka
+    entity_a: krizzix
+    entity_b: zuka
+    synergy_type: aoe_pull_burst
+    mechanism: engage_followup
+    mechanism_detail: >-
+      "รวบแล้วก็เหยียบ" — Krizzix ดึงกลุ่มศัตรูมารวมกัน Zuka กระโดดอัลติทับชุดใหญ่
+      แล้วใช้คอมโบสกิลทุบซ้ำ
+    condition:
+      - cue: ต้องทำคอมโบในมุมอับหรือดักพุ่มไม้ เพื่อไม่ให้ศัตรูกด Flicker หนี
+    expected_result: ล้างแผงหลังและสังหารเป้าหมายเดี่ยว/กลุ่มได้อย่างรวดเร็ว
+    weakness: แพ้ทางฮีโร่ที่มีสกิลอมตะหรือกันสถานะ (เช่น Marja, Chaugnar)
+    confidence: HIGH
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: Draft 101 ดราฟยังไงคร่าวๆให้ตัวเองไม่เสียเปรียบ — AnalysttSeak-
+      detail: synergy.md §1 Pair 6 [FACT 28]
+    data_check:
+      verdict: insufficient
+      n: 2
+      detail: มีแค่ 2 เกมที่ Krizzix กับ Zuka อยู่ทีมเดียวกัน ต่ำกว่าเกณฑ์ MIN_PAIR_GAMES = 8
+
+  # ── Pair 7 · Rouie & Marja — คู่เดียวที่ข้อมูลหนุน ──────────────────
+  - evidence_id: SYN-007-rouie-marja
+    entity_a: rouie
+    entity_b: marja
+    synergy_type: global_warp
+    mechanism: recall_warp
+    mechanism_detail: >-
+      Marja ดันเลนข้างสูง Rouie วางวงวาร์ปหน้าป้อมศัตรู หากศัตรูมาปิด Marja กดอัลติ
+      เป็นผีหลบดาเมจแล้ววาร์ปกลับบ้าน ก่อน Rouie กดอัลติดึง Marja กลับมาดันป้อมอีกทาง
+    condition:
+      - cue: Marja ต้องมีไอเทมหลัก (ดาบ Z) และ Rouie คุมจังหวะวางวงวาร์ปให้ตรงคูลดาวน์อัลติ Marja
+    expected_result: >-
+      สร้างแรงกดดันเลนข้าง 2 ทางพร้อมกัน บีบให้ศัตรูต้องแยกรับจนเสียป้อมเทียร์ 2 และหน้าบ้าน
+    weakness: โดนแก้ทางหากศัตรูมีตัวเบิร์สหนักสังหาร Rouie หรือตัวผลัก Marja ออกจากวงวาร์ป
+    confidence: HIGH
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: Draft 101 ดราฟยังไงคร่าวๆให้ตัวเองไม่เสียเปรียบ — AnalysttSeak-
+      detail: synergy.md §1 Pair 7 [FACT 22, 102, 110, 114]
+    data_check:
+      verdict: agrees
+      n: 34
+      detail: >-
+        adjusted 0.589 เทียบค่าคาดหวัง 0.557 · score +1.71 จาก 34 เกม —
+        คู่เดียวใน 8 pair ที่ข้อมูลผลแพ้ชนะหนุนข้ออ้างกลไก
+
+  # ── Pair 8 · Chaugnar & Hayate ─────────────────────────────────────
+  # ⚠️ §6 tag = Front_to_Back_Synergy แต่ §1 กลไกคือ cleanse cover — เก็บทั้งสองตามต้นทาง
+  - evidence_id: SYN-008-chaugnar-hayate
+    entity_a: chaugnar
+    entity_b: hayate
+    synergy_type: front_to_back
+    mechanism: cleanse_cover
+    mechanism_detail: >-
+      Chaugnar เดินนำเปิดไฟต์ เมื่อ Hayate พุ่งอัลติเข้ารำกลางดงศัตรู Chaugnar กดอัลติ
+      ล้าง CC มอบกันสถานะและลดดาเมจ ให้ Hayate รำสร้าง true damage เต็มหลอดโดยไม่โดนขัด
+    condition:
+      - cue: ทั้งคู่ต้องมีอัลติพร้อมใช้งาน และ Hayate ต้องเข้าในระยะสแต็กพิษ
+    expected_result: ละลายแผงหน้าและแทงค์ศัตรูยกทีมโดยไม่โดนขัดจังหวะ CC
+    weakness: ดาเมจหลักพึ่งพา Hayate หาก Hayate โดนเบิร์สสังหารทันที ทีมจะขาดตัวทำดาเมจ
+    confidence: HIGH
+    objective_scope: both
+    source:
+      type: coach_input
+      ref: มาเจาะพี่หมูกับปราสาทสายฟ้า — BAC vs BRU RPL winter 2026 leg 1 — AnalysttSeak-
+      detail: synergy.md §1 Pair 8 [FACT 163, 165, 180]
+    data_check:
+      verdict: insufficient
+      n: 3
+      detail: มีแค่ 3 เกมที่ Chaugnar กับ Hayate อยู่ทีมเดียวกัน ต่ำกว่าเกณฑ์ MIN_PAIR_GAMES = 8

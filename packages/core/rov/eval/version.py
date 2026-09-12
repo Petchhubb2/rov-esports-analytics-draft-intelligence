@@ -33,6 +33,7 @@ CODE_FILES: tuple[str, ...] = (
     "packages/core/rov/draft/lanes.py",
     "packages/core/rov/draft/composition.py",
     "packages/core/rov/draft/counterknowledge.py",
+    "packages/core/rov/draft/synergyknowledge.py",
     "packages/core/rov/draft/winconditions.py",
 )
 
@@ -42,6 +43,7 @@ KNOWLEDGE_PATHS: tuple[str, ...] = (
     "configs/draft/hero_assessment.yaml",
     "configs/draft/format.yaml",
     "knowledge/counter",
+    "knowledge/synergy",
     "knowledge/macro",
 )
 
@@ -172,6 +174,14 @@ def _counts() -> dict[str, int]:
         out["counter_evidence"] = len(b.evidence)
         out["counter_threats"] = len(b.threats)
         out["counter_capabilities"] = len(b.capabilities)
+    except Exception:  # noqa: BLE001
+        pass
+    try:
+        from rov.draft.synergyknowledge import SynergyBook
+
+        sb = SynergyBook.load()
+        out["synergy_evidence"] = len(sb.evidence)
+        out["synergy_usable"] = len(sb.usable_evidence)
     except Exception:  # noqa: BLE001
         pass
     try:

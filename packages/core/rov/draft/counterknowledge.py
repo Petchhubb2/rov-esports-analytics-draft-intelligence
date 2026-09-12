@@ -55,6 +55,7 @@ ThreatTag = Literal[
     "tank_frontline",     # ค้ำไฟต์จนยิงไม่เข้า
     "immobile_backline",  # แผงหลังขาตาย เสี่ยงโดนล้วง
     "poke_siege",         # ตอดเลือดระยะไกล บีบไม่ให้เข้าใกล้
+    "split_push",         # ออฟเลนสายสเกล ดันเลนข้างสูง สโนว์บอลถ้าปล่อยฟรี (M2A STEP 7)
 ]
 
 MechanismTag = Literal[
@@ -80,6 +81,7 @@ THREAT_LABEL: dict[str, str] = {
     "tank_frontline": "ค้ำไฟต์จนยิงแผงหน้าไม่เข้า",
     "immobile_backline": "แผงหลังขาตาย เสี่ยงโดนล้วง",
     "poke_siege": "ตอดเลือดระยะไกล บีบไม่ให้เข้าใกล้",
+    "split_push": "ออฟเลนสายสเกล ดันเลนข้างสูง สโนว์บอลถ้าปล่อยฟาร์มฟรี",
 }
 
 MECHANISM_LABEL: dict[str, str] = {

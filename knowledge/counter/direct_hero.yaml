@@ -85,6 +85,23 @@ threats:
       ref: "Rov : เข้าทำแบบไหนให้ดีในไฟต์ ทุกตำแหน่ง — Cozmos"
       detail: counter.md Role Counter — Enemy Assassin [FACT 26, 83, 93]
 
+  # M2A · STEP 7 — marja มี counter evidence (CTR-002/004) แต่เดิมไม่มี threat tag
+  # จึง mechanism matching ใช้กับมันไม่ได้เลย (docs/31 §4.2) · เติมจาก source ที่มีอยู่แล้ว
+  #
+  # ⚠️ provenance: "split push" มาจาก synergy.md ไม่ใช่ CTR-004 — CTR-004 เป็น "Lane/Poke
+  #    Counter" พูดถึงแค่การแก้ทาง Marja ในเลน ไม่ได้ระบุว่า Marja เป็น split pusher
+  - hero: marja
+    threats: [split_push]
+    detail: >-
+      ออฟเลนสายสปีดฟาร์ม ถึกทน มีอัลติเป็นผีอมตะ ดันเลนข้างสูงได้ปลอดภัย
+      พอได้ไอเทมหลัก (ดาบ Z) จะสเกลเป็นตัวกดดันเลนข้างสองทาง
+    source:
+      type: coach_input
+      ref: Draft 101 ดราฟยังไงคร่าวๆให้ตัวเองไม่เสียเปรียบ — AnalysttSeak-
+      detail: >-
+        synergy.md §1 Pair 7 "Ghost Warp + Dual Side Push" + §3 Composition "Split Push + Global Warp"
+        [FACT 22, 102, 110, 114] — ที่มาของ split push · CTR-004 (poke/lane counter) ไม่ได้ระบุ split push
+
 # ─────────────────────────────────────────────────────────────────────
 # กลไกที่ฮีโร่แต่ละตัวมี — counter.md ระบุไว้ตรง ๆ
 #
@@ -303,6 +320,24 @@ answers:
       type: coach_input
       ref: Draft 101 ดราฟยังไงคร่าวๆให้ตัวเองไม่เสียเปรียบ — AnalysttSeak-
       detail: counter.md CTR-005 [FACT 6, 24, 26]
+
+  # M2A · STEP 7 — วิธีตอบภัย split_push ของ marja: ออกเทรดชนะในเลนก่อนได้ไอเทมหลัก
+  # confidence MEDIUM เพราะข้อมูล 861 เกมของเราค้าน lane_trade→marja (docs/31 §5)
+  #
+  # provenance: กลไก lane_trade + power gate (ดาบ Z) มาจาก CTR-004 ตรง ๆ · ส่วน threat
+  # ที่มันตอบ (split_push) นิยามไว้ที่ marja HeroThreat ซึ่ง source เป็น synergy.md
+  - threat: split_push
+    mechanisms: [lane_trade]
+    reason: >-
+      กดดันการฟาร์มในเลนออฟเลนช่วงต้นเกมก่อน Marja ได้ไอเทมหลัก (ดาบ Z) ให้เก็บสแตก/สปีดของไม่ทัน
+      จึงไม่ถึง power spike ที่ทำให้ออกไปดันเลนข้างได้
+    confidence: MEDIUM
+    source:
+      type: coach_input
+      ref: Draft 101 ดราฟยังไงคร่าวๆให้ตัวเองไม่เสียเปรียบ — AnalysttSeak-
+      detail: >-
+        counter.md CTR-004 [FACT 23, 25, 42, 63] — lane/poke counter กด Marja ก่อนได้ดาบ Z
+        (CTR-004 เป็นที่มาของ lane_trade เท่านั้น · split_push อ้างอิง marja threat จาก synergy.md)
 
 # ─────────────────────────────────────────────────────────────────────
 # Direct Hero Counter — counter.md §1
@@ -535,6 +570,7 @@ evidence:
     counter: murad
     counter_type: lane
     lane: ds
+    threat: split_push
     mechanism: lane_trade
     mechanism_detail: >-
       Murad ตอดสกิลแล้วใช้วาร์ปถอยโดยไม่เสียเลือด ทำให้ Marja ลิงก์สายใย
@@ -560,6 +596,7 @@ evidence:
     counter: ryoma
     counter_type: lane
     lane: ds
+    threat: split_push
     mechanism: lane_trade
     mechanism_detail: Ryoma มีระยะสกิลตอดไกลกว่าในต้นเกม กดดันการฟาร์มของ Marja ในเลนออฟเลน
     condition:
@@ -583,6 +620,7 @@ evidence:
     counter: hayate
     counter_type: lane
     lane: ds
+    threat: split_push
     mechanism: lane_trade
     mechanism_detail: ตอดจากระยะไกลกดดันการฟาร์มของ Marja ในเลนออฟเลนช่วงต้นเกม
     condition:
