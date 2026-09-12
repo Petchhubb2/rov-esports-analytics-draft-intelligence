@@ -39,3 +39,16 @@ but the mapping is not source-verified:
 - only activate the mapping after source-backed verification
 
 Example cases may be documented separately, but this rule is not tied to any one hero.
+
+## Series identity vs side (Global Ban-Pick)
+
+Side (BLUE/RED) is ephemeral — it lasts one game. Team identity is stable across a
+series. Series history, Global Ban-Pick locks, and series score must be keyed by team
+identity, never by side. `GameRecord[]` is the single immutable source of truth; used
+heroes and wins are derived from it, not stored separately.
+
+A recorded game is immutable: its blue/red team identities, the association of picks to
+those identities, and its winner_team_id must never change after recording. The
+"swap sides" action may modify only the current/next game's side assignment — it must
+never rewrite a historical GameRecord. Renaming a team's display name must not move
+history, locks, or wins.

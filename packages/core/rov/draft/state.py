@@ -14,6 +14,7 @@ import yaml
 from pydantic import BaseModel, Field, model_validator
 
 from rov.domain.enums import DraftAction, Team
+from rov.draft.series import GameSideAssignment, SeriesState
 
 
 class TurnSpec(BaseModel):
@@ -138,8 +139,9 @@ class IllegalMove(ValueError):
 class DraftState:
     """สถานะการ draft หนึ่งเกม
 
-    series_used  ฮีโร่ที่แต่ละทีมใช้ไปแล้วในเกมก่อนหน้าของซีรีส์
-                 ใช้บังคับกติกา Global Ban-Pick
+    Global Ban-Pick อ่านจาก `series` (ประวัติทั้งซีรีส์) ผ่าน `sides` (ทีมไหนอยู่ฝั่งไหน
+    ในเกมนี้) — key ด้วย **team identity ไม่ใช่ side** เพื่อให้ถูกเมื่อ BO3/BO5 สลับฝั่ง
+    (docs/36-37) · ไม่ส่ง sides/series มา = เกมเดี่ยว ไม่มี series lock
     """
 
     fmt: DraftFormat
@@ -147,8 +149,9 @@ class DraftState:
     blue_name: str = "BLUE"
     red_name: str = "RED"
     moves: list[Move] = field(default_factory=list)
-    series_used: dict[Team, set[str]] = field(default_factory=dict)
-    is_final_game: bool = False
+    # ★ M2A.5 — series identity: sides = assignment ของเกมนี้ · series = source of truth
+    sides: GameSideAssignment | None = None
+    series: SeriesState | None = None
 
     # ------------------------------------------------------------------
 
@@ -167,6 +170,11 @@ class DraftState:
         return self.fmt.sequence[self.turn_index]
 
     def team_name(self, team: Team) -> str:
+        # มี series identity → ใช้ชื่อของทีมที่อยู่ฝั่งนั้นในเกมนี้ (ตาม identity ไม่ใช่ side)
+        if self.sides is not None and self.series is not None:
+            t = self.series.teams.get(self.sides.team_for_side(team))
+            if t is not None:
+                return t.display_name
         return self.blue_name if team is Team.BLUE else self.red_name
 
     # ------------------------------------------------------------------
@@ -188,18 +196,15 @@ class DraftState:
         return {m.hero_id for m in self.moves}
 
     def locked_by_series(self, team: Team) -> set[str]:
-        """ฮีโร่ที่ใช้ไม่ได้เพราะกติกา Global Ban-Pick"""
-        g = self.fmt.global_ban_pick
-        if not g.enabled:
+        """ฮีโร่ที่ใช้ไม่ได้เพราะกติกา Global Ban-Pick
+
+        resolve ผ่าน identity: side → ทีมที่อยู่ฝั่งนั้นในเกมนี้ → ประวัติของทีมนั้น
+        (docs/37 §3) · ไม่มี series/sides = เกมเดี่ยว ไม่มี lock
+        """
+        if self.sides is None or self.series is None:
             return set()
-        if g.reset_on_final_game and self.is_final_game:
-            return set()
-        if g.scope == "both_teams":
-            out: set[str] = set()
-            for used in self.series_used.values():
-                out |= used
-            return out
-        return set(self.series_used.get(team, set()))
+        team_id = self.sides.team_for_side(team)
+        return self.series.locked_heroes_for(team_id, self.fmt)
 
     # ------------------------------------------------------------------
 

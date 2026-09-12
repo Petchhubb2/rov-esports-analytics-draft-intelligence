@@ -80,7 +80,28 @@ def test_series_state_is_derived_not_duplicated(tpl):
     เคยมีบั๊กจากการเก็บทั้ง used-set และประวัติ พอสลับฝั่งแล้วสองอย่างไม่ตรงกัน
     """
     assert "S.used" not in tpl, "S.used ถูกแทนด้วย lockedFor() ที่คิดจากประวัติแล้ว"
-    assert "const winsOf = t => S.results.filter" in tpl
+    # M2A.5 — series score/history/lock derive จาก results โดย **team identity** ไม่ใช่ side
+    assert "const winsOf = tid => S.results.filter(r => r.winnerId" in tpl, (
+        "winsOf ต้อง key ด้วย winnerId (team identity) ไม่ใช่ side"
+    )
+    assert "const heroesUsedBy" in tpl, "ต้องมี heroesUsedBy(teamId) เป็นแหล่ง lock/ประวัติ"
+
+
+def test_series_history_is_keyed_by_identity_not_side(tpl):
+    """★ M2A.5 correctness — lock/history ต้องผูกกับ team identity ไม่ใช่ BLUE/RED
+
+    docs/36-37: bug เดิมคือ series history ผูกกับ side · เมื่อสลับฝั่ง lock ผิดทีม
+    """
+    # lock resolve ผ่าน assignment ปัจจุบัน -> team id -> heroesUsedBy
+    assert "return heroesUsedBy(S.assign[side]);" in tpl
+    # GameRecord เก็บ moves by identity + assignment snapshot
+    assert "teamId: m.teamId" in tpl and "assignment: {blue: S.assign.blue" in tpl
+    # ปุ่มสลับฝั่งต้องไม่เขียนทับ results เก่า (invariant #4)
+    assert "S.results = S.results.map" not in tpl, (
+        "swap ห้าม rewrite S.results — record เก่าต้อง immutable"
+    )
+    # winner ของเกมเก็บเป็น team identity (winnerId) ไม่ใช่ side
+    assert "winnerId: S.assign[side]" in tpl, "winner ต้องเก็บเป็น team id (winnerId)"
 
 
 def test_js_weight_formula_matches_python(tpl):

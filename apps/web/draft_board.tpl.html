@@ -1324,13 +1324,14 @@ const other = t => t === "blue" ? "red" : "blue";
 
 // ── state ────────────────────────────────────────────────────────────
 const S = {
-  moves: [],           // {i, team, action, hero}
-  swapped: false,      // ฝั่งไหนคือทีมไหน
+  moves: [],           // {i, teamId, action, hero} — ปัจจุบัน · เก็บ team identity ไม่ใช่ side
   bo: 3,               // รูปแบบซีรีส์ 1/3/5/7
-  // ผลของเกมที่จบไปแล้ว — เก็บ "ทั้งกระดาน" ของเกมนั้นไว้เลย
-  // ไม่ใช่แค่ตัวที่เลือก เพราะต้องย้อนดูได้ว่าเกมนั้นแบนอะไรไปบ้าง
-  // อยู่จนกว่าจะกดล้างซีรีส์ ปุ่มเริ่มใหม่ไม่แตะตรงนี้
-  results: [],         // [{w:"blue"|"red", moves:[{team,action,hero}]}]
+  // M2A.5 — identity เสถียร · side เป็นของต่อเกม (docs/37) เปลี่ยนชื่อไม่ขยับ history/locks
+  names: {A: "TEAM BLUE", B: "TEAM RED"},  // display แก้ได้ · key ด้วย team id
+  assign: {blue: "A", red: "B"},           // เกมนี้ side ไหนคือทีมไหน (ของต่อเกม)
+  // GameRecord[] เป็น source of truth เดียว (immutable) · เก็บ assignment snapshot + moves by identity
+  // ปุ่มสลับฝั่งแตะได้แค่ assignment ปัจจุบัน ห้ามเขียนทับ record เก่า
+  results: [],         // [{winnerId, assignment:{blue,red}, moves:[{teamId,action,hero}]}]
   filter: "all",
   query: "",
   picked: null,        // ฮีโร่ที่เลือกดูรายละเอียด
@@ -1349,15 +1350,29 @@ const S = {
   wbMarks: true,
 };
 
-// ── ซีรีส์ ────────────────────────────────────────────────────────────
-// ค่าที่นับได้จาก S.results ทั้งหมดเป็น derived ไม่เก็บซ้ำ
-// เพราะถ้าเก็บทั้งยอดสะสมและประวัติ สองอย่างจะเพี้ยนจากกันเมื่อ swap ฝั่ง
+// ── ซีรีส์ · M2A.5 identity ────────────────────────────────────────────
+// GameRecord[] เป็น source of truth เดียว · history/lock/score key ด้วย team identity
+// ไม่ใช่ side → ถูกเมื่อ BO3/BO5 สลับฝั่ง (docs/36-37) · Python ทำแบบเดียวกันใน rov/draft/series.py
+const TEAM_IDS = ["A", "B"];
 const gameNo = () => S.results.length + 1;
-const winsOf = t => S.results.filter(r => r.w === t).length;
+
+const teamOnSide = side => S.assign[side];                 // side -> team id (เกมนี้)
+const sideOfTeam = tid => S.assign.blue === tid ? "blue" : (S.assign.red === tid ? "red" : null);
+const nameOfTeam = tid => S.names[tid] || tid;
+const teamName = side => nameOfTeam(S.assign[side]);        // ชื่อทีมที่อยู่ฝั่งนั้นในเกมนี้
+
+const heroesUsedBy = tid => {                               // by identity จากทุกเกมที่บันทึก
+  const out = new Set();
+  for (const r of S.results)
+    for (const m of r.moves) if (m.teamId === tid && m.action === "PICK") out.add(m.hero);
+  return out;
+};
+const winsOf = tid => S.results.filter(r => r.winnerId === tid).length;   // by team id
+const winsOnSide = side => winsOf(S.assign[side]);
+
 const needed = () => Math.ceil(S.bo / 2);
-const decided = () => winsOf("blue") >= needed() || winsOf("red") >= needed();
-const seriesWinner = () => winsOf("blue") >= needed() ? "blue"
-                         : winsOf("red") >= needed() ? "red" : null;
+const decided = () => TEAM_IDS.some(tid => winsOf(tid) >= needed());
+const seriesWinner = () => TEAM_IDS.find(tid => winsOf(tid) >= needed()) || null;  // team id | null
 
 // configs/draft/format.yaml — global_ban_pick
 // scope: own_team_only · applies_to_bans: false · reset_on_final_game: true
@@ -1369,18 +1384,18 @@ const gbpOff = () => !GBP.enabled || (GBP.resetOnFinalGame && isFinalGame());
 
 const turn = () => S.moves.length < SEQ.length ? SEQ[S.moves.length] : null;
 const taken = () => new Set(S.moves.map(m => m.hero));
-const of = (team, action) => S.moves.filter(m => m.team===team && m.action===action).map(m => m.hero);
-const teamName = t => document.getElementById(t==="blue" ? "nameBlue" : "nameRed").value || t.toUpperCase();
+// ปัจจุบันเก็บ teamId ต่อ move · แสดง/กรองตาม side ผ่าน assignment ปัจจุบัน (สลับฝั่งแล้วตามทันที)
+const of = (side, action) =>
+  S.moves.filter(m => m.action === action && sideOfTeam(m.teamId) === side).map(m => m.hero);
 
-// ดึง ban/pick ของฝั่งหนึ่งออกจากกระดานที่เก็บไว้
-const movesOf = (moves, team, action) =>
-  moves.filter(m => m.team === team && m.action === action).map(m => m.hero);
+// ดึง ban/pick ของทีมหนึ่ง (by identity) ออกจากรายการ moves ที่บันทึกไว้
+const movesOf = (moves, tid, action) =>
+  moves.filter(m => m.teamId === tid && m.action === action).map(m => m.hero);
 
-function lockedFor(team) {
-  const out = new Set();
-  if (gbpOff()) return out;
-  for (const r of S.results) for (const h of movesOf(r.moves, team, "PICK")) out.add(h);
-  return out;
+// Global Ban-Pick: side -> ทีมที่อยู่ฝั่งนั้นเกมนี้ -> ฮีโร่ที่ทีมนั้นใช้ไปแล้ว (by identity)
+function lockedFor(side) {
+  if (gbpOff()) return new Set();
+  return heroesUsedBy(S.assign[side]);
 }
 
 function why(hero) {
@@ -1388,7 +1403,7 @@ function why(hero) {
   if (!t) return "ดราฟต์จบแล้ว";
   if (!HERO.has(hero)) return "ไม่รู้จักฮีโร่นี้";
   const m = S.moves.find(m => m.hero === hero);
-  if (m) return `${HERO.get(hero).name} ถูก${m.action==="BAN"?"แบน":"เลือก"}ไปแล้วโดย ${teamName(m.team)}`;
+  if (m) return `${HERO.get(hero).name} ถูก${m.action==="BAN"?"แบน":"เลือก"}ไปแล้วโดย ${nameOfTeam(m.teamId)}`;
   if (t.action === "PICK" && lockedFor(t.team).has(hero))
     return `${HERO.get(hero).name} ใช้ไม่ได้ — ${teamName(t.team)} เลือกไปแล้วในเกมก่อนหน้าของซีรีส์ (Global Ban-Pick)`;
   return null;
@@ -1397,7 +1412,8 @@ function why(hero) {
 function apply(hero) {
   const t = turn();
   if (!t || why(hero)) return false;
-  S.moves.push({i: S.moves.length, team: t.team, action: t.action, hero});
+  // เก็บ team identity ของฝั่งที่ถึงตา (ผ่าน assignment ปัจจุบัน) ไม่ใช่ side
+  S.moves.push({i: S.moves.length, teamId: S.assign[t.team], action: t.action, hero});
   S.picked = null;
   clockReset();          // ตาใหม่ได้เวลาใหม่ · เดินต่อถ้าเดินอยู่ก่อนหน้า
   render();
@@ -2544,20 +2560,22 @@ function renderSeries() {
   el("boPick").innerHTML = [1,3,5,7].map(n =>
     `<button class="bo" data-bo="${n}" aria-pressed="${n===S.bo}">Bo${n}</button>`).join("");
 
-  const wb = winsOf("blue"), wr = winsOf("red"), win = seriesWinner();
+  const wb = winsOnSide("blue"), wr = winsOnSide("red"), win = seriesWinner();  // win = team id | null
   el("score").innerHTML = `<span class="b">${wb}</span><span class="sep">–</span><span class="r">${wr}</span>`;
 
   el("gameDots").innerHTML = Array.from({length: S.bo}, (_, i) => {
     const r = S.results[i];
     const now = !r && i === S.results.length && !win;
-    const tip = r ? `เกมที่ ${i+1} — ${teamName(r.w)} ชนะ` : `เกมที่ ${i+1}`;
-    return `<span class="gd ${r ? r.w[0] : ""} ${now ? "now" : ""}" title="${escape(tip)}">${i+1}</span>`;
+    // สีจุด = ฝั่งที่ทีมผู้ชนะอยู่ "ในเกมนั้น" จาก assignment ที่บันทึกไว้ (ไม่ใช่ side ปัจจุบัน)
+    const winCls = r ? (r.assignment.blue === r.winnerId ? "b" : "r") : "";
+    const tip = r ? `เกมที่ ${i+1} — ${nameOfTeam(r.winnerId)} ชนะ` : `เกมที่ ${i+1}`;
+    return `<span class="gd ${winCls} ${now ? "now" : ""}" title="${escape(tip)}">${i+1}</span>`;
   }).join("");
 
   const st = el("seriesState");
   if (win) {
     st.className = "decided";
-    st.textContent = `ซีรีส์จบแล้ว — ${teamName(win)} ชนะ ${Math.max(wb,wr)}-${Math.min(wb,wr)}`;
+    st.textContent = `ซีรีส์จบแล้ว — ${nameOfTeam(win)} ชนะ ${Math.max(wb,wr)}-${Math.min(wb,wr)}`;
   } else {
     st.className = "";
     let msg = `เกมที่ ${gameNo()} · ชนะ ${needed()} เกมก่อนได้ซีรีส์`;
@@ -2606,30 +2624,33 @@ function renderHistory() {
   el("histCount").textContent = `${S.results.length} เกม`;
 
   el("histList").innerHTML = S.results.map((r, i) => {
-    // ตัวที่ทีมนี้เคยเลือกในเกมก่อน ๆ — ใช้ไฮไลต์ว่าซ้ำหรือไม่
-    const before = {blue: new Set(), red: new Set()};
+    // ตัวที่ทีมนี้ (by identity) เคยเลือกในเกมก่อน ๆ — ใช้ไฮไลต์ว่าซ้ำหรือไม่
+    const before = {A: new Set(), B: new Set()};
     for (let k = 0; k < i; k++)
-      for (const t of ["blue","red"])
-        for (const h of movesOf(S.results[k].moves, t, "PICK")) before[t].add(h);
+      for (const tid of TEAM_IDS)
+        for (const h of movesOf(S.results[k].moves, tid, "PICK")) before[tid].add(h);
 
     const decider = GBP.resetOnFinalGame && S.bo > 1 && i + 1 >= S.bo;
-    const side = t => {
-      const bans = movesOf(r.moves, t, "BAN"), picks = movesOf(r.moves, t, "PICK");
-      return `<div class="hside ${t[0]}">
-        <span class="tm">${escape(teamName(t))}</span>
+    // แสดงตามฝั่งที่ทีมอยู่ "ในเกมนั้น" (จาก assignment ที่บันทึก) · ชื่อ/ประวัติ by identity
+    const sideBlock = side => {
+      const tid = r.assignment[side];
+      const bans = movesOf(r.moves, tid, "BAN"), picks = movesOf(r.moves, tid, "PICK");
+      return `<div class="hside ${side[0]}">
+        <span class="tm">${escape(nameOfTeam(tid))}</span>
         <span class="lab">แบน</span>
         <span class="hrow">${bans.map(h => heroChip(h, "ban", false)).join("") || "—"}</span>
         <span class="lab">เลือก</span>
-        <span class="hrow">${picks.map(h => heroChip(h, "pick", before[t].has(h))).join("") || "—"}</span>
+        <span class="hrow">${picks.map(h => heroChip(h, "pick", before[tid].has(h))).join("") || "—"}</span>
       </div>`;
     };
+    const winCls = r.assignment.blue === r.winnerId ? "b" : "r";
     return `<div class="hgame ${decider ? "decider" : ""}">
       <div class="hhead">
         <b>เกมที่ ${i + 1}</b>
-        <span class="who ${r.w[0]}">${escape(teamName(r.w))} ชนะ</span>
+        <span class="who ${winCls}">${escape(nameOfTeam(r.winnerId))} ชนะ</span>
         ${decider ? '<span class="note">เกมตัดสิน — Normal Ban-Pick</span>' : ""}
       </div>
-      ${side("blue")}${side("red")}
+      ${sideBlock("blue")}${sideBlock("red")}
     </div>`;
   }).join("");
 }
@@ -3337,19 +3358,21 @@ el("reset").onclick = () => {
 el("clockToggle").onclick = clockToggle;
 setInterval(clockTick, 1000);
 el("swap").onclick = () => {
-  const a = el("nameBlue"), b = el("nameRed");
-  [a.value, b.value] = [b.value, a.value];
-  S.results = S.results.map(r => ({
-    w: other(r.w),
-    moves: r.moves.map(m => ({...m, team: other(m.team)})),
-  }));
-  S.moves = S.moves.map(m => ({...m, team: other(m.team)}));
+  // M2A.5 — สลับฝั่งแตะได้แค่ assignment ของเกมปัจจุบัน · ห้ามเขียนทับ record เก่า (invariant #4)
+  // history/locks/wins key ด้วย identity อยู่แล้ว จึงตามฝั่งใหม่เองโดยไม่ต้องแก้ประวัติ
+  [S.assign.blue, S.assign.red] = [S.assign.red, S.assign.blue];
+  el("nameBlue").value = S.names[S.assign.blue];
+  el("nameRed").value = S.names[S.assign.red];
   render();
 };
-function recordWin(w) {
+function recordWin(side) {
   if (turn() || seriesWinner()) return;
-  // เก็บกระดานทั้งใบ ทั้งแบนและเลือก ตามลำดับที่เกิดจริง
-  S.results.push({w, moves: S.moves.map(m => ({team: m.team, action: m.action, hero: m.hero}))});
+  // GameRecord immutable: เก็บ winnerId + assignment snapshot + moves by identity
+  S.results.push({
+    winnerId: S.assign[side],
+    assignment: {blue: S.assign.blue, red: S.assign.red},
+    moves: S.moves.map(m => ({teamId: m.teamId, action: m.action, hero: m.hero})),
+  });
   S.moves = []; S.picked = null; render();
 }
 el("winBlue").onclick = () => recordWin("blue");
@@ -3413,7 +3436,13 @@ el("laneBar").addEventListener("click", e => {
   renderCtr();
 });
 el("search").addEventListener("input", e => { S.query = e.target.value; renderPool(); });
-for (const inp of [el("nameBlue"), el("nameRed")]) inp.addEventListener("input", () => { renderTurn(); renderRecs(); renderSeries(); });
+// ชื่อทีมแก้ได้ · เก็บ by identity (S.names[teamId]) ไม่ผูกกับ side — เปลี่ยนชื่อไม่ขยับ history
+el("nameBlue").addEventListener("input", () => {
+  S.names[S.assign.blue] = el("nameBlue").value; renderTurn(); renderRecs(); renderSeries(); renderHistory();
+});
+el("nameRed").addEventListener("input", () => {
+  S.names[S.assign.red] = el("nameRed").value; renderTurn(); renderRecs(); renderSeries(); renderHistory();
+});
 
 el("theme").onclick = () => {
   const cur = document.documentElement.getAttribute("data-theme");

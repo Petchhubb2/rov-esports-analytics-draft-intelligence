@@ -34,6 +34,8 @@ CODE_FILES: tuple[str, ...] = (
     "packages/core/rov/draft/composition.py",
     "packages/core/rov/draft/counterknowledge.py",
     "packages/core/rov/draft/synergyknowledge.py",
+    "packages/core/rov/draft/series.py",
+    "packages/core/rov/draft/state.py",
     "packages/core/rov/draft/winconditions.py",
 )
 

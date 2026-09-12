@@ -7,6 +7,12 @@ from rov.domain.enums import DraftAction, Team
 from rov.draft.importer.parser import GameDraft, SeriesDraft
 from rov.draft.meta import Region, pool
 from rov.draft.recommend import recommend, weights_for
+from rov.draft.series import (
+    GameRecord,
+    GameSideAssignment,
+    SeriesState,
+    TeamIdentity,
+)
 from rov.draft.state import DraftFormat, DraftState, IllegalMove
 
 FORMAT_FILE = "configs/draft/format.yaml"
@@ -146,11 +152,43 @@ def test_picks_and_bans_are_separated(fmt):
 
 
 # --------------------------------------------------- Global Ban-Pick
+#
+# M2A.5 — series history key ด้วย team identity ไม่ใช่ side (docs/37)
+A_ID, B_ID = "TEAM_A", "TEAM_B"
+
+
+def mk_series(a_used=(), b_used=(), best_of=None, prior=1) -> SeriesState:
+    """SeriesState ที่ TEAM_A (blue ในเกมก่อน) ใช้ a_used · TEAM_B (red) ใช้ b_used
+
+    current_assignment ตั้ง A=blue B=red — ฝั่ง BLUE เกมนี้จึงหมายถึง TEAM_A
+    """
+    cur = GameSideAssignment(blue_team_id=A_ID, red_team_id=B_ID)
+    games = [
+        GameRecord(
+            game_no=i,
+            assignment=cur,
+            blue_picks=tuple(a_used) if i == 1 else (),
+            red_picks=tuple(b_used) if i == 1 else (),
+            winner_team_id=A_ID,
+        )
+        for i in range(1, prior + 1)
+    ]
+    return SeriesState(
+        teams={A_ID: TeamIdentity(A_ID, "Team A"), B_ID: TeamIdentity(B_ID, "Team B")},
+        games=games,
+        current_assignment=cur,
+        best_of=best_of,
+    )
+
+
+def series_state(fmt, **kw) -> DraftState:
+    s = mk_series(**kw)
+    return DraftState(fmt=fmt, pool=set(POOL), sides=s.current_assignment, series=s)
 
 
 def test_own_previous_picks_are_locked(fmt):
     """กติกาที่ยืนยันแล้ว: ห้ามใช้ตัวที่ทีมตัวเองเคยเลือกในซีรีส์"""
-    st = new_state(fmt, series_used={Team.BLUE: {"h5"}})
+    st = series_state(fmt, a_used={"h5"})
     skip_bans(st, keep="h5")
     assert st.current.team_enum is Team.BLUE
     assert "h5" not in st.legal_moves()
@@ -159,8 +197,8 @@ def test_own_previous_picks_are_locked(fmt):
 
 
 def test_opponent_previous_picks_are_still_allowed(fmt):
-    """soft fearless — หยิบตัวที่ฝ่ายตรงข้ามเคยใช้ได้"""
-    st = new_state(fmt, series_used={Team.RED: {"h5"}})
+    """soft fearless — หยิบตัวที่ฝ่ายตรงข้ามเคยใช้ได้ · history ต้องไม่รั่วข้ามทีม"""
+    st = series_state(fmt, b_used={"h5"})  # TEAM_B ใช้ h5 · ฝั่ง BLUE เกมนี้คือ TEAM_A
     skip_bans(st, keep="h5")
     assert st.current.team_enum is Team.BLUE
     assert "h5" in st.legal_moves()
@@ -168,15 +206,15 @@ def test_opponent_previous_picks_are_still_allowed(fmt):
 
 def test_bans_are_not_restricted_by_series(fmt):
     """applies_to_bans = false — แบนตัวที่ตัวเองเคยใช้ได้"""
-    st = new_state(fmt, series_used={Team.BLUE: {"h5"}})
+    st = series_state(fmt, a_used={"h5"})
     assert st.current.action is DraftAction.BAN
     assert st.current.team_enum is Team.BLUE
     assert "h5" in st.legal_moves()
 
 
 def test_final_game_resets_the_rule(fmt):
-    """Bo7 เกมที่ 7 กลับเป็น Normal Ban-Pick"""
-    st = new_state(fmt, series_used={Team.BLUE: {"h5"}}, is_final_game=True)
+    """Bo7 เกมสุดท้ายกลับเป็น Normal Ban-Pick"""
+    st = series_state(fmt, a_used={"h5"}, best_of=3, prior=2)
     skip_bans(st, keep="h5")
     assert "h5" in st.legal_moves()
 
@@ -184,7 +222,8 @@ def test_final_game_resets_the_rule(fmt):
 def test_both_teams_scope(fmt):
     f2 = fmt.model_copy(deep=True)
     f2.global_ban_pick.scope = "both_teams"
-    st = DraftState(fmt=f2, pool=set(POOL), series_used={Team.RED: {"h5"}})
+    s = mk_series(b_used={"h5"})
+    st = DraftState(fmt=f2, pool=set(POOL), sides=s.current_assignment, series=s)
     skip_bans(st, keep="h5")
     assert "h5" not in st.legal_moves()
 

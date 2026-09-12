@@ -1,0 +1,404 @@
+{
+  "provenance": "distilled from the Liquipedia cache via rov.cli.main._regions() on 2026-09-12; committed so tests do not depend on data/cache/ (gitignored). Each game's side comes from the parsed team1side/team2side, never game number.",
+  "series": [
+    {
+      "id": "fs-vs-godji_check",
+      "tournament": "RPL 2026 Summer (ไทย)",
+      "team1": "fs",
+      "team2": "godji check",
+      "best_of": 5,
+      "date": "January 31, 2026 - 12:00 {{Abbr/ICT}}",
+      "t1_side_by_game": [
+        "blue",
+        "red",
+        "blue"
+      ],
+      "games": [
+        {
+          "game_no": 1,
+          "blue_team": "fs",
+          "red_team": "godji check",
+          "blue_picks": [
+            "skud",
+            "billow",
+            "rouie",
+            "hayate",
+            "toro"
+          ],
+          "red_picks": [
+            "murad",
+            "keera",
+            "lorion",
+            "wisp",
+            "ybneth"
+          ],
+          "blue_bans": [
+            "annette",
+            "elandorr",
+            "qi",
+            "florentino"
+          ],
+          "red_bans": [
+            "sinestrea",
+            "zata",
+            "mganga",
+            "marja"
+          ],
+          "winner_team": "fs"
+        },
+        {
+          "game_no": 2,
+          "blue_team": "godji check",
+          "red_team": "fs",
+          "blue_picks": [
+            "marja",
+            "sinestrea",
+            "iggy",
+            "elsu",
+            "thane"
+          ],
+          "red_picks": [
+            "taara",
+            "zephys",
+            "mganga",
+            "stuart",
+            "dolia"
+          ],
+          "blue_bans": [
+            "elandorr",
+            "zata",
+            "tachi",
+            "keera"
+          ],
+          "red_bans": [
+            "rouie",
+            "enzo",
+            "skud",
+            "maloch"
+          ],
+          "winner_team": "fs"
+        },
+        {
+          "game_no": 3,
+          "blue_team": "fs",
+          "red_team": "godji check",
+          "blue_picks": [
+            "richter",
+            "murad",
+            "aya",
+            "elsu",
+            "annette"
+          ],
+          "red_picks": [
+            "qi",
+            "tachi",
+            "yue",
+            "capheny",
+            "taara"
+          ],
+          "blue_bans": [
+            "rouie",
+            "zata",
+            "kahlii",
+            "dolia"
+          ],
+          "red_bans": [
+            "sinestrea",
+            "elandorr",
+            "florentino",
+            "marja"
+          ],
+          "winner_team": "fs"
+        }
+      ]
+    },
+    {
+      "id": "solyx-vs-bac",
+      "tournament": "RPL 2026 Summer (ไทย)",
+      "team1": "solyx",
+      "team2": "bac",
+      "best_of": null,
+      "date": "January 31, 2026 - 15:00 {{Abbr/ICT}}",
+      "t1_side_by_game": [
+        "blue",
+        "blue",
+        "red",
+        "blue",
+        "blue"
+      ],
+      "games": [
+        {
+          "game_no": 1,
+          "blue_team": "solyx",
+          "red_team": "bac",
+          "blue_picks": [
+            "marja",
+            "edras",
+            "zata",
+            "fennik",
+            "dolia"
+          ],
+          "red_picks": [
+            "murad",
+            "tachi",
+            "mganga",
+            "hayate",
+            "toro"
+          ],
+          "blue_bans": [
+            "elandorr",
+            "enzo",
+            "teemee",
+            "annette"
+          ],
+          "red_bans": [
+            "valhein",
+            "stuart",
+            "qi",
+            "capheny"
+          ],
+          "winner_team": "solyx"
+        },
+        {
+          "game_no": 2,
+          "blue_team": "solyx",
+          "red_team": "bac",
+          "blue_picks": [
+            "biron",
+            "billow",
+            "natalya",
+            "valhein",
+            "ybneth"
+          ],
+          "red_picks": [
+            "skud",
+            "elandorr",
+            "lorion",
+            "wisp",
+            "enzo"
+          ],
+          "blue_bans": [
+            "zata",
+            "marja",
+            "florentino",
+            "edras"
+          ],
+          "red_bans": [
+            "sinestrea",
+            "tachi",
+            "mganga",
+            "iggy"
+          ],
+          "winner_team": "bac"
+        },
+        {
+          "game_no": 3,
+          "blue_team": "bac",
+          "red_team": "solyx",
+          "blue_picks": [
+            "airi",
+            "marja",
+            "rouie",
+            "elsu",
+            "ybneth"
+          ],
+          "red_picks": [
+            "qi",
+            "tachi",
+            "heino",
+            "stuart",
+            "teemee"
+          ],
+          "blue_bans": [
+            "murad",
+            "lorion",
+            "enzo",
+            "ignis"
+          ],
+          "red_bans": [
+            "zata",
+            "sinestrea",
+            "florentino",
+            "keera"
+          ],
+          "winner_team": "bac"
+        },
+        {
+          "game_no": 4,
+          "blue_team": "solyx",
+          "red_team": "bac",
+          "blue_picks": [
+            "florentino",
+            "zephys",
+            "iggy",
+            "elsu",
+            "annette"
+          ],
+          "red_picks": [
+            "taara",
+            "keera",
+            "tulen",
+            "capheny",
+            "teemee"
+          ],
+          "blue_bans": [
+            "zata",
+            "valhein",
+            "aya",
+            "dolia"
+          ],
+          "red_bans": [
+            "sinestrea",
+            "rouie",
+            "skud",
+            "toro"
+          ],
+          "winner_team": "solyx"
+        },
+        {
+          "game_no": 5,
+          "blue_team": "solyx",
+          "red_team": "bac",
+          "blue_picks": [
+            "airi",
+            "volkath",
+            "lorion",
+            "elandorr",
+            "toro"
+          ],
+          "red_picks": [
+            "riktor",
+            "billow",
+            "iggy",
+            "erin",
+            "dolia"
+          ],
+          "blue_bans": [
+            "zata",
+            "valhein",
+            "stuart",
+            "maloch"
+          ],
+          "red_bans": [
+            "rouie",
+            "sinestrea",
+            "skud",
+            "murad"
+          ],
+          "winner_team": "solyx"
+        }
+      ]
+    },
+    {
+      "id": "hd-vs-bac",
+      "tournament": "RPL 2026 Summer (ไทย)",
+      "team1": "hd",
+      "team2": "bac",
+      "best_of": null,
+      "date": "February 1, 2026 - 12:00 {{Abbr/ICT}}",
+      "t1_side_by_game": [
+        "blue",
+        "red",
+        "red"
+      ],
+      "games": [
+        {
+          "game_no": 1,
+          "blue_team": "hd",
+          "red_team": "bac",
+          "blue_picks": [
+            "skud",
+            "edras",
+            "rouie",
+            "hayate",
+            "teemee"
+          ],
+          "red_picks": [
+            "airi",
+            "tachi",
+            "lorion",
+            "wisp",
+            "ybneth"
+          ],
+          "blue_bans": [
+            "dolia",
+            "elandorr",
+            "marja",
+            "stuart"
+          ],
+          "red_bans": [
+            "sinestrea",
+            "billow",
+            "florentino",
+            "elsu"
+          ],
+          "winner_team": "bac"
+        },
+        {
+          "game_no": 2,
+          "blue_team": "bac",
+          "red_team": "hd",
+          "blue_picks": [
+            "edras",
+            "taara",
+            "mganga",
+            "elandorr",
+            "dolia"
+          ],
+          "red_picks": [
+            "qi",
+            "zephys",
+            "zata",
+            "stuart",
+            "ming"
+          ],
+          "blue_bans": [
+            "tachi",
+            "murad",
+            "florentino",
+            "enzo"
+          ],
+          "red_bans": [
+            "sinestrea",
+            "rouie",
+            "elsu",
+            "skud"
+          ],
+          "winner_team": "bac"
+        },
+        {
+          "game_no": 3,
+          "blue_team": "bac",
+          "red_team": "hd",
+          "blue_picks": [
+            "skud",
+            "volkath",
+            "rouie",
+            "fennik",
+            "enzo"
+          ],
+          "red_picks": [
+            "airi",
+            "billow",
+            "ignis",
+            "capheny",
+            "ybneth"
+          ],
+          "blue_bans": [
+            "elandorr",
+            "lorion",
+            "florentino",
+            "murad"
+          ],
+          "red_bans": [
+            "marja",
+            "sinestrea",
+            "hayate",
+            "stuart"
+          ],
+          "winner_team": "bac"
+        }
+      ]
+    }
+  ]
+}

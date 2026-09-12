@@ -232,15 +232,29 @@ def test_both_sides_get_ban_recommendations(ctx, side):
 
 
 def test_ban_pool_excludes_heroes_the_enemy_cannot_use(ctx):
-    """Global Ban-Pick — ไม่เสียตาแบนกับตัวที่ศัตรูหยิบไม่ได้อยู่แล้ว"""
-    from rov.domain.enums import Team
+    """Global Ban-Pick — ไม่เสียตาแบนกับตัวที่ศัตรูหยิบไม่ได้อยู่แล้ว
+
+    M2A.5 — resolve ผ่าน identity: ศัตรู (RED เกมนี้) เคยใช้ rouie ในเกมก่อน
+    """
+    from rov.draft.series import (
+        GameRecord,
+        GameSideAssignment,
+        SeriesState,
+        TeamIdentity,
+    )
 
     fx, pooled, lu, lmu, fmt = ctx
-    st = DraftState(
-        fmt=fmt,
-        pool=set(pooled.stats.heroes),
-        series_used={Team.RED: {"rouie"}},
+    cur = GameSideAssignment(blue_team_id="A", red_team_id="B")
+    series = SeriesState(
+        teams={"A": TeamIdentity("A", "A"), "B": TeamIdentity("B", "B")},
+        games=[
+            GameRecord(
+                game_no=1, assignment=cur, red_picks=("rouie",), winner_team_id="B"
+            )
+        ],
+        current_assignment=cur,
     )
+    st = DraftState(fmt=fmt, pool=set(pooled.stats.heroes), sides=cur, series=series)
     assert st.current.action is DraftAction.BAN and st.current.team == "blue"
     ids = [s.hero_id for s in rec(ctx, st)]
     assert "rouie" not in ids, "แบนตัวที่ศัตรูใช้ไม่ได้อยู่แล้ว = เสียตาเปล่า"
