@@ -55,6 +55,19 @@ Ban-Pick มีจริง (ข) parser อ่านถูก · หมาย�
 
 ---
 
+### 2.4 ⚠️ แก้ denominator (M2A.6A · STEP 6)
+
+ตัวเลข §2 (305 series · side-swap 197/100/8) นับบนหน่วย **parsed slot** — ซึ่งรวม
+**706 unplayed slots (45%)** ที่ `parse_map` สร้างต่อทุก `map1..mapN` แม้ยังไม่แข่ง
+(ดู [docs/39 §2](39-competition-rule-inventory.md))
+
+- **played games จริง = 861** (parsed slots = 1,567) — เลข 861 ที่ใช้ที่อื่นถูกต้อง
+- side-swap tallies ข้างบนจึงเป็น "per series บน slot" ไม่ใช่ per played game
+- **ข้อสรุปเชิงคุณภาพไม่เปลี่ยน**: identity คงที่ · side ต่อเกม · ไม่ใช่ odd/even —
+  พิสูจน์บน played games ใน `tests/fixtures/series_identity.json` (ใช้เฉพาะ complete games)
+
+---
+
 ## 3. โมเดลปัจจุบัน — แยก 4 ชั้น
 
 | ชั้น | team identity | side | series history key | ถูกไหม |
