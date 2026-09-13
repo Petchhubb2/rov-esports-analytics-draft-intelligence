@@ -1,63 +1,68 @@
 # 41 — Series-Aware Benchmark Eligibility
 
-PHASE M2A.6A · STEP 7 · 2026-09-12 · **ยังไม่รัน benchmark ใหม่ · ประเมิน eligibility เท่านั้น**
+PHASE M2A.6A · STEP 7 · 2026-09-12 · **revised M2A.6A.1 2026-09-13 (web-verified rules)**
 
-audit: [docs/40](40-global-ban-pick-rule-audit.md) · inventory: [docs/39](39-competition-rule-inventory.md)
+audit: [docs/40](40-global-ban-pick-rule-audit.md) · recovery: [docs/42](42-rule-source-recovery.md) · inventory: [docs/39](39-competition-rule-inventory.md)
 
-series-aware replay จะ "ปลอดภัยโดยไม่เดา" ก็ต่อเมื่อ **กติกา GBP ของ event นั้น VERIFIED**
-(เกมเดี่ยว game 1 ไม่ต้องใช้ lock อยู่แล้ว · lock มีผลเฉพาะ game N>1)
+series-aware replay "ปลอดภัยโดยไม่เดา" เมื่อรู้ครบ: (1) team identity เจ้าของ history ✅ (M2A.5) ·
+(2) GBP ใช้กับ event/stage นี้ไหม · (3) prior picks สร้าง lock · (4) เกมนี้ reset ไหม (ต้องรู้ Bo) ·
+(5) side assignment ✅ (M2A.5)
+
+> **แก้ใหญ่จาก M2A.6A:** เดิมมี source แค่ RPL 2026 Summer → eligibility ≤34% · หลัง web-verify
+> (2026-09-13) กติกา 3 รายการ RPL เป็น **VERIFIED** และ best_of รู้ 88% (ตาม stage) → eligibility พุ่งขึ้นมาก
 
 ---
 
-## 1. Eligibility table (ตาม played games = 861)
+## 1. Eligibility table (played games = 861)
 
-| event | played games | GBP rule status | benchmark-safe? |
-|---|---|---|---|
-| **RPL 2026 Summer** | **291** (33.8%) | **VERIFIED** | ✅ **ได้** — แต่มีเงื่อนไข §2 |
-| RPL 2026 Winter | 93 (10.8%) | UNKNOWN | ❌ ไม่ (ไม่มี source) |
-| RPL 2025 Winter | 232 (26.9%) | UNKNOWN + **observation ค้าน** | ❌ **ไม่** (ข้อมูลชี้ว่าอาจไม่ใช้ own-team GBP) |
-| GCS 2026 Spring | 196 (22.8%) | UNKNOWN | ❌ ไม่ |
-| GCS 2026 Summer | 49 (5.7%) | UNKNOWN | ❌ ไม่ |
+| event | played games | rule status | best_of | benchmark-safe? |
+|---|---|---|---|---|
+| RPL 2026 Summer | 291 (33.8%) | **VERIFIED** (GBP ทุกแมตช์) | Group Bo5 / PO Bo7 | ✅ (ยกเว้น 1 conflict series) |
+| RPL 2026 Winter | 93 (10.8%) | **VERIFIED** | Group Bo5 / PO Bo7 | ✅ |
+| RPL 2025 Winter | 232 (26.9%) | **VERIFIED** | Group Bo5 / PO Bo7 | ✅ (ยกเว้น 1 conflict series) |
+| GCS 2026 Spring | 196 (22.8%) | **SUPPORTED** (GBP documented · scope wording ไม่ยืนยัน "ทุกแมตช์") | Regular Bo5 / PO Bo7 | ⚠️ ได้แบบ SUPPORTED |
+| GCS 2026 Summer | 49 (5.7%) | **UNKNOWN** (ไม่ได้ main-event Format) | UNKNOWN | ❌ |
 
 | สรุป | games | % |
 |---|---|---|
-| VERIFIED (eligible) | **291** | **33.8%** |
-| UNKNOWN (ไม่ eligible) | 570 | 66.2% |
+| **VERIFIED** (3× RPL) | **616** | **71.5%** |
+| SUPPORTED (GCS Spring) | 196 | 22.8% |
+| UNKNOWN (GCS Summer) | 49 | 5.7% |
 
-% ของ historical turns ≈ ตามสัดส่วน games → **~34% eligible · ~66% ต้องเดาถ้าจะ replay**
+→ **VERIFIED ~71.5% · รวม SUPPORTED ~94.3% · เหลือ UNKNOWN แค่ 5.7%**
 
 ---
 
-## 2. แม้แต่ 291 เกมของ RPL 2026 Summer ก็ยังมีเงื่อนไขค้าง
+## 2. เงื่อนไขค้าง (เล็กลงมาก)
 
-1. **godji/bac conflict** — 1 ซีรีส์ (~4 เกม) มี reuse กลางซีรีส์ที่ขัดกติกา verified
-   ([docs/40 §3](40-global-ban-pick-rule-audit.md)) → ต้องสอบ match page ก่อน ไม่งั้น lock อาจผิด
-2. **best_of หายใน 82% ของซีรีส์** → ซีรีส์ Bo7 ที่ best_of=None จะระบุ "เกม 7 (reset)" ไม่ได้ →
-   series-aware lock อาจ lock เกมตัดสินผิด · ต้องเติม best_of หรือมีวิธีระบุ Bo7 ที่ไม่ใช่การเดา
-
-→ **fully-clean eligibility < 33.8%** จนกว่าจะเคลียร์ 2 ข้อนี้
+1. **2 conflict series** ใน VERIFIED events (godji/bac RPL 2026 Summer · hd/bac RPL 2025 Winter) —
+   reuse จริงขัดกติกาที่เอกสารระบุว่าใช้ทุกแมตช์ ([docs/40 §3](40-global-ban-pick-rule-audit.md)) ·
+   ~9 เกม · ต้อง **flag/exclude หรือสอบ** ก่อน ไม่งั้น replay จะ lock ตัวที่ทีมใช้จริง (data ขัด rule)
+2. **best_of ไม่ block VERIFIED events อีกต่อไป** — รู้ Bo แล้ว 269/305 (88%) จาก stage rule →
+   ระบุ Bo7 g7 reset ได้ · เหลือ 36 ที่ยังไม่รู้ = **GCS Summer เท่านั้น** (ซึ่ง UNKNOWN อยู่แล้ว)
+3. GCS Spring = SUPPORTED (GBP documented แต่ยังไม่ยืนยันคำว่า "ทุกแมตช์" + ไม่ยืนยัน g7 reset/side)
 
 ---
 
 ## 3. ตอบ STEP 8 — M2A.6B เดินได้ไหมโดยไม่เดา
 
-**ไม่ได้ในระดับทั้ง dataset** — 66% เป็น UNKNOWN และ RPL 2025 Winter ข้อมูล**ค้าน**การใช้กติกา
-· ถ้าฝืน apply กติกา RPL 2026 Summer กับทุก event = การเดา (โจทย์ห้าม)
+**ได้แล้วในวงกว้าง (ต่างจาก M2A.6A):**
 
-**เดินได้แบบจำกัดขอบเขต** เฉพาะ **RPL 2026 Summer** (≤34%) **หลังจาก**:
-- สอบ godji/bac conflict (data artifact หรือ rule exception)
-- แก้ best_of ของซีรีส์ Bo7 ใน Summer (ไม่งั้น reset ระบุไม่ได้)
+- **VERIFIED subset (3× RPL, 616 เกม / 71.5%)** — เดินได้ โดย **exclude/flag 2 conflict series** ก่อน
+- **+ GCS Spring (SUPPORTED, +196)** — รวม 94.3% ถ้ายอมรับระดับ SUPPORTED (report แยกจาก VERIFIED)
+- **GCS 2026 Summer (49 / 5.7%) — UNKNOWN → ห้าม replay** จนกว่าได้ main-event Format (ห้ามใช้ Seat Challenge แทน)
 
-**ทางเลือกเพื่อขยาย eligibility** (ก่อน M2A.6B):
-- เปิด Liquipedia Format section ของอีก 4 รายการ (fetch อัตโนมัติโดน 403 · ใช้ browser/มือ/Chrome automation) → upgrade UNKNOWN→VERIFIED เท่าที่ source รองรับ
-- ถ้า RPL 2025 Winter ยืนยันว่า**ไม่**ใช้ own-team GBP → mark rule ต่อ season ให้ถูก แล้ว replay แบบ per-competition rule
+**เงื่อนไขก่อนเริ่ม M2A.6B:**
+1. per-competition/stage rule config ([docs/40 §4](40-global-ban-pick-rule-audit.md)) — engine อ่าน rule ต่อ event/stage ·
+   UNKNOWN → fall back เกมเดี่ยว
+2. best_of provenance (explicit / verified_stage_rule) — **ห้ามอนุมานจากเกมที่เล่นหรือ map slot**
+3. ตัดสินใจเรื่อง 2 conflict series (exclude / investigate)
+4. benchmark series-aware รายงาน headline **แยก** จากเดิม (ไม่เขียนทับ)
 
 ---
 
-## 4. ข้อเสนอ (รอ review)
+## 4. ยังต้องหา source เพิ่ม
 
-1. M2A.6B ทำ **per-competition rule config** (docs/40 §4) ก่อน — engine อ่าน rule ต่อ event ·
-   UNKNOWN → fall back เกมเดี่ยว (ไม่ lock)
-2. benchmark series-aware รันเฉพาะ subset ที่ VERIFIED · รายงาน headline **แยก** จาก headline เดิม
-   (ไม่เขียนทับ) จนกว่าจะครอบคลุมพอ
-3. งานเก็บ source: verify 4 รายการ + best_of + godji/bac — เป็น data/verification ไม่ใช่ tuning
+- GCS 2026 Summer main-event Format (GBP + best_of + reset + side)
+- คำอธิบาย 2 conflict series (RPL Summer godji/bac · RPL 2025 Winter hd/bac) — ยังปลายเปิด
+- draft sequence (ทุก event) · GCS Spring: ยืนยันคำว่า "ทุกแมตช์" + g7 reset + side-selection

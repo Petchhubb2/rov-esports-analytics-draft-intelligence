@@ -6,6 +6,15 @@ inventory: [docs/39](39-competition-rule-inventory.md) · eligibility: [docs/41]
 
 ---
 
+> **M2A.6A.1 update (2026-09-13 · web-verified · [docs/42](42-rule-source-recovery.md)):**
+> ผู้ใช้ยืนยัน Liquipedia Format ผ่าน browser แล้ว → **RPL 2026 Summer: Group Stage = Bo5 · Playoffs = Bo7 ·
+> Global Ban-Pick ใช้กับ _ทุกแมตช์_ · Bo3/Bo5 ห้ามใช้ตัวที่เคยใช้ในซีรีส์ · Bo7 เกม 1-6 บังคับ เกม 7 กลับ normal**
+> → **ยกเลิก hypothesis "playoff-only" · stage scope ไม่ใช่ UNKNOWN อีกต่อไป (VERIFIED ว่าใช้ทุกแมตช์)**
+> · godji/bac (group-stage Bo5, reuse จริง) จึงเป็น **`observation_conflicts_with_documented_rule`**
+> · คำถามที่เหลือเปลี่ยนเป็น: **ทำไม raw match data ถึงขัดกับกติกาที่เอกสารระบุว่าใช้ทุกแมตช์**
+> (source page error / match data anomaly / undocumented exception / admin exception / อื่น ๆ — **ไม่เดาคำตอบ**)
+> · §2 ด้านล่างแก้เป็น VERIFIED สำหรับ 3 รายการ RPL แล้ว
+
 ## 1. แหล่งข้อมูลที่พยายามใช้
 
 | ประเภท source (ที่โจทย์อนุญาต) | สถานะในเซสชันนี้ |
@@ -42,17 +51,21 @@ quote จาก Liquipedia "RoV Pro League/2026/Summer" Format (อยู่ใ�
 | side_selection | home g1 · previous_loser later | **VERIFIED** (Format · Side Selection Privilege) |
 | draft sequence (ban/pick order) | standard 4-ban/5-pick | **UNKNOWN** (`verified: false` · Liquipedia ไม่เก็บลำดับรวม) |
 
-### 2.2 อีก 4 รายการ — ไม่มี source ของตัวเอง
+### 2.2 อีก 4 รายการ — web-verified 2026-09-13 (Liquipedia Format section, ผ่าน browser)
 
-| event | global_ban_pick | reset_on_final | side_selection | sequence | หมายเหตุจาก **observation** (ไม่ใช่หลักฐานกติกา) |
-|---|---|---|---|---|---|
-| RPL 2026 Winter | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | ไม่พบ reuse ในข้อมูลที่แข่งแล้ว (93 เกม) — **ไม่ใช่ข้อพิสูจน์** |
-| RPL 2025 Winter | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | ⚠️ **observation ขัดกับ own-team GBP** — hd reuse billow/hayate/teemee กลางซีรีส์ (§3) |
-| GCS 2026 Spring | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | ไม่พบ reuse (196 เกม) — ไม่ใช่ข้อพิสูจน์ |
-| GCS 2026 Summer | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | observation: 1 reuse กลางซีรีส์ (bmg/one) |
+| event | best_of (stage) | GBP enabled | GBP scope | Bo7 g7 reset | side selection | สถานะรวม |
+|---|---|---|---|---|---|---|
+| RPL 2026 Winter | Group Bo5 / PO Bo7 | true | ทุกแมตช์ | true | documented | **VERIFIED** |
+| RPL 2025 Winter | Group Bo5 / PO Bo7 | true | ทุกแมตช์ | true | ไม่ได้ระบุ → UNKNOWN | **VERIFIED** (GBP) |
+| GCS 2026 Spring | Regular Bo5 / PO Bo7 | true (documented) | **SUPPORTED** — ไม่ยืนยันคำว่า "ทุกแมตช์" | ไม่ได้ระบุ → UNKNOWN | ไม่ได้ระบุ → UNKNOWN | **SUPPORTED** |
+| GCS 2026 Summer | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | UNKNOWN | **UNKNOWN** |
 
-> **ห้ามเติม UNKNOWN จาก RPL 2026 Summer** (โจทย์ห้าม) · โดยเฉพาะ **RPL 2025 Winter ที่ข้อมูล
-> _ค้าน_ การใช้ own-team GBP** — เป็นสัญญาณว่ากติกาอาจต่างกันตามฤดูกาล (fearless อาจเพิ่งมาปี 2026)
+- source (ยกเว้น UNKNOWN) = Liquipedia Format section ของแต่ละหน้า (ผู้ใช้ยืนยันผ่าน browser 2026-09-13)
+- `draft sequence` ทุกรายการยัง **UNKNOWN** · **GCS 2026 Summer:** ยังไม่ได้ main-event Format · **ห้ามใช้ Seat Challenge แทน**
+
+> **แก้จาก M2A.6A:** เดิม 4 รายการนี้ UNKNOWN ทั้งหมด → ตอนนี้ 3 RPL **VERIFIED** (GBP ทุกแมตช์ +
+> best_of ตาม stage) · GCS Spring **SUPPORTED** · **RPL 2025 Winter ที่ข้อมูลเคยดู "ค้าน" กติกา —
+> ตอนนี้กติกา VERIFIED แล้ว → hd/bac กลายเป็น observation_conflicts_with_documented_rule (§3)**
 
 ---
 
@@ -60,19 +73,22 @@ quote จาก Liquipedia "RoV Pro League/2026/Summer" Format (อยู่ใ�
 
 จาก M2A.5 · map เข้า tournament แล้ว (ไม่มีข้อสรุปรวมจนจำแนกครบ)
 
-| # | event | series | reuse | เกม | จำแนก |
+**revised หลัง web-verify (2026-09-13)** — best_of มาจาก stage rule (Group Bo5 / Playoff Bo7):
+
+| # msgs | event | series | Bo (stage) | เกม | จำแนก (revised) |
 |---|---|---|---|---|---|
-| 1-2 | **RPL 2026 Summer** | godji check vs bac (BoNone, 4 played) | godji `toro` g1→g4 · bac `marja` g3→g4 | กลางซีรีส์ | **observation_conflicts_with_documented_rule** — กติกา verified ห้าม reuse แต่เกิด reuse · ต้องสอบระดับ match (เป็น Bo5 จริงไหม / data / bracket reset) — **ยังไม่แก้กติกา** |
-| 3-5 | **RPL 2025 Winter** | hd vs bac (BoNone, 5 played) | hd `billow/hayate/teemee` g1→g3 · `rouie` g3→g5 · bac `annette` g1→g3 | กลางซีรีส์ | **unresolved (event rule not source-verified)** — reuse หนักกลางซีรีส์ ชี้ว่า own-team GBP อาจไม่บังคับใน RPL 2025 Winter |
-| 6-7 | **RPL 2025 Winter** | bac vs bru (**Bo7**, 7 played) | reuse ทั้งหมด**ในเกม 7** (= best_of) | เกมตัดสิน | **explained_by_reset** — เข้ากับ reset_on_final_game (RPL rule) · หมายเหตุ: RPL 2025 Winter rule ยังไม่ verified แยก แต่ reuse อยู่เฉพาะเกมตัดสินตามรูปแบบ reset |
-| 8 | **GCS 2026 Summer** | bmg vs one (BoNone, 4 played) | one `zephys` g1→g4 | กลางซีรีส์ | **unresolved (event rule not source-verified)** |
+| 2 | **RPL 2026 Summer** | godji/bac (Match#2, group) | Bo5 | g1,g4 / g3,g4 | **observation_conflicts_with_documented_rule** — GBP ทุกแมตช์ VERIFIED · reuse ขัด |
+| 3 | **RPL 2025 Winter** | hd/bac (group) | Bo5 | g1,g3,g5 | **observation_conflicts_with_documented_rule** (upgraded — GBP ทุกแมตช์ VERIFIED แล้ว) |
+| 2 | **RPL 2025 Winter** | bac/bru (playoff) | Bo7 | ทั้งหมด g7 | **explained_by_documented_reset** — Bo7 g7 กลับ normal (VERIFIED) |
+| 1 | **GCS 2026 Summer** | bmg/one | rule UNKNOWN | g1,g4 | **unresolved** — GCS Summer rule ยังไม่ verified |
 
-**สรุปการจำแนก:** explained_by_reset 2 (1 series) · observation_conflicts_with_documented_rule 2 (1 series) ·
-unresolved 4 (2 series) · parser_or_data_issue 0 (แต่ #1-2 ต้องสอบว่าเป็น data หรือไม่) ·
-likely_unplayed_slot_artifact 0
+**สรุป (revised):** observation_conflicts_with_documented_rule **5 msgs / 2 series** ·
+explained_by_documented_reset 2 / 1 series · unresolved 1 (GCS Summer) · parser/alias/picks-vs-bans **0**
+(picks-only check + canonical ids + raw-confirmed map index — ตัดทิ้งทั้งหมด · ดู [docs/42 §B,D](42-rule-source-recovery.md))
 
-> **ไม่มี** case ไหนเกิดจากบั๊ก side/identity (M2A.5 แก้ไปแล้ว · identity pairing อ่านถูกทุก case)
-> **ไม่แก้ `reset_on_final_game`** เพื่อลบ violation (โจทย์ห้าม)
+> ⚠️ **2 series RPL (godji/bac, hd/bac) reuse ขัดกับกติกาที่เอกสารระบุว่าใช้ _ทุกแมตช์_** — คำถามปลายเปิด:
+> source page error / match data anomaly / undocumented exception / competition admin exception / อื่น ๆ ·
+> **ไม่เดาคำตอบ · ไม่แก้กติกา** · ไม่มี case ใดเกิดจากบั๊ก side/identity (M2A.5 แก้แล้ว)
 
 ---
 

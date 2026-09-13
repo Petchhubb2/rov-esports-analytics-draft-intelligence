@@ -52,6 +52,13 @@ PHASE M2A.6A · STEP 1 + 6 · 2026-09-12 · **verification only — ไม่แ
 - **best_of parse ไม่ได้ 249/305 ซีรีส์ (82%)** — Liquipedia เขียน bestof ไม่ครบ → ระบุ "เกมสุดท้าย"
   (สำหรับ reset_on_final_game) ไม่ได้ในหลายซีรีส์ · เป็น data gap สำคัญต่อ M2A.6B
 
+> **M2A.6A.1 revised (2026-09-13 · web-verified · [docs/42](42-rule-source-recovery.md) §C):**
+> **ไม่ใช่ parser bug** (อ่าน `bestof=` ครบ 56/56 ที่มี) · best_of มี **2 provenance**:
+> **(A) explicit_match** (`bestof=` ใน {{Match}}) · **(B) verified_stage_rule** (Group/Regular = Bo5 ·
+> Playoffs = Bo7 · ยืนยันจาก Liquipedia Format) · recount: **explicit 56 (VERIFIED) · stage-inherited
+> 213 (SUPPORTED) · still_unknown 36 (GCS Summer เท่านั้น) → รู้ best_of 269/305 (88.2%)** ·
+> **ห้ามอนุมานจากจำนวนเกมที่เล่นจริง หรือจำนวน map slot**
+
 ### 2.1 แก้ไข denominator ใน docs/36
 
 docs/36 §2 นับ "series ที่มี ≥2 games = 305" และ side-swap (197/100/8) **บนหน่วย parsed slot**
